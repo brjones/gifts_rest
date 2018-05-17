@@ -3,11 +3,11 @@ from psqlextra.models import PostgresModel
 from psqlextra.manager import PostgresManager
 
 class EnsemblGene(PostgresModel):
-    # override default django manager
+    # override default Django manager
     objects = PostgresManager()
     
     gene_id = models.BigAutoField(primary_key=True)
-    ensg_id = models.CharField(max_length=30, blank=True, null=True)
+    ensg_id = models.CharField(unique=True, max_length=30, blank=True, null=True)
     gene_name = models.CharField(max_length=30, blank=True, null=True)
     chromosome = models.CharField(max_length=50, blank=True, null=True)
     region_accession = models.CharField(max_length=50, blank=True, null=True)
@@ -57,6 +57,9 @@ class EnsemblTranscript(models.Model):
         managed = False
         db_table = 'ensembl_transcript'
 
+
+
+
 class EnspUCigar(models.Model):
     ensp_u_cigar_id = models.BigAutoField(primary_key=True)
     cigarplus = models.TextField(blank=True, null=True)
@@ -68,6 +71,7 @@ class EnspUCigar(models.Model):
     class Meta:
         managed = False
         db_table = 'ensp_u_cigar'
+
 
 class GeneHistory(models.Model):
     ensembl_species_history = models.ForeignKey(EnsemblSpeciesHistory, models.DO_NOTHING, primary_key=True)
