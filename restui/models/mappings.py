@@ -39,7 +39,7 @@ class AlignmentRun(models.Model):
 
 class EnsemblUniprot(models.Model):
     mapping_id = models.BigAutoField(primary_key=True)
-    uniprot = models.ForeignKey('UniprotEntryVersion', models.DO_NOTHING, blank=True, null=True)
+    uniprot_id = models.ForeignKey('UniprotEntryType', models.DO_NOTHING, blank=True, null=True)
     userstamp = models.CharField(max_length=30, blank=True, null=True)
     timestamp = models.DateTimeField(blank=True, null=True)
     mapping_history_id = models.BigIntegerField(blank=True, null=True)
