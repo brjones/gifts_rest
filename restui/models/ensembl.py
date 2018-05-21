@@ -2,6 +2,20 @@ from django.db import models
 from psqlextra.models import PostgresModel
 from psqlextra.manager import PostgresManager
 
+class EnsemblSpeciesHistory(models.Model):
+    ensembl_species_history_id = models.BigAutoField(primary_key=True)
+    species = models.CharField(max_length=30, blank=True, null=True)
+    assembly_accession = models.CharField(max_length=30, blank=True, null=True)
+    ensembl_tax_id = models.BigIntegerField(blank=True, null=True)
+    ensembl_release = models.BigIntegerField(blank=True, null=True)
+    status = models.CharField(max_length=30, blank=True, null=True)
+    time_loaded = models.DateTimeField(blank=True, null=True)
+    
+    
+    class Meta:
+        managed = False
+        db_table = 'ensembl_species_history'
+
 class EnsemblGene(PostgresModel):
     # override default Django manager
     objects = PostgresManager()
@@ -23,21 +37,6 @@ class EnsemblGene(PostgresModel):
     class Meta:
         managed = False
         db_table = 'ensembl_gene'
-
-
-class EnsemblSpeciesHistory(models.Model):
-    ensembl_species_history_id = models.BigAutoField(primary_key=True)
-    species = models.CharField(max_length=30, blank=True, null=True)
-    assembly_accession = models.CharField(max_length=30, blank=True, null=True)
-    ensembl_tax_id = models.BigIntegerField(blank=True, null=True)
-    ensembl_release = models.BigIntegerField(blank=True, null=True)
-    status = models.CharField(max_length=30, blank=True, null=True)
-    time_loaded = models.DateTimeField(blank=True, null=True)
-    
-    
-    class Meta:
-        managed = False
-        db_table = 'ensembl_species_history'
 
 
 class EnsemblTranscript(models.Model):
