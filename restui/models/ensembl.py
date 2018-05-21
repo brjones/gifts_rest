@@ -18,7 +18,8 @@ class EnsemblGene(PostgresModel):
     seq_region_strand = models.BigIntegerField(blank=True, null=True)
     biotype = models.CharField(max_length=40, blank=True, null=True)
     time_loaded = models.DateTimeField(blank=True, null=True)
-
+    history = models.ManyToManyField(EnsemblSpeciesHistory, through='GeneHistory')
+    
     class Meta:
         managed = False
         db_table = 'ensembl_gene'
@@ -53,7 +54,8 @@ class EnsemblTranscript(models.Model):
     supporting_evidence = models.CharField(max_length=45, blank=True, null=True)
     userstamp = models.CharField(max_length=30, blank=True, null=True)
     time_loaded = models.DateTimeField(blank=True, null=True)
-
+    history = models.ManyToManyField(EnsemblSpeciesHistory, through='TranscriptHistory')
+    
     class Meta:
         managed = False
         db_table = 'ensembl_transcript'
