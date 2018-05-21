@@ -32,7 +32,8 @@ class EnsemblSpeciesHistory(models.Model):
     ensembl_release = models.BigIntegerField(blank=True, null=True)
     status = models.CharField(max_length=30, blank=True, null=True)
     time_loaded = models.DateTimeField(blank=True, null=True)
-
+    
+    
     class Meta:
         managed = False
         db_table = 'ensembl_species_history'
@@ -81,3 +82,12 @@ class GeneHistory(models.Model):
         managed = False
         db_table = 'gene_history'
         unique_together = (('ensembl_species_history', 'gene'),)
+
+class TranscriptHistory(models.Model):
+    ensembl_species_history = models.ForeignKey(EnsemblSpeciesHistory, models.DO_NOTHING, primary_key=True)
+    transcript = models.ForeignKey(EnsemblTranscript, models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'transcript_history'
+        unique_together = (('ensembl_species_history', 'transcript'),)
