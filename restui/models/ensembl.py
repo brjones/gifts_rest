@@ -62,7 +62,7 @@ class EnsemblTranscript(PostgresModel):
     history = models.ManyToManyField(EnsemblSpeciesHistory, through='TranscriptHistory')
 
     def __str__(self):
-        return "{0} - {1} ({2})".format(self.transcript_id, self.enst_id, self.enst_id)
+        return "{0} - {1} ({2})".format(self.transcript_id, self.enst_id, self.ensg_id)
     
     class Meta:
         managed = False
