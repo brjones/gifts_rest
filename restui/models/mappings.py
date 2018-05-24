@@ -47,7 +47,8 @@ class EnsemblUniprot(models.Model):
     sp_ensembl_mapping_type = models.CharField(max_length=50, blank=True, null=True)
     uniprot_entry_version = models.IntegerField(blank=True, null=True)
     uniprot_ensembl_derived = models.SmallIntegerField(blank=True, null=True)
-
+    grouping_id = models.BigIntegerField(blank=True, null=True)
+    
     class Meta:
         managed = False
         db_table = 'ensembl_uniprot'
