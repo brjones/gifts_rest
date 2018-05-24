@@ -69,7 +69,7 @@ class UniprotEntryHistory(models.Model):
     class Meta:
         managed = False
         db_table = 'uniprot_entry_history'
-        unique_together = (('uniprot_entry_version_id', 'release_version'),)
+        unique_together = (('uniprot_entry_type_id', 'release_version'),)
 
 
 class UniprotEntryType(models.Model):
