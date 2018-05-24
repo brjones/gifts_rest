@@ -48,7 +48,7 @@ class EnsemblTranscript(PostgresModel):
 
     transcript_id = models.BigAutoField(primary_key=True)
     gene = models.ForeignKey(EnsemblGene, models.DO_NOTHING, blank=True, null=True)
-    enst_id = models.CharField(max_length=30, blank=True, null=True)
+    enst_id = models.CharField(unique=True, max_length=30, blank=True, null=True)
     enst_version = models.SmallIntegerField(blank=True, null=True)
     ccds_id = models.CharField(max_length=30, blank=True, null=True)
     uniparc_accession = models.CharField(max_length=30, blank=True, null=True)
