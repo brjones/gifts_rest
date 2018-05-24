@@ -33,13 +33,19 @@ class EnsemblGene(PostgresModel):
     biotype = models.CharField(max_length=40, blank=True, null=True)
     time_loaded = models.DateTimeField(blank=True, null=True)
     history = models.ManyToManyField(EnsemblSpeciesHistory, through='GeneHistory')
+
+    def __str__(self):
+        return "{0} - {1} ({2})".format(self.gene_id, self.ensg_id, self.gene_name)
+        
     
     class Meta:
         managed = False
         db_table = 'ensembl_gene'
 
 
-class EnsemblTranscript(models.Model):
+class EnsemblTranscript(PostgresModel):
+    objects = PostgresManager()
+
     transcript_id = models.BigAutoField(primary_key=True)
     gene = models.ForeignKey(EnsemblGene, models.DO_NOTHING, blank=True, null=True)
     enst_id = models.CharField(max_length=30, blank=True, null=True)
@@ -54,6 +60,9 @@ class EnsemblTranscript(models.Model):
     userstamp = models.CharField(max_length=30, blank=True, null=True)
     time_loaded = models.DateTimeField(blank=True, null=True)
     history = models.ManyToManyField(EnsemblSpeciesHistory, through='TranscriptHistory')
+
+    def __str__(self):
+        return "{0} - {1} ({2})".format(self.transcript_id, self.enst_id, self.enst_id)
     
     class Meta:
         managed = False
