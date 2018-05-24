@@ -63,8 +63,8 @@ class UniprotEntry(models.Model):
 
 
 class UniprotEntryHistory(models.Model):
-    uniprot_entry_version_id = models.ForeignKey('UniprotEntryType', models.DO_NOTHING, primary_key=True)
-    release_version = models.CharField(max_length=30)
+    uniprot_entry_type_id = models.ForeignKey('UniprotEntryType', models.DO_NOTHING, primary_key=True)
+    release_version = models.CharField(max_length=30, primary_key=True)
 
     class Meta:
         managed = False
@@ -73,7 +73,7 @@ class UniprotEntryHistory(models.Model):
 
 
 class UniprotEntryType(models.Model):
-    uniprot_entry_version_id = models.BigAutoField(primary_key=True)
+    uniprot_entry_type_id = models.BigAutoField(primary_key=True)
     userstamp = models.CharField(max_length=30, blank=True, null=True)
     timestamp = models.DateTimeField(blank=True, null=True)
     uniprot = models.ForeignKey(UniprotEntry, models.DO_NOTHING, blank=True, null=True)
