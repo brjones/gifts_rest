@@ -58,9 +58,8 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
 
         # map each transcript data to its corresponding gene object,
         # effectively establishing the gene-transcript one-to-many relationship
-        for t, g in ((transcript_data, gene) for gene in genes for transcript_data in tdata[gene.ensg_id]):
-            t["gene"] = g
-
+        map(lambda t, g: t.extend({"gene": gene}), ((transcript_data, gene) for gene in genes for transcript_data in tdata[gene.ensg_id]))
+        
         # bulk insert the transcripts mapped to their genes
         transcripts = EnsemblTranscript.objects.on_conflict(['enst_id'],
                                                             ConflictAction.UPDATE).bulk_insert(list(chain.from_iterable(tdata.values())),
