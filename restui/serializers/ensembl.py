@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.core.serializers import serialize
-from restui.models.ensembl import EnsemblGene, EnsemblTranscript
+from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory, GeneHistory, TranscriptHistory
 from psqlextra.query import ConflictAction
 from itertools import chain # flatten list of lists, i.e. list of transcripts for each gene
 import pprint
@@ -46,7 +46,7 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
             gdata.append(dict(**item))
 
         #
-        # bulk insert the genes
+        # bulk insert the genes and transcripts
         #
         # WARNING
         #
@@ -58,12 +58,29 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
 
         # map each transcript data to its corresponding gene object,
         # effectively establishing the gene-transcript one-to-many relationship
-        map(lambda t, g: t.extend({"gene": gene}), ((transcript_data, gene) for gene in genes for transcript_data in tdata[gene.ensg_id]))
+        # use generator expression to reduce memory footprint
+        for t, g in ((transcript_data, gene) for gene in genes for transcript_data in tdata[gene.ensg_id]):
+             t["gene"] = g
         
         # bulk insert the transcripts mapped to their genes
         transcripts = EnsemblTranscript.objects.on_conflict(['enst_id'],
                                                             ConflictAction.UPDATE).bulk_insert(list(chain.from_iterable(tdata.values())),
                                                                                                return_model=True)
+
+        #
+        # TODO
+        #
+        # write out the history
+        #
+        # How to get history attributes?
+        #
+        history = EnsemblSpeciesHistory.objects.create()
+        pprint.pprint(history)
+        for gene in genes:
+            GeneHistory.objects.create(ensembl_species_history=history, gene=gene)
+        for transcript in transcripts:
+            TranscriptHistory.objects.create(ensembl_species_history=history, transcript=transcript)
+            
         return genes
 
 class EnsemblGeneSerializer(serializers.Serializer):
