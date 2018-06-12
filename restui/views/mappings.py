@@ -1,8 +1,8 @@
 from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory
 from restui.models.mappings import EnsemblUniprot, TaxonomyMapping, MappingHistory
 from restui.models.uniprot import UniprotEntry, UniprotEntryType
-from restui.models.other import CvEntryType, CvUeStatus, UeMappingStatus
-from restui.serializers.mappings import MappingSerializer
+from restui.models.other import CvEntryType, CvUeStatus, UeMappingStatus, UeMappingComment, UeMappingLabel
+from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer
 
 from django.http import Http404
 from rest_framework.views import APIView
@@ -54,19 +54,25 @@ class Mapping(APIView):
             raise Exception('Should not be here')
 
         #
-        # TODO
+        # CHECK
         #
         # Not sure I'm doing the correct thing. A mapping shouldn't be uniquely identified by the transcript_id/uniprot_acc pair,
         # as there could be several mappings associated to the given pair.
-        # 
+        #
+        # Is UeMappingStatus.id the ensembl_uniprot.mapping_id?
+        #
+        # We're also assuming CvUeStatus.id is UeMappingStatus.status
         #
         try:
             mapping_status = UeMappingStatus.objects.get(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id)
-            status = CvUeStatus.objects.get(pk=mapping_status.id).description
+            status = CvUeStatus.objects.get(pk=mapping_status.status).description
         except (UeMappingStatus.DoesNotExist, CvUeStatus.DoesNotExist):
             # TODO: should log this anomaly or do something else
             status = None
 
+        #
+        # CHECK: we're assuming CvEntryType.id is uniprot_entry_type.entry_type
+        #
         try:
             entry_type = CvEntryType.objects.get(pk=uniprot_entry_type.entry_type).description
         except CvEntryType.DoesNotExist:
@@ -122,3 +128,57 @@ class Mapping(APIView):
         return Response(serializer.data)
 
 
+class MappingComments(APIView):
+    """
+    Retrieve all comments relative to a given mapping.
+    """
+
+    def get(self, request, pk):
+        mapping = get_ensembl_uniprot(pk)
+
+        try:
+            ensembl_transcript = EnsemblTranscript.objects.get(ensembluniprot=mapping)
+            uniprot_entry_type = UniprotEntryType.objects.get(ensembluniprot=mapping)
+            uniprot_entry = UniprotEntry.objects.get(uniprotentrytype=uniprot_entry_type)
+        except (EnsemblTranscript.DoesNotExist, UniprotEntryType.DoesNotExist, UniprotEntry.DoesNotExist):
+            raise Http404
+        except MultipleObjectsReturned:
+            raise Exception('Should not be here')
+
+        #
+        # CHECK
+        #
+        # Not sure I'm doing the correct thing. A mapping shouldn't be uniquely identified by the transcript_id/uniprot_acc pair,
+        # as there could be several mappings associated to the given pair.
+        #
+        # Are the UeMappingStatus.id, UeMappingComment.id and UeMappingLabel.id the ensembl_uniprot.mapping_id?!
+        #
+        # We're also assuming:
+        # - CvUeStatus.id is UeMappingStatus.status
+        # - CvUeLabel.id is UeMappingLabel.label
+        #
+        try:
+            mapping_status = UeMappingStatus.objects.get(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id)
+            status = CvUeStatus.objects.get(pk=mapping_status.status).description
+        except (UeMappingStatus.DoesNotExist, CvUeStatus.DoesNotExist):
+            # TODO: should log this anomaly or do something else
+            status = None
+
+        mapping_comments = UeMappingComment.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id)
+        comments = map(lambda c: { 'text':c.comment, 'timeAdded':c.time_stamp, 'user':c.user_stamp }, mapping_comments)
+
+        mapping_labels = UeMappingLabel.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id)
+        try:
+            labels = map(lambda l: { 'text':CvUeLabel.objects.get(pk=l.label).description, 'timeAdded':l.time_stamp, 'user':l.user_stamp }, mapping_labels)
+        except CvUeLabel.DoesNotExist:
+            raise Http404
+
+        data = { 'mappingId':mapping.mapping_id,
+                 'status':status,
+                 'user':mapping.userstamp,
+                 'comments':list(comments),
+                 'labels':list(labels)
+        }
+
+        serializer = MappingCommentsSerializer(data)
+        return Response(serializer.data)
