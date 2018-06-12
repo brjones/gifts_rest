@@ -2,7 +2,9 @@ from django.db import models
 from psqlextra.models import PostgresModel
 from psqlextra.manager import PostgresManager
 
-class EnsemblSpeciesHistory(models.Model):
+class EnsemblSpeciesHistory(PostgresModel):
+    objects = PostgresManager()
+    
     ensembl_species_history_id = models.BigAutoField(primary_key=True)
     species = models.CharField(max_length=30, blank=True, null=True)
     assembly_accession = models.CharField(max_length=30, blank=True, null=True)
@@ -10,7 +12,9 @@ class EnsemblSpeciesHistory(models.Model):
     ensembl_release = models.BigIntegerField(blank=True, null=True)
     status = models.CharField(max_length=30, blank=True, null=True)
     time_loaded = models.DateTimeField(blank=True, null=True)
-    
+
+    def __str__(self):
+        return "{0} - {1} {2} {3}".format(self.ensembl_species_history_id, self.species, self.assembly_accession, self.ensembl_tax_id, self.ensembl_release)
     
     class Meta:
         managed = False
@@ -62,7 +66,7 @@ class EnsemblTranscript(PostgresModel):
     history = models.ManyToManyField(EnsemblSpeciesHistory, through='TranscriptHistory')
 
     def __str__(self):
-        return "{0} - {1} ({2})".format(self.transcript_id, self.enst_id, self.enst_id)
+        return "{0} - {1} ({2})".format(self.transcript_id, self.enst_id, self.gene)
     
     class Meta:
         managed = False
@@ -84,7 +88,9 @@ class EnspUCigar(models.Model):
         db_table = 'ensp_u_cigar'
 
 
-class GeneHistory(models.Model):
+class GeneHistory(PostgresModel):
+    objects = PostgresManager()
+    
     ensembl_species_history = models.ForeignKey(EnsemblSpeciesHistory, models.DO_NOTHING, primary_key=True)
     gene = models.ForeignKey(EnsemblGene, models.DO_NOTHING)
 
@@ -93,7 +99,9 @@ class GeneHistory(models.Model):
         db_table = 'gene_history'
         unique_together = (('ensembl_species_history', 'gene'),)
 
-class TranscriptHistory(models.Model):
+class TranscriptHistory(PostgresModel):
+    objects = PostgresManager()
+    
     ensembl_species_history = models.ForeignKey(EnsemblSpeciesHistory, models.DO_NOTHING, primary_key=True)
     transcript = models.ForeignKey(EnsemblTranscript, models.DO_NOTHING)
 
