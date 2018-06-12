@@ -77,7 +77,7 @@ class UniprotEntryType(models.Model):
     userstamp = models.CharField(max_length=30, blank=True, null=True)
     timestamp = models.DateTimeField(blank=True, null=True)
     uniprot = models.ForeignKey(UniprotEntry, models.DO_NOTHING, blank=True, null=True)
-    entry_type = models.NullBooleanField()
+    entry_type = models.SmallIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
