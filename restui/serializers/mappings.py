@@ -60,18 +60,9 @@ class MappingSerializer(serializers.Serializer):
     mapping = EnsemblUniprotMappingSerializer()
     relatedMappings = EnsemblUniprotMappingSerializer(many=True)
 
-class CommentSerializer(serializers.Serializer):
+class CommentLabelSerializer(serializers.Serializer):
     """
-    For nested serialization of user comment in call to mapping/comments/<mapping_id> endpoint.
-    """
-
-    text = serializers.CharField()
-    timeAdded = serializers.DateTimeField()
-    user = serializers.CharField()
-
-class LabelSerializer(serializers.Serializer):
-    """
-    For nested serialization of mapping label in call to mapping/comments/<mapping_id> endpoint.
+    For nested serialization of user comment or label for a mapping in call to mapping/comments/<mapping_id> endpoint.
     """
 
     text = serializers.CharField()
@@ -81,10 +72,12 @@ class LabelSerializer(serializers.Serializer):
 class MappingCommentsSerializer(serializers.Serializer):
     """
     Serialize data in call to mapping/comments/<mapping_id> endpoint.
+
+    JSON specs derived from https://github.com/ebi-uniprot/gifts-mock/blob/master/data/comments.json
     """
 
     mappingId = serializers.IntegerField()
     status = serializers.CharField()
     user = serializers.CharField()
-    comments = CommentSerializer(many=True)
-    labels = LabelSerializer(many=True)
+    comments = CommentLabelSerializer(many=True)
+    labels = CommentLabelSerializer(many=True)
