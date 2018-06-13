@@ -149,19 +149,19 @@ class MappingComments(APIView):
         except MultipleObjectsReturned:
             raise Exception('Should not be here')
 
-        # Fetch latest mapping status (see comments in class Mapping)
+        # fetch latest mapping status (see comments in class Mapping)
         try:
             mapping_status = UeMappingStatus.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id).order_by('-time_stamp')[0]
             status = CvUeStatus.objects.get(pk=mapping_status.status).description
         except (IndexError, CvUeStatus.DoesNotExist):
             status = None
 
-        # Fetch mapping comment history
-        mapping_comments = UeMappingComment.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id)
+        # fetch mapping comment history
+        mapping_comments = UeMappingComment.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id).order_by('-time_stamp')
         comments = map(lambda c: { 'text':c.comment, 'timeAdded':c.time_stamp, 'user':c.user_stamp }, mapping_comments)
 
         # fetch mapping label history
-        mapping_labels = UeMappingLabel.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id)
+        mapping_labels = UeMappingLabel.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id).order_by('time_stamp')
         try:
             labels = map(lambda l: { 'text':CvUeLabel.objects.get(pk=l.label).description, 'timeAdded':l.time_stamp, 'user':l.user_stamp }, mapping_labels)
         except CvUeLabel.DoesNotExist:
