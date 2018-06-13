@@ -112,7 +112,7 @@ class Mapping(APIView):
 
     def get_related_mappings(self, mapping):
         """
-        Return the list of mappings sharing the same ENST or Uniprot accession.
+        Return the list of mappings sharing the same ENST or Uniprot accession of the given mapping.
         """
         
         mappings = EnsemblUniprot.objects.filter(transcript=mapping.transcript).filter(uniprot_entry_type=mapping.uniprot_entry_type).exclude(pk=mapping.mapping_id)
@@ -149,28 +149,18 @@ class MappingComments(APIView):
         except MultipleObjectsReturned:
             raise Exception('Should not be here')
 
-        #
-        # CHECK
-        #
-        # Not sure I'm doing the correct thing. A mapping shouldn't be uniquely identified by the transcript_id/uniprot_acc pair,
-        # as there could be several mappings associated to the given pair.
-        #
-        # Are the UeMappingStatus.id, UeMappingComment.id and UeMappingLabel.id the ensembl_uniprot.mapping_id?!
-        #
-        # We're also assuming:
-        # - CvUeStatus.id is UeMappingStatus.status
-        # - CvUeLabel.id is UeMappingLabel.label
-        #
+        # Fetch latest mapping status (see comments in class Mapping)
         try:
-            mapping_status = UeMappingStatus.objects.get(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id)
+            mapping_status = UeMappingStatus.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id).order_by('-time_stamp')[0]
             status = CvUeStatus.objects.get(pk=mapping_status.status).description
-        except (UeMappingStatus.DoesNotExist, CvUeStatus.DoesNotExist):
-            # TODO: should log this anomaly or do something else
+        except (IndexError, CvUeStatus.DoesNotExist):
             status = None
 
+        # Fetch mapping comment history
         mapping_comments = UeMappingComment.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id)
         comments = map(lambda c: { 'text':c.comment, 'timeAdded':c.time_stamp, 'user':c.user_stamp }, mapping_comments)
 
+        # fetch mapping label history
         mapping_labels = UeMappingLabel.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id)
         try:
             labels = map(lambda l: { 'text':CvUeLabel.objects.get(pk=l.label).description, 'timeAdded':l.time_stamp, 'user':l.user_stamp }, mapping_labels)
