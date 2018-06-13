@@ -1,3 +1,5 @@
+import requests
+
 from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory
 from restui.models.mappings import EnsemblUniprot, TaxonomyMapping, MappingHistory
 from restui.models.uniprot import UniprotEntry, UniprotEntryType
@@ -20,6 +22,18 @@ def get_mapping_history(mapping):
         return MappingHistory.objects.get(pk=mapping.mapping_history_id)
     except MappingHistory.DoesNotExist:
         raise Http404
+
+def tark_transcript(enst_id, release):
+    url = "http://betatark.ensembl.org/api/transcript/?stable_id={}&release_short_name={}&expand=sequence"
+
+    r = requests.get(url.format(enst_id, release))
+    if not r.ok:
+        raise Http404
+
+    response = r.json()
+    assert response['count'] == 1
+
+    return response['results'][0]
 
 class Mapping(APIView):
     """
@@ -83,6 +97,17 @@ class Mapping(APIView):
             entry_type = CvEntryType.objects.get(pk=uniprot_entry_type.entry_type).description
         except CvEntryType.DoesNotExist:
             raise Http404
+
+        # fetch transcript sequence from TaRK
+        transcript = tark_transcript(ensembl_transcript.enst_id, ensembl_release)
+        # double check we've got the same thing
+        assert transcript['loc_start'] == ensembl_transcript.seq_region_start
+        assert transcript['loc_end'] == ensembl_transcript.seq_region_end
+
+        try:
+            sequence = transcript['sequence']['sequence']
+        except KeyError:
+            sequence = None
         
         return { 'mappingId':mapping.mapping_id,
                  'timeMapped':mapping.timestamp,
@@ -105,7 +130,7 @@ class Mapping(APIView):
                      'seqRegionStart':ensembl_transcript.seq_region_start,
                      'seqRegionEnd':ensembl_transcript.seq_region_end,
                      'ensgId':EnsemblGene.objects.get(ensembltranscript=ensembl_transcript).ensg_id,
-                     'sequence':None # TODO
+                     'sequence':sequence
                  },
                  'status':status
         }
