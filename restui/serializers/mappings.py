@@ -17,12 +17,10 @@ class TaxonomySerializer(serializers.Serializer):
 class UniprotEntrySerializer(serializers.Serializer):
     uniprotAccession = serializers.CharField()
     entryType = serializers.CharField()
-    entryVersion = serializers.IntegerField()
     sequenceVersion = serializers.IntegerField()
     upi = serializers.CharField()
     md5 = serializers.CharField()
     ensemblDerived = serializers.NullBooleanField()
-    isoform = serializers.NullBooleanField()
 
 class EnsemblTranscriptSerializer(serializers.Serializer):
     enstId = serializers.CharField()

@@ -54,24 +54,30 @@ class Mapping(APIView):
             raise Exception('Should not be here')
 
         #
-        # CHECK
+        # fetch status
         #
-        # Not sure I'm doing the correct thing. A mapping shouldn't be uniquely identified by the transcript_id/uniprot_acc pair,
-        # as there could be several mappings associated to the given pair.
-        #
-        # Is UeMappingStatus.id the ensembl_uniprot.mapping_id?
-        #
-        # We're also assuming CvUeStatus.id is UeMappingStatus.status
+        # NOTE
+        #   There's no way to get to the specific mapping from the upacc/enst pair in UeMappingStatus table.
+        #   Mappings sharing the same upacc/enst are technically the same pair, so status for a given mapping
+        #   is simply reported as being the most recent status associated to the given pair. Moreover, users
+        #   are likely to be not interested to see the status history, i.e. who when changed status.
         #
         try:
-            mapping_status = UeMappingStatus.objects.get(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id)
+            mapping_status = UeMappingStatus.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id).order_by('-time_stamp')[0]
             status = CvUeStatus.objects.get(pk=mapping_status.status).description
-        except (UeMappingStatus.DoesNotExist, CvUeStatus.DoesNotExist):
+        except (IndexError, CvUeStatus.DoesNotExist):
             # TODO: should log this anomaly or do something else
             status = None
 
         #
-        # CHECK: we're assuming CvEntryType.id is uniprot_entry_type.entry_type
+        # fetch entry_type
+        #
+        # NOTE
+        #  Specs at https://github.com/ebi-uniprot/gifts-mock/blob/master/data/mapping.json
+        #  prescribe to report isoform as boolean flag separate from entry_type.
+        #  Here we don't do that, as isoform is an entry type, e.g. Swiss-Prot isoform, so isoform
+        #  status is implicitly reported by entryType.
+        #
         #
         try:
             entry_type = CvEntryType.objects.get(pk=uniprot_entry_type.entry_type).description
@@ -85,12 +91,10 @@ class Mapping(APIView):
                  'uniprotEntry': {
                      'uniprotAccession':uniprot_entry.uniprot_acc,
                      'entryType':entry_type, 
-                     'entryVersion':None, # TODO: there's no uniprot_entry_type.entry_version any more?!
                      'sequenceVersion':uniprot_entry.sequence_version,
                      'upi':uniprot_entry.upi,
                      'md5':uniprot_entry.md5,
                      'ensemblDerived':uniprot_entry.ensembl_derived,
-                     'isoform':None # TODO
                  },
                  'ensemblTranscript': {
                      'enstId':ensembl_transcript.enst_id,
