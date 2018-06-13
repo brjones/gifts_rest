@@ -1,11 +1,16 @@
+certifi==2018.4.16
+chardet==3.0.4
 Django==2.0.2
 django-filter==1.1.0
 django-mysql==2.2.0
 django-postgres-extra==1.21a8
 djangorestframework==3.7.7
+idna==2.7
 Markdown==2.6.11
 mysqlclient==1.3.12
 psycopg2==2.7.4
 psycopg2-binary==2.7.4
 pytz==2018.3
+requests==2.19.0
 typing==3.6.4
+urllib3==1.23
