@@ -31,7 +31,7 @@ class EnsemblTranscriptSerializer(serializers.Serializer):
     seqRegionStart = serializers.IntegerField()
     seqRegionEnd = serializers.IntegerField()
     ensgId = serializers.CharField()
-    sequence = serializers.CharField()
+    sequence = serializers.CharField(required=False)
 
 class EnsemblUniprotMappingSerializer(serializers.Serializer):
     """
@@ -56,7 +56,7 @@ class MappingSerializer(serializers.Serializer):
     
     taxonomy = TaxonomySerializer()
     mapping = EnsemblUniprotMappingSerializer()
-    relatedMappings = EnsemblUniprotMappingSerializer(many=True)
+    relatedMappings = EnsemblUniprotMappingSerializer(many=True, required=False)
 
 class CommentLabelSerializer(serializers.Serializer):
     """
