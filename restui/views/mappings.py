@@ -181,7 +181,7 @@ class MappingComments(APIView):
         except MultipleObjectsReturned:
             raise Exception('Should not be here')
 
-        # fetch latest mapping status (see comments in class Mapping)
+        # fetch latest mapping status (see comments in get_mapping function)
         try:
             mapping_status = UeMappingStatus.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id).order_by('-time_stamp')[0]
             status = CvUeStatus.objects.get(pk=mapping_status.status).description
@@ -224,7 +224,7 @@ class Mappings(generics.ListAPIView):
         search_term = self.request.query_params.get('searchTerm', None)
         
         # filters for the given query, taking the form facets=organism:9606,status:unreviewed
-        facets = self.request.query_params.get('facets', None)
+        facets_params = self.request.query_params.get('facets', None)
 
         # search the mappings according to the search term 'type'
         queryset = None
@@ -240,7 +240,57 @@ class Mappings(generics.ListAPIView):
                     queryset = EnsemblUniprot.objects.filter(uniprot_entry_type__uniprot__uniprot_acc=search_term)
         else:
             # no search term: return all mappings
+            #
+            # WARNING!! This is potentially massively hitting the database
+            #
+            # See Matt's June 19 Matt's comments on slack for a possible direction
+            # e.g. https://github.com/encode/django-rest-framework/issues/1721
+            #
             queryset = EnsemblUniprot.objects.all()
+
+        #
+        # Apply filters based on facets parameters
+        #
+        # TODO: consider other filters beyond organism/status
+        #
+
+        if facets_params:
+            # create facets dict from e.g. 'organism=9606:status=unreviewed'
+            facets = dict( tuple(param.split(':')) for param in facets_params.split(',') )
+
+            # follow the relationships up to ensembl_species_history to filter based on taxid
+            if 'organism' in facets:
+                queryset = queryset.filter(transcript__transcripthistory__ensembl_species_history__ensembl_tax_id=facets['organism'])
+
+            # filter queryset based on status
+            # NOTE: cannot directly filter by following relationships,
+            #       have to fetch latest status associated to each mapping's uniprot_acc/ens_t pair
+            #       (see comments in get_mapping function)
+            if 'status' in facets:
+                # create closure to be used in filter function to filter queryset based on status
+                # binds to given status so filter can pass each mapping which is compared against binding param
+                def check_for_status(status):
+                    def has_status(mapping):
+                        try:
+                            ensembl_transcript = EnsemblTranscript.objects.get(ensembluniprot=mapping)
+                            uniprot_entry_type = UniprotEntryType.objects.get(ensembluniprot=mapping)
+                            uniprot_entry = UniprotEntry.objects.get(uniprotentrytype=uniprot_entry_type)
+                        except (EnsemblTranscript.DoesNotExist, UniprotEntryType.DoesNotExist, UniprotEntry.DoesNotExist):
+                            raise Http404
+                        except MultipleObjectsReturned:
+                            raise Exception('Should not be here')
+
+                        try:
+                            mapping_status = UeMappingStatus.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id).order_by('-time_stamp')[0]
+                            status_description = CvUeStatus.objects.get(pk=mapping_status.status).description
+                        except (IndexError, CvUeStatus.DoesNotExist):
+                            return False
+
+                        return status_description == status
+
+                    return has_status
+
+                queryset = filter(check_for_status(facets['status']), queryset)
 
         mappings = []
         for result in queryset:
