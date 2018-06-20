@@ -25,7 +25,12 @@ def tark_transcript(enst_id, release):
         raise Http404
 
     response = r.json()
-    assert response['count'] == 1
+    if not response:
+        raise Exception("Couldn't get a response from TaRK for {}".format(enst_id))
+    if response['count'] != 1:
+        raise Exception("Couldn't get a/or unique answer from TaRK for {}".format(enst_id))
+    if not 'results' in response:
+        raise Exception("Empty result set from TaRK for {}".format(enst_id))
 
     return response['results'][0]
 
@@ -99,16 +104,27 @@ def get_mapping(mapping, mapping_history):
     except CvEntryType.DoesNotExist:
         raise Http404
 
+    #
     # fetch transcript sequence from TaRK
-    transcript = tark_transcript(ensembl_transcript.enst_id, ensembl_release)
-    # double check we've got the same thing
-    assert transcript['loc_start'] == ensembl_transcript.seq_region_start
-    assert transcript['loc_end'] == ensembl_transcript.seq_region_end
-
+    #
     try:
-        sequence = transcript['sequence']['sequence']
-    except KeyError:
+        transcript = tark_transcript(ensembl_transcript.enst_id, ensembl_release)
+    except Exception as e:
+        print(e) # TODO: log
         sequence = None
+    else:
+        # double check we've got the same thing
+        try:
+            if transcript['loc_start'] != ensembl_transcript.seq_region_start or transcript['loc_end'] != ensembl_transcript.seq_region_end:
+                raise Exception("Mismatch between GIFTS and TaRK transcript {} sequence boundaries".format(ensembl_transcript.enst_id))
+        except KeyError:
+            raise Exception("Transcript {} retrieved from TaRK doesn't have expected sequence boundaries".format(ensembl_transcript.enst_id))
+
+        try:
+            sequence = transcript['sequence']['sequence']
+        except KeyError:
+            # TODO: log anomaly perhaps?
+            sequence = None
         
     return { 'mappingId':mapping.mapping_id,
              'timeMapped':mapping.timestamp,
