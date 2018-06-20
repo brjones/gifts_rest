@@ -209,10 +209,24 @@ class MappingComments(APIView):
         serializer = MappingCommentsSerializer(data)
         return Response(serializer.data)
 
-
+#
+# TODO
+#
+# - Filter based on other facets, besides organism/status
+#
+# - Group mappings if they share ENST or UniProt accessions,
+#   see https://github.com/ebi-uniprot/gifts-mock/blob/master/data/mappings.json
+#
+# - What does it mean to search with a given mapping ID, return just that mapping
+#   or all 'related' mappings?
+#   We're returning only that mapping at the moment, to discuss with Uniprot
+#
+# - Returning all mappings is not feasible at the moment.
+#   Discuss with Uniprot if it's possible to make the search term a mandatory argument
+#
 class Mappings(generics.ListAPIView):
     """
-    Search/retrieve all mappings. Mappings are grouped if they share ENST or UniProt accessions. 
+    Search/retrieve all mappings. Mappings are grouped if they share ENST or UniProt accessions (TODO)
     'Facets' are used for filtering and returned by the service based on the result set.
     """
 
@@ -229,7 +243,10 @@ class Mappings(generics.ListAPIView):
         # search the mappings according to the search term 'type'
         queryset = None
         if search_term:
-            if search_term.isdigit(): # this is a mapping ID, can get it directly wo searching
+            if search_term.isdigit(): # this is a mapping ID
+                # TODO
+                #  what does it mean to search with a given mapping ID, return just that mapping
+                #  or all 'related' mappings? We're returning only that mapping at the moment
                 queryset = [ get_ensembl_uniprot(search_term) ]
             else: # this is either an ENSG/ENST or UniProt accession
                 if re.compile(r"^ENSG").match(search_term):
@@ -241,19 +258,20 @@ class Mappings(generics.ListAPIView):
         else:
             # no search term: return all mappings
             #
-            # WARNING!! This is potentially massively hitting the database
+            # WARNING!! This is massively hitting the database
             #
             # See Matt's June 19 Matt's comments on slack for a possible direction
             # e.g. https://github.com/encode/django-rest-framework/issues/1721
             #
-            queryset = EnsemblUniprot.objects.all()
+            # Can return an iterator, but this is not compatible with pagination, see comments below
+            # queryset = EnsemblUniprot.objects.all().iterator()
+            raise Exception('Do you really want to get all mappings from the DB?')
 
         #
         # Apply filters based on facets parameters
         #
-        # TODO: consider other filters beyond organism/status
+        # TODO: consider other filters besides organism/status
         #
-
         if facets_params:
             # create facets dict from e.g. 'organism=9606:status=unreviewed'
             facets = dict( tuple(param.split(':')) for param in facets_params.split(',') )
@@ -292,10 +310,23 @@ class Mappings(generics.ListAPIView):
 
                 queryset = filter(check_for_status(facets['status']), queryset)
 
+        #
+        # NOTES (Important)
+        #
+        # Unfortunately, we have to 'evaluate' the queryset since we need assemble and serialise
+        # objects which do not come straight from the DB. This is a problem when there's no search
+        # term specified, as we're forced to iterate over gazillions of rows.
+        #
+        # I've tried making the queryset an iterator and returning a generator expression,
+        # but pagination in these cases won't work as it expects itself to be able to
+        # compute the length of the given data.
+        #
+        # return ( {'taxonomy':get_taxonomy(get_mapping_history(mapping)),
+        #           'mapping':get_mapping(result, get_mapping_history(mapping)) } for mapping in queryset )
         mappings = []
-        for result in queryset:
-            mapping_history = get_mapping_history(result)
-            mappings.append({'taxonomy':get_taxonomy(mapping_history),
-                             'mapping':get_mapping(result, mapping_history)})
+        for mapping in queryset:
+            mapping_history = get_mapping_history(mapping)
+            mappings.append({ 'taxonomy':get_taxonomy(mapping_history),
+                              'mapping':get_mapping(mapping, mapping_history) })
 
         return mappings
