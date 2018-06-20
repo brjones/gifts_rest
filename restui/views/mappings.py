@@ -15,10 +15,12 @@ from rest_framework import status
 from rest_framework import generics
 from rest_framework.pagination import LimitOffsetPagination
 
-def tark_transcript(enst_id, release):
-    url = "http://betatark.ensembl.org/api/transcript/?stable_id={}&release_short_name={}&expand=sequence"
+from gifts_rest.settings.base import TARK_SERVER
 
-    r = requests.get(url.format(enst_id, release))
+def tark_transcript(enst_id, release):
+    url = "{}/api/transcript/?stable_id={}&release_short_name={}&expand=sequence"
+
+    r = requests.get(url.format(TARK_SERVER, enst_id, release))
     if not r.ok:
         raise Http404
 
