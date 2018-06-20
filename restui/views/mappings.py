@@ -284,7 +284,11 @@ class Mappings(generics.ListAPIView):
             #
             # Can return an iterator, but this is not compatible with pagination, see comments below
             # queryset = EnsemblUniprot.objects.all().iterator()
-            raise Exception('Do you really want to get all mappings from the DB?')
+            #
+            # As we've discussed with Uniprot, it is a sensible thing to return and paginate
+            # just the first xxx results picked from the DB
+            #
+            queryset = EnsemblUniprot.objects.all()[:100]
 
         #
         # Apply filters based on facets parameters
