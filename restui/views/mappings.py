@@ -9,6 +9,7 @@ from restui.models.other import CvEntryType, CvUeStatus, UeMappingStatus, UeMapp
 from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer
 
 from django.http import Http404
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -68,10 +69,10 @@ def get_mapping(mapping, mapping_history):
         ensembl_transcript = EnsemblTranscript.objects.get(ensembluniprot=mapping)
         uniprot_entry_type = UniprotEntryType.objects.get(ensembluniprot=mapping)
         uniprot_entry = UniprotEntry.objects.get(uniprotentrytype=uniprot_entry_type)
-    except (EnsemblTranscript.DoesNotExist, UniprotEntryType.DoesNotExist, UniprotEntry.DoesNotExist):
-        raise Http404
+    except ObjectDoesNotExist:
+        raise Http404("Couldn't find either transcript or uniprot entry")
     except MultipleObjectsReturned:
-        raise Exception('Should not be here')
+        raise Exception('Error: querying for transcripts or uniprot entries should have returned single entities')
 
     #
     # fetch status
@@ -194,10 +195,10 @@ class MappingComments(APIView):
             ensembl_transcript = EnsemblTranscript.objects.get(ensembluniprot=mapping)
             uniprot_entry_type = UniprotEntryType.objects.get(ensembluniprot=mapping)
             uniprot_entry = UniprotEntry.objects.get(uniprotentrytype=uniprot_entry_type)
-        except (EnsemblTranscript.DoesNotExist, UniprotEntryType.DoesNotExist, UniprotEntry.DoesNotExist):
-            raise Http404
+        except ObjectDoesNotExist:
+            raise Http404("Couldn't find either transcript or uniprot entry")
         except MultipleObjectsReturned:
-            raise Exception('Should not be here')
+            raise Exception('Error: querying for transcripts or uniprot entries should have returned single entities')
 
         # fetch latest mapping status (see comments in get_mapping function)
         try:
@@ -311,10 +312,10 @@ class Mappings(generics.ListAPIView):
                             ensembl_transcript = EnsemblTranscript.objects.get(ensembluniprot=mapping)
                             uniprot_entry_type = UniprotEntryType.objects.get(ensembluniprot=mapping)
                             uniprot_entry = UniprotEntry.objects.get(uniprotentrytype=uniprot_entry_type)
-                        except (EnsemblTranscript.DoesNotExist, UniprotEntryType.DoesNotExist, UniprotEntry.DoesNotExist):
-                            raise Http404
+                        except ObjectDoesNotExist:
+                            raise Http404("Couldn't find either transcript or uniprot entry")
                         except MultipleObjectsReturned:
-                            raise Exception('Should not be here')
+                            raise Exception('Error: querying for transcripts or uniprot entries should have returned single entities')
 
                         try:
                             mapping_status = UeMappingStatus.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id).order_by('-time_stamp')[0]
