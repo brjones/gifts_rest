@@ -39,7 +39,7 @@ class AlignmentRun(models.Model):
 class Mapping(models.Model):
     mapping_id = models.BigAutoField(primary_key=True)
     uniprot = models.ForeignKey('UniprotEntry', models.DO_NOTHING, blank=True, null=True)
-    transcript = models.ForeignKey(EnsemblTranscript, models.DO_NOTHING, blank=True, null=True)
+    transcript = models.ForeignKey('EnsemblTranscript', models.DO_NOTHING, blank=True, null=True)
     grouping_id = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
@@ -63,7 +63,7 @@ class MappingHistory(models.Model):
 
 class ReleaseMappingHistory(models.Model):
     release_mapping_history_id = models.BigAutoField(primary_key=True)
-    ensembl_species_history = models.ForeignKey(EnsemblSpeciesHistory, models.DO_NOTHING, blank=True, null=True)
+    ensembl_species_history = models.ForeignKey('EnsemblSpeciesHistory', models.DO_NOTHING, blank=True, null=True)
     time_mapped = models.DateTimeField()
     entries_mapped = models.BigIntegerField(blank=True, null=True)
     entries_unmapped = models.BigIntegerField(blank=True, null=True)

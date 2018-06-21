@@ -31,7 +31,7 @@ class UeMappingComment(models.Model):
     time_stamp = models.DateTimeField()
     user_stamp = models.CharField(max_length=20)
     comment = models.TextField()
-    mapping = models.ForeignKey(Mapping, models.DO_NOTHING, blank=True, null=True)
+    mapping = models.ForeignKey('Mapping', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -43,7 +43,7 @@ class UeMappingLabel(models.Model):
     time_stamp = models.DateTimeField()
     user_stamp = models.CharField(max_length=20)
     label = models.BigIntegerField()
-    mapping = models.ForeignKey(Mapping, models.DO_NOTHING)
+    mapping = models.ForeignKey('Mapping', models.DO_NOTHING)
 
     class Meta:
         managed = False
@@ -55,7 +55,7 @@ class UeMappingStatus(models.Model):
     time_stamp = models.DateTimeField()
     user_stamp = models.CharField(max_length=20)
     status = models.BigIntegerField()
-    mapping = models.ForeignKey(Mapping, models.DO_NOTHING)
+    mapping = models.ForeignKey('Mapping', models.DO_NOTHING)
 
     class Meta:
         managed = False
