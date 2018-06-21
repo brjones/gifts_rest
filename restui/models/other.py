@@ -1,31 +1,5 @@
 from django.db import models
 
-class CvEntryType(models.Model):
-    id = models.BigIntegerField(primary_key=True)
-    description = models.CharField(max_length=20, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'cv_entry_type'
-
-
-class CvUeLabel(models.Model):
-    id = models.BigIntegerField(primary_key=True)
-    description = models.CharField(max_length=20)
-
-    class Meta:
-        managed = False
-        db_table = 'cv_ue_label'
-
-
-class CvUeStatus(models.Model):
-    id = models.BigIntegerField(primary_key=True)
-    description = models.CharField(max_length=20)
-
-    class Meta:
-        managed = False
-        db_table = 'cv_ue_status'
-
 class PdbEns(models.Model):
     pdb_ens_id = models.BigAutoField(primary_key=True)
     pdb_acc = models.CharField(max_length=45)
@@ -44,40 +18,30 @@ class PdbEns(models.Model):
         managed = False
         db_table = 'pdb_ens'
 
-class UeMappingComment(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    uniprot_acc = models.CharField(max_length=30)
-    enst_id = models.CharField(max_length=30)
-    time_stamp = models.DateTimeField()
-    user_stamp = models.CharField(max_length=20)
-    comment = models.TextField()
+class TaxonomyMapping(models.Model):
+    taxonomy_mapping_id = models.BigAutoField(primary_key=True)
+    ensembl_tax_id = models.BigIntegerField(blank=True, null=True)
+    uniprot_tax_id = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'ue_mapping_comment'
+        db_table = 'taxonomy_mapping'
 
-
-class UeMappingLabel(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    uniprot_acc = models.CharField(max_length=30)
-    enst_id = models.CharField(max_length=30)
-    time_stamp = models.DateTimeField()
-    user_stamp = models.CharField(max_length=20)
-    label = models.BigIntegerField()
+class TempMap(models.Model):
+    uniprot_id = models.BigIntegerField()
+    uniprot_entry_version_id = models.BigIntegerField()
 
     class Meta:
         managed = False
-        db_table = 'ue_mapping_label'
+        db_table = 'temp_map'
 
-
-class UeMappingStatus(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    uniprot_acc = models.CharField(max_length=30)
-    enst_id = models.CharField(max_length=30)
-    time_stamp = models.DateTimeField()
-    user_stamp = models.CharField(max_length=20)
-    status = models.BigIntegerField()
+class Users(models.Model):
+    user_id = models.IntegerField(blank=True, null=True)
+    email = models.CharField(max_length=50, blank=True, null=True)
+    elixir_id = models.CharField(max_length=50, blank=True, null=True)
+    is_admin = models.NullBooleanField()
+    validated = models.NullBooleanField()
 
     class Meta:
         managed = False
-        db_table = 'ue_mapping_status'
+        db_table = 'users'
