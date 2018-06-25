@@ -254,8 +254,9 @@ class MappingCommentsView(APIView):
 #   or all 'related' mappings?
 #   We're returning only that mapping at the moment, to discuss with Uniprot
 #
-# - Returning all mappings is not feasible at the moment.
-#   Discuss with Uniprot if it's possible to make the search term a mandatory argument
+# - facet filtering based on mapping status: consider query potential values and DB values might be different
+#   |
+#   --> Action: agree with Uniprot on a common vocabulary
 #
 class MappingsView(generics.ListAPIView):
     """
@@ -325,7 +326,14 @@ class MappingsView(generics.ListAPIView):
                 # binds to given status so filter can pass each mapping which is compared against binding param
                 def check_for_status(status):
                     def has_status(mapping):
-                        return get_status(mapping) == status
+                        # status query can have a different form from the one in the DB, e.g. UNREVIEWED vs NOT REVIEWED
+                        # TODO: under_review, other values?
+                        mapping_status = get_status(mapping).lower()
+                        if mapping_status == 'unreviewed':
+                            mapping_status = 'not reviewed'
+
+
+                        return mapping_status == status.lower()
 
                     return has_status
 
