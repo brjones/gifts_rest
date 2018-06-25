@@ -3,9 +3,9 @@ import re
 import requests
 
 from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory
-from restui.models.mappings import EnsemblUniprot, TaxonomyMapping, MappingHistory
-from restui.models.uniprot import UniprotEntry, UniprotEntryType
-from restui.models.other import CvEntryType, CvUeStatus, UeMappingStatus, UeMappingComment, UeMappingLabel
+from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistory
+from restui.models.uniprot import UniprotEntry
+from restui.models.annotations import CvEntryType, CvUeStatus, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer
 
 from django.http import Http404
@@ -35,56 +35,71 @@ def tark_transcript(enst_id, release):
 
     return response['results'][0]
 
-def get_ensembl_uniprot(pk):
+def get_mapping(pk):
     try:
-        return EnsemblUniprot.objects.get(pk=pk)
-    except EnsemblUniprot.DoesNotExist:
+        return Mapping.objects.get(pk=pk)
+    except Mapping.DoesNotExist:
         raise Http404
 
 def get_mapping_history(mapping):
+    # A mapping can have multiple entries in mapping history and it is not clear which one to go for.
+    # The assumption would be that when mapping is curated it is always related to latest status
+    #
+    # just pick latest mapping_history entry (the one with the highest id)
+    #
     try:
-        return MappingHistory.objects.get(pk=mapping.mapping_history_id)
+        return MappingHistory.objects.filter(mapping=mapping).order_by('-mapping_history_id')[0]
     except MappingHistory.DoesNotExist:
         raise Http404
     
-def get_taxonomy(mapping_history):
+def build_taxonomy_data(mapping):
+    # Find the ensembl tax id via one ensembl species history associated to transcript
+    # associated to the given mapping.
+    # Relationship between transcript and history is many to many but we just fetch one history
+    # as the tax id remains the same across all of them
     try:
-        ensembl_species_history = EnsemblSpeciesHistory.objects.get(pk=mapping_history.ensembl_species_history_id)
+        ensembl_species_history = EnsemblSpeciesHistory.objects.get(transcripthistory__transcript=mapping.transcript)
     except EnsemblSpeciesHistory.DoesNotExist:
-        raise Http404
+        raise Http404("Couldn't find an ensembl species history associated to mapping {}".format(mapping.mapping_id))
     
-    return { 'species':ensembl_species_history.species,
-             'ensemblTaxId':ensembl_species_history.ensembl_tax_id,
-             'uniprotTaxId':mapping_history.uniprot_taxid }
-
-def get_mapping(mapping, mapping_history):
     try:
-        ensembl_species_history = EnsemblSpeciesHistory.objects.get(pk=mapping_history.ensembl_species_history_id)
+        return { 'species':ensembl_species_history.species,
+                 'ensemblTaxId':ensembl_species_history.ensembl_tax_id,
+                 'uniprotTaxId':mapping.uniprot.uniprot_tax_id }
+    except:
+        raise Http404("Couldn't find uniprot tax id as I couldn't find a uniprot entry associated to the mapping")
+
+def build_mapping_data(mapping, mapping_history):
+    #
+    # get ensembl/uniprot release
+    #
+    # to get ensembl release, we need the ensembl species history associated to the mapping_history
+    #
+    try:
+        ensembl_species_history = EnsemblSpeciesHistory.objects.get(releasemappinghistory__mappinghistory=mapping_history)
     except EnsemblSpeciesHistory.DoesNotExist:
-        raise Http404
+        raise Http404("Could't fetch ensembl species history from mapping history {}".format(mapping_history.mapping_history_id))
+    except MultipleObjectsReturned:
+        raise Http404("Shouldn't be here")
 
-    ensembl_release, uniprot_release = ensembl_species_history.ensembl_release, mapping_history.uniprot_release
+    # uniprot release is an attribute of the associated release mapping history
+    try:
+        release_mapping_history = ReleaseMappingHistory.objects.get(mappinghistory=mapping_history)
+    except ReleaseMappingHistory.DoesNotExist:
+        raise Http404("Couldn't fetch ReleaseMappingHistory from mapping history {}".format(mapping_history.mapping_history_id))
+    
+    ensembl_release, uniprot_release = ensembl_species_history.ensembl_release, release_mapping_history.uniprot_release
 
     try:
-        ensembl_transcript = EnsemblTranscript.objects.get(ensembluniprot=mapping)
-        uniprot_entry_type = UniprotEntryType.objects.get(ensembluniprot=mapping)
-        uniprot_entry = UniprotEntry.objects.get(uniprotentrytype=uniprot_entry_type)
+        ensembl_transcript = mapping.transcript
+        uniprot_entry = mapping.uniprot
     except ObjectDoesNotExist:
         raise Http404("Couldn't find either transcript or uniprot entry")
-    except MultipleObjectsReturned:
-        raise Exception('Error: querying for transcripts or uniprot entries should have returned single entities')
 
-    #
     # fetch status
-    #
-    # NOTE
-    #   There's no way to get to the specific mapping from the upacc/enst pair in UeMappingStatus table.
-    #   Mappings sharing the same upacc/enst are technically the same pair, so status for a given mapping
-    #   is simply reported as being the most recent status associated to the given pair. Moreover, users
-    #   are likely to be not interested to see the status history, i.e. who when changed status.
-    #
     try:
-        mapping_status = UeMappingStatus.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id).order_by('-time_stamp')[0]
+        # status is assumed to be the latest associated to the given mapping
+        mapping_status = UeMappingStatus.objects.filter(mapping=mapping).order_by('-time_stamp')[0]
         status = CvUeStatus.objects.get(pk=mapping_status.status).description
     except (IndexError, CvUeStatus.DoesNotExist):
         # TODO: should log this anomaly or do something else
@@ -101,7 +116,7 @@ def get_mapping(mapping, mapping_history):
     #
     #
     try:
-        entry_type = CvEntryType.objects.get(pk=uniprot_entry_type.entry_type).description
+        entry_type = CvEntryType.objects.get(pk=mapping_history.entry_type).description
     except CvEntryType.DoesNotExist:
         raise Http404
 
@@ -128,7 +143,7 @@ def get_mapping(mapping, mapping_history):
             sequence = None
         
     return { 'mappingId':mapping.mapping_id,
-             'timeMapped':mapping.timestamp,
+             'timeMapped':release_mapping_history.time_mapped,
              'ensemblRelease':ensembl_release,
              'uniprotRelease':uniprot_release,
              'uniprotEntry': {
@@ -153,37 +168,39 @@ def get_mapping(mapping, mapping_history):
              'status':status
     }
 
-def get_related_mappings(mapping):
+def build_related_mappings_data(mapping):
     """
     Return the list of mappings sharing the same ENST or Uniprot accession of the given mapping.
     """
-        
-    mappings = EnsemblUniprot.objects.filter(transcript=mapping.transcript).filter(uniprot_entry_type=mapping.uniprot_entry_type).exclude(pk=mapping.mapping_id)
 
-    return list(map(lambda m: self.get_mapping(m, get_mapping_history(m)), mappings))
+    #
+    # TODO: related mapping share the same group_id
+    #
+    mappings = Mapping.objects.filter(transcript=mapping.transcript).filter(uniprot=mapping.uniprot).exclude(pk=mapping.mapping_id)
+
+    return list(map(lambda m: build_mapping_data(m, get_mapping_history(m)), mappings))
 
 
 
-class Mapping(APIView):
+class MappingView(APIView):
     """
     Retrieve a single mapping.
     """
 
-                                    
     def get(self, request, pk):
-        ensembl_uniprot = get_ensembl_uniprot(pk)
-        mapping_history = get_mapping_history(ensembl_uniprot)
+        mapping = get_mapping(pk)
+        mapping_history = get_mapping_history(mapping)
 
-        data = { 'taxonomy':get_taxonomy(mapping_history),
-                 'mapping':get_mapping(ensembl_uniprot, mapping_history),
-                 'relatedMappings':get_related_mappings(ensembl_uniprot) }
+        data = { 'taxonomy':build_taxonomy_data(mapping),
+                 'mapping':build_mapping_data(mapping, mapping_history),
+                 'relatedMappings':build_related_mappings_data(mapping) }
         
         serializer = MappingSerializer(data)
 
         return Response(serializer.data)
 
 
-class MappingComments(APIView):
+class MappingCommentsView(APIView):
     """
     Retrieve all comments relative to a given mapping.
     """
@@ -243,7 +260,7 @@ class MappingComments(APIView):
 # - Returning all mappings is not feasible at the moment.
 #   Discuss with Uniprot if it's possible to make the search term a mandatory argument
 #
-class Mappings(generics.ListAPIView):
+class MappingsView(generics.ListAPIView):
     """
     Search/retrieve all mappings. Mappings are grouped if they share ENST or UniProt accessions (TODO)
     'Facets' are used for filtering and returned by the service based on the result set.
