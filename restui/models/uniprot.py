@@ -46,6 +46,9 @@ class UniprotEntry(models.Model):
     canonical_uniprot_id = models.IntegerField(blank=True, null=True)
     ensembl_derived = models.NullBooleanField()
 
+    def __str__(self):
+        return "{0} - {1}".format(self.uniprot_id, self.uniprot_acc)
+
     class Meta:
         managed = False
         db_table = 'uniprot_entry'
