@@ -257,7 +257,7 @@ class MappingCommentsView(APIView):
 # - Returning all mappings is not feasible at the moment.
 #   Discuss with Uniprot if it's possible to make the search term a mandatory argument
 #
-class Mappings(generics.ListAPIView):
+class MappingsView(generics.ListAPIView):
     """
     Search/retrieve all mappings. Mappings are grouped if they share ENST or UniProt accessions (TODO)
     'Facets' are used for filtering and returned by the service based on the result set.
@@ -280,14 +280,14 @@ class Mappings(generics.ListAPIView):
                 # TODO
                 #  what does it mean to search with a given mapping ID, return just that mapping
                 #  or all 'related' mappings? We're returning only that mapping at the moment
-                queryset = [ get_ensembl_uniprot(search_term) ]
+                queryset = [ get_mapping(search_term) ]
             else: # this is either an ENSG/ENST or UniProt accession
                 if re.compile(r"^ENSG").match(search_term):
-                    queryset = EnsemblUniprot.objects.filter(transcript__gene__ensg_id=search_term)
+                    queryset = Mapping.objects.filter(transcript__gene__ensg_id=search_term)
                 elif re.compile(r"^ENST").match(search_term):
-                    queryset = EnsemblUniprot.objects.filter(transcript__enst_id=search_term)
+                    queryset = Mapping.objects.filter(transcript__enst_id=search_term)
                 else:
-                    queryset = EnsemblUniprot.objects.filter(uniprot_entry_type__uniprot__uniprot_acc=search_term)
+                    queryset = Mapping.objects.filter(uniprot__uniprot_acc=search_term)
         else:
             # no search term: return all mappings
             #
@@ -297,12 +297,12 @@ class Mappings(generics.ListAPIView):
             # e.g. https://github.com/encode/django-rest-framework/issues/1721
             #
             # Can return an iterator, but this is not compatible with pagination, see comments below
-            # queryset = EnsemblUniprot.objects.all().iterator()
+            # queryset = Mapping.objects.all().iterator()
             #
             # As we've discussed with Uniprot, it is a sensible thing to return and paginate
             # just the first xxx results picked from the DB
             #
-            queryset = EnsemblUniprot.objects.all()[:100]
+            queryset = Mapping.objects.all()[:100]
 
         #
         # Apply filters based on facets parameters
@@ -310,7 +310,7 @@ class Mappings(generics.ListAPIView):
         # TODO: consider other filters besides organism/status
         #
         if facets_params:
-            # create facets dict from e.g. 'organism=9606:status=unreviewed'
+            # create facets dict from e.g. 'organism:9606,status:unreviewed'
             facets = dict( tuple(param.split(':')) for param in facets_params.split(',') )
 
             # follow the relationships up to ensembl_species_history to filter based on taxid
@@ -319,29 +319,13 @@ class Mappings(generics.ListAPIView):
 
             # filter queryset based on status
             # NOTE: cannot directly filter by following relationships,
-            #       have to fetch latest status associated to each mapping's uniprot_acc/ens_t pair
-            #       (see comments in get_mapping function)
+            #       have to fetch latest status associated to each mapping
             if 'status' in facets:
                 # create closure to be used in filter function to filter queryset based on status
                 # binds to given status so filter can pass each mapping which is compared against binding param
                 def check_for_status(status):
                     def has_status(mapping):
-                        try:
-                            ensembl_transcript = EnsemblTranscript.objects.get(ensembluniprot=mapping)
-                            uniprot_entry_type = UniprotEntryType.objects.get(ensembluniprot=mapping)
-                            uniprot_entry = UniprotEntry.objects.get(uniprotentrytype=uniprot_entry_type)
-                        except ObjectDoesNotExist:
-                            raise Http404("Couldn't find either transcript or uniprot entry")
-                        except MultipleObjectsReturned:
-                            raise Exception('Error: querying for transcripts or uniprot entries should have returned single entities')
-
-                        try:
-                            mapping_status = UeMappingStatus.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id).order_by('-time_stamp')[0]
-                            status_description = CvUeStatus.objects.get(pk=mapping_status.status).description
-                        except (IndexError, CvUeStatus.DoesNotExist):
-                            return False
-
-                        return status_description == status
+                        return get_status(mapping) == status
 
                     return has_status
 
@@ -358,12 +342,12 @@ class Mappings(generics.ListAPIView):
         # but pagination in these cases won't work as it expects itself to be able to
         # compute the length of the given data.
         #
-        # return ( {'taxonomy':get_taxonomy(get_mapping_history(mapping)),
+        # return ( {'taxonomy':get_taxonomy(mapping),
         #           'mapping':get_mapping(result, get_mapping_history(mapping)) } for mapping in queryset )
         mappings = []
         for mapping in queryset:
             mapping_history = get_mapping_history(mapping)
-            mappings.append({ 'taxonomy':get_taxonomy(mapping_history),
-                              'mapping':get_mapping(mapping, mapping_history) })
+            mappings.append({ 'taxonomy':build_taxonomy_data(mapping),
+                              'mapping':build_mapping_data(mapping, mapping_history) })
 
         return mappings
