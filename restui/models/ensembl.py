@@ -72,9 +72,6 @@ class EnsemblTranscript(PostgresModel):
         managed = False
         db_table = 'ensembl_transcript'
 
-
-
-
 class EnspUCigar(models.Model):
     ensp_u_cigar_id = models.BigAutoField(primary_key=True)
     cigarplus = models.TextField(blank=True, null=True)

@@ -51,6 +51,18 @@ def get_mapping_history(mapping):
         return MappingHistory.objects.filter(mapping=mapping).order_by('-mapping_history_id')[0]
     except MappingHistory.DoesNotExist:
         raise Http404
+
+def get_status(mapping):
+    try:
+        # status is assumed to be the latest associated to the given mapping
+        mapping_status = UeMappingStatus.objects.filter(mapping=mapping).order_by('-time_stamp')[0]
+        status = CvUeStatus.objects.get(pk=mapping_status.status).description
+    except (IndexError, CvUeStatus.DoesNotExist):
+        # TODO: should log this anomaly or do something else
+        status = None
+
+    return status
+
     
 def build_taxonomy_data(mapping):
     # Find the ensembl tax id via one ensembl species history associated to transcript
@@ -97,13 +109,7 @@ def build_mapping_data(mapping, mapping_history):
         raise Http404("Couldn't find either transcript or uniprot entry")
 
     # fetch status
-    try:
-        # status is assumed to be the latest associated to the given mapping
-        mapping_status = UeMappingStatus.objects.filter(mapping=mapping).order_by('-time_stamp')[0]
-        status = CvUeStatus.objects.get(pk=mapping_status.status).description
-    except (IndexError, CvUeStatus.DoesNotExist):
-        # TODO: should log this anomaly or do something else
-        status = None
+    status = get_status(mapping)
 
     #
     # fetch entry_type
@@ -206,38 +212,29 @@ class MappingCommentsView(APIView):
     """
 
     def get(self, request, pk):
-        mapping = get_ensembl_uniprot(pk)
+        mapping = get_mapping(pk)
 
         try:
-            ensembl_transcript = EnsemblTranscript.objects.get(ensembluniprot=mapping)
-            uniprot_entry_type = UniprotEntryType.objects.get(ensembluniprot=mapping)
-            uniprot_entry = UniprotEntry.objects.get(uniprotentrytype=uniprot_entry_type)
+            ensembl_transcript = mapping.transcript
         except ObjectDoesNotExist:
-            raise Http404("Couldn't find either transcript or uniprot entry")
-        except MultipleObjectsReturned:
-            raise Exception('Error: querying for transcripts or uniprot entries should have returned single entities')
+            raise Http404("Couldn't find transcript entry associated to mapping {}".format(mapping.mapping_id))
 
-        # fetch latest mapping status (see comments in get_mapping function)
-        try:
-            mapping_status = UeMappingStatus.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id).order_by('-time_stamp')[0]
-            status = CvUeStatus.objects.get(pk=mapping_status.status).description
-        except (IndexError, CvUeStatus.DoesNotExist):
-            status = None
+        # fetch latest mapping status
+        status = get_status(mapping)
 
         # fetch mapping comment history
-        mapping_comments = UeMappingComment.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id).order_by('-time_stamp')
+        mapping_comments = UeMappingComment.objects.filter(mapping=mapping).order_by('-time_stamp')
         comments = map(lambda c: { 'text':c.comment, 'timeAdded':c.time_stamp, 'user':c.user_stamp }, mapping_comments)
 
         # fetch mapping label history
-        mapping_labels = UeMappingLabel.objects.filter(uniprot_acc=uniprot_entry.uniprot_acc, enst_id=ensembl_transcript.enst_id).order_by('time_stamp')
+        mapping_labels = UeMappingLabel.objects.filter(mapping=mapping).order_by('-time_stamp')
         try:
             labels = map(lambda l: { 'text':CvUeLabel.objects.get(pk=l.label).description, 'timeAdded':l.time_stamp, 'user':l.user_stamp }, mapping_labels)
         except CvUeLabel.DoesNotExist:
-            raise Http404
+            raise Http404("Couldn't fetch label")
 
         data = { 'mappingId':mapping.mapping_id,
                  'status':status,
-                 'user':mapping.userstamp,
                  'comments':list(comments),
                  'labels':list(labels)
         }
@@ -260,7 +257,7 @@ class MappingCommentsView(APIView):
 # - Returning all mappings is not feasible at the moment.
 #   Discuss with Uniprot if it's possible to make the search term a mandatory argument
 #
-class MappingsView(generics.ListAPIView):
+class Mappings(generics.ListAPIView):
     """
     Search/retrieve all mappings. Mappings are grouped if they share ENST or UniProt accessions (TODO)
     'Facets' are used for filtering and returned by the service based on the result set.
