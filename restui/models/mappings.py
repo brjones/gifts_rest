@@ -42,6 +42,9 @@ class Mapping(models.Model):
     transcript = models.ForeignKey('EnsemblTranscript', models.DO_NOTHING, blank=True, null=True)
     grouping_id = models.BigIntegerField(blank=True, null=True)
 
+    def __str__(self):
+        return "{0} - ({1}, {2})".format(self.mapping_id, self.uniprot, self.transcript)
+
     class Meta:
         managed = False
         db_table = 'mapping'
