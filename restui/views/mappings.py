@@ -7,9 +7,11 @@ from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistor
 from restui.models.uniprot import UniprotEntry
 from restui.models.annotations import CvEntryType, CvUeStatus, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer
+from restui.serializers.annotations import StatusSerializer
 
 from django.http import Http404
-from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -203,6 +205,39 @@ class MappingView(APIView):
 
         return Response(serializer.data)
 
+#
+# TODO
+#
+# Add user information (presumably elixir_id attribute from request.user object) when
+# authentication system is in place
+#
+class MappingStatusView(APIView):
+    """
+    Change the status of a mapping
+    """
+
+    def put(self, request, pk):
+        mapping = get_mapping(pk)
+
+        # retrieve the status object associated to the given description
+        try:
+            mapping_status = CvUeStatus.objects.get(description=request.data['status'])
+        except CvUeStatus.DoesNotExist:
+            raise Http404("Couldn't get status object for {}".format(request.data['status']))
+        except MultipleObjectsReturned:
+            raise Http404("Couldn't get unique status for {}".format(request.data['status']))
+
+        serializer = StatusSerializer(data={ 'time_stamp':timezone.now(),
+                                             # 'user_stamp':request.user,
+                                             'status':mapping_status.id,
+                                             'mapping':mapping.mapping_id })
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class MappingCommentsView(APIView):
     """
@@ -335,6 +370,9 @@ class MappingsView(generics.ListAPIView):
                     return has_status
 
                 queryset = filter(check_for_status(facets['status']), queryset)
+
+        # group the result set
+        # results in each group share the same ENST or UniProt accession
 
         #
         # NOTES (Important)
