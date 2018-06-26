@@ -7,7 +7,7 @@ from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistor
 from restui.models.uniprot import UniprotEntry
 from restui.models.annotations import CvEntryType, CvUeStatus, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer
-from restui.serializers.annotations import StatusSerializer
+from restui.serializers.annotations import StatusSerializer, CommentSerializer
 
 from django.http import Http404
 from django.utils import timezone
@@ -231,6 +231,34 @@ class MappingStatusView(APIView):
                                              # 'user_stamp':request.user,
                                              'status':mapping_status.id,
                                              'mapping':mapping.mapping_id })
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#
+# TODO
+#
+# Add user information (presumably elixir_id attribute from request.user object) when
+# authentication system is in place
+#
+class MappingCommentView(APIView):
+    """
+    Add a comment to a mapping
+    """
+
+    def post(self, request, pk):
+        mapping = get_mapping(pk)
+
+        try:
+            serializer = CommentSerializer(data={ 'time_stamp':timezone.now(),
+                                                  # 'user_stamp':request.user,
+                                                  'comment':request.data['comment'],
+                                                  'mapping':mapping.mapping_id })
+        except KeyError:
+            raise Http404("Must provide comment")
 
         if serializer.is_valid():
             serializer.save()
