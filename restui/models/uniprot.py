@@ -1,28 +1,5 @@
 from django.db import models
 
-class Domain(models.Model):
-    domain_id = models.BigAutoField(primary_key=True)
-    isoform = models.ForeignKey('Isoform', models.DO_NOTHING, blank=True, null=True)
-    start = models.BigIntegerField(blank=True, null=True)
-    end = models.BigIntegerField(blank=True, null=True)
-    description = models.CharField(max_length=45, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'domain'
-
-
-class Ptm(models.Model):
-    ptm_id = models.BigAutoField(primary_key=True)
-    domain = models.ForeignKey(Domain, models.DO_NOTHING, blank=True, null=True)
-    description = models.CharField(max_length=45, blank=True, null=True)
-    start = models.BigIntegerField(blank=True, null=True)
-    end = models.BigIntegerField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'ptm'
-
 class Isoform(models.Model):
     isoform_id = models.BigAutoField(primary_key=True)
     uniprot_id = models.BigIntegerField(blank=True, null=True)
@@ -35,15 +12,27 @@ class Isoform(models.Model):
         managed = False
         db_table = 'isoform'
 
-
-class TempMap(models.Model):
-    uniprot_id = models.BigIntegerField()
-    uniprot_entry_version_id = models.BigIntegerField()
+class Domain(models.Model):
+    domain_id = models.BigAutoField(primary_key=True)
+    isoform = models.ForeignKey('Isoform', models.DO_NOTHING, blank=True, null=True)
+    start = models.BigIntegerField(blank=True, null=True)
+    end = models.BigIntegerField(blank=True, null=True)
+    description = models.CharField(max_length=45, blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'temp_map'
+        db_table = 'domain'
 
+class Ptm(models.Model):
+    ptm_id = models.BigAutoField(primary_key=True)
+    domain = models.ForeignKey(Domain, models.DO_NOTHING, blank=True, null=True)
+    description = models.CharField(max_length=45, blank=True, null=True)
+    start = models.BigIntegerField(blank=True, null=True)
+    end = models.BigIntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'ptm'
 
 class UniprotEntry(models.Model):
     uniprot_id = models.BigAutoField(primary_key=True)
@@ -57,29 +46,19 @@ class UniprotEntry(models.Model):
     canonical_uniprot_id = models.IntegerField(blank=True, null=True)
     ensembl_derived = models.NullBooleanField()
 
+    def __str__(self):
+        return "{0} - {1}".format(self.uniprot_id, self.uniprot_acc)
+
     class Meta:
         managed = False
         db_table = 'uniprot_entry'
-
+        unique_together = (('uniprot_acc', 'sequence_version'),)
 
 class UniprotEntryHistory(models.Model):
-    uniprot_entry_type_id = models.ForeignKey('UniprotEntryType', models.DO_NOTHING, primary_key=True)
-    release_version = models.CharField(max_length=30, primary_key=True)
+    release_version = models.CharField(max_length=30)
+    uniprot = models.ForeignKey(UniprotEntry, models.DO_NOTHING, primary_key=True)
 
     class Meta:
         managed = False
         db_table = 'uniprot_entry_history'
-        unique_together = (('uniprot_entry_type_id', 'release_version'),)
-
-
-class UniprotEntryType(models.Model):
-    uniprot_entry_type_id = models.BigAutoField(primary_key=True)
-    userstamp = models.CharField(max_length=30, blank=True, null=True)
-    timestamp = models.DateTimeField(blank=True, null=True)
-    uniprot = models.ForeignKey(UniprotEntry, models.DO_NOTHING, blank=True, null=True)
-    entry_type = models.SmallIntegerField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'uniprot_entry_type'
-
+        unique_together = (('uniprot', 'release_version'),)

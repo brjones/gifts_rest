@@ -5,7 +5,7 @@ class Alignment(models.Model):
     alignment_run = models.ForeignKey('AlignmentRun', models.DO_NOTHING)
     uniprot_id = models.BigIntegerField(blank=True, null=True)
     transcript = models.ForeignKey('EnsemblTranscript', models.DO_NOTHING, blank=True, null=True)
-    mapping = models.ForeignKey('EnsemblUniprot', models.DO_NOTHING, blank=True, null=True)
+    mapping = models.ForeignKey('Mapping', models.DO_NOTHING, blank=True, null=True)
     score1 = models.FloatField(blank=True, null=True)
     report = models.CharField(max_length=300, blank=True, null=True)
     is_current = models.NullBooleanField()
@@ -15,7 +15,6 @@ class Alignment(models.Model):
         managed = False
         db_table = 'alignment'
 
-
 class AlignmentRun(models.Model):
     alignment_run_id = models.BigAutoField(primary_key=True)
     userstamp = models.CharField(max_length=30, blank=True, null=True)
@@ -24,7 +23,7 @@ class AlignmentRun(models.Model):
     report_type = models.CharField(max_length=30, blank=True, null=True)
     pipeline_name = models.CharField(max_length=30)
     pipeline_comment = models.CharField(max_length=300)
-    mapping_history = models.ForeignKey('MappingHistory', models.DO_NOTHING)
+    release_mapping_history = models.ForeignKey('ReleaseMappingHistory', models.DO_NOTHING)
     ensembl_release = models.BigIntegerField()
     uniprot_file_swissprot = models.CharField(max_length=300, blank=True, null=True)
     uniprot_file_isoform = models.CharField(max_length=300, blank=True, null=True)
@@ -37,26 +36,37 @@ class AlignmentRun(models.Model):
         managed = False
         db_table = 'alignment_run'
 
-class EnsemblUniprot(models.Model):
+class Mapping(models.Model):
     mapping_id = models.BigAutoField(primary_key=True)
-    uniprot_entry_type = models.ForeignKey('UniprotEntryType', models.DO_NOTHING, blank=True, null=True)
-    userstamp = models.CharField(max_length=30, blank=True, null=True)
-    timestamp = models.DateTimeField(blank=True, null=True)
-    mapping_history_id = models.BigIntegerField(blank=True, null=True)
+    uniprot = models.ForeignKey('UniprotEntry', models.DO_NOTHING, blank=True, null=True)
     transcript = models.ForeignKey('EnsemblTranscript', models.DO_NOTHING, blank=True, null=True)
-    sp_ensembl_mapping_type = models.CharField(max_length=50, blank=True, null=True)
-    uniprot_entry_version = models.IntegerField(blank=True, null=True)
-    uniprot_ensembl_derived = models.SmallIntegerField(blank=True, null=True)
     grouping_id = models.BigIntegerField(blank=True, null=True)
-    
+
+    def __str__(self):
+        return "{0} - ({1}, {2})".format(self.mapping_id, self.uniprot, self.transcript)
+
     class Meta:
         managed = False
-        db_table = 'ensembl_uniprot'
+        db_table = 'mapping'
 
 
 class MappingHistory(models.Model):
     mapping_history_id = models.BigAutoField(primary_key=True)
-    ensembl_species_history_id = models.BigIntegerField(blank=True, null=True)
+    release_mapping_history = models.ForeignKey('ReleaseMappingHistory', models.DO_NOTHING)
+    sequence_version = models.SmallIntegerField()
+    entry_type = models.SmallIntegerField()
+    entry_version = models.IntegerField()
+    enst_version = models.SmallIntegerField()
+    mapping = models.ForeignKey(Mapping, models.DO_NOTHING)
+    sp_ensembl_mapping_type = models.CharField(max_length=50, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'mapping_history'
+
+class ReleaseMappingHistory(models.Model):
+    release_mapping_history_id = models.BigAutoField(primary_key=True)
+    ensembl_species_history = models.ForeignKey('EnsemblSpeciesHistory', models.DO_NOTHING, blank=True, null=True)
     time_mapped = models.DateTimeField()
     entries_mapped = models.BigIntegerField(blank=True, null=True)
     entries_unmapped = models.BigIntegerField(blank=True, null=True)
@@ -66,14 +76,4 @@ class MappingHistory(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'mapping_history'
-
-
-class TaxonomyMapping(models.Model):
-    taxonomy_mapping_id = models.BigAutoField(primary_key=True)
-    ensembl_tax_id = models.BigIntegerField(blank=True, null=True)
-    uniprot_tax_id = models.BigIntegerField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'taxonomy_mapping'
+        db_table = 'release_mapping_history'
