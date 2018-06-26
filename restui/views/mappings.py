@@ -28,9 +28,9 @@ def tark_transcript(enst_id, release):
     response = r.json()
     if not response:
         raise Exception("Couldn't get a response from TaRK for {}".format(enst_id))
-    if response['count'] != 1:
+    if response['count'] > 1:
         raise Exception("Couldn't get a/or unique answer from TaRK for {}".format(enst_id))
-    if not 'results' in response:
+    if not 'results' in response or not response['results']:
         raise Exception("Empty result set from TaRK for {}".format(enst_id))
 
     return response['results'][0]
