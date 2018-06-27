@@ -5,9 +5,9 @@ import requests
 from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory
 from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistory
 from restui.models.uniprot import UniprotEntry
-from restui.models.annotations import CvEntryType, CvUeStatus, UeMappingStatus, UeMappingComment, UeMappingLabel
+from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer
-from restui.serializers.annotations import StatusSerializer, CommentSerializer
+from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
 
 from django.http import Http404
 from django.utils import timezone
@@ -65,6 +65,17 @@ def get_status(mapping):
 
     return status
 
+def get_label(label):
+    """
+    Retrieve the label object associated to the given description
+    """
+
+    try:
+        return CvUeLabel.objects.get(description=label)
+    except CvUeLabel.DoesNotExist:
+        raise Http404("Couldn't get label object for {}".format(label))
+    except MultipleObjectsReturned:
+        raise Http404("Couldn't get unique label object for {}".format(label))
     
 def build_taxonomy_data(mapping):
     # Find the ensembl tax id via one ensembl species history associated to transcript
@@ -205,11 +216,17 @@ class MappingView(APIView):
 
         return Response(serializer.data)
 
+#######################################
+#
+# Support for the front-end write API
 #
 # TODO
 #
-# Add user information (presumably elixir_id attribute from request.user object) when
-# authentication system is in place
+# - add user information (presumably elixir_id attribute from request.user object)
+#   when authentication system is in place
+#
+# - handle transactions when writing/updating content, see
+#   https://docs.djangoproject.com/en/2.0/topics/db/transactions/
 #
 class MappingStatusView(APIView):
     """
@@ -222,6 +239,8 @@ class MappingStatusView(APIView):
         # retrieve the status object associated to the given description
         try:
             mapping_status = CvUeStatus.objects.get(description=request.data['status'])
+        except KeyError:
+            raise Http404("Payload should have 'status'")
         except CvUeStatus.DoesNotExist:
             raise Http404("Couldn't get status object for {}".format(request.data['status']))
         except MultipleObjectsReturned:
@@ -238,12 +257,6 @@ class MappingStatusView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-#
-# TODO
-#
-# Add user information (presumably elixir_id attribute from request.user object) when
-# authentication system is in place
-#
 class MappingCommentView(APIView):
     """
     Add a comment to a mapping
@@ -266,6 +279,74 @@ class MappingCommentView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+#
+# TODO: should remove only the label attached to the mapping by the given user
+#
+class CreateMappingLabelView(APIView):
+    """
+    Add a label associated to a mapping
+    """
+
+    def post(self, request, pk):
+        mapping = get_mapping(pk)
+
+        try:
+            label = get_label(request.data['label'])
+        except KeyError:
+            raise Http404("Should provide 'label' in payload")
+
+        #
+        # TODO
+        #
+        # If the same user has already assigned that label, update the timestamp
+        #
+        try:
+            mapping_label = UeMappingLabel.objects.get(mapping=mapping, label=label.id) # user_stamp=request.user,
+        except UeMappingLabel.DoesNotExist:
+            # create new label associated to the mapping
+            serializer = LabelSerializer(data={ 'time_stamp':timezone.now(),
+                                                # 'user_stamp':request.user,
+                                                'label':label.id,
+                                                'mapping':mapping.mapping_id })
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status.HTTP_201_CREATED)
+
+        else:
+            # mapping label already exists, update timestamp
+            # NOTE: have to provide all fields anyway othewise serializer complains
+            serializer = LabelSerializer(mapping_label, data={ 'time_stamp':timezone.now(),
+                                                               # 'user_stamp':request.user,
+                                                               'label':label.id,
+                                                               'mapping':mapping.mapping_id })
+
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeleteMappingLabelView(APIView):
+    """
+    Delete label a associated to the given mapping
+    """
+
+    def delete(self, request, pk, label):
+        mapping = get_mapping(pk)
+
+        # delete all labels with the given description attached to the mapping
+        # TODO: only those associated to the given user
+        mapping_labels = UeMappingLabel.objects.filter(mapping=mapping,label=get_label(label).id)
+        if mapping_labels:
+            mapping_labels.delete()
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        raise Http404
+
+#
+#######################################
 
 class MappingCommentsView(APIView):
     """
