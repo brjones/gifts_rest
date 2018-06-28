@@ -6,7 +6,7 @@ from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpecies
 from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistory
 from restui.models.uniprot import UniprotEntry
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
-from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer
+from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer, MappingsSerializer
 from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
 
 from django.http import Http404
@@ -94,7 +94,7 @@ def build_taxonomy_data(mapping):
     except:
         raise Http404("Couldn't find uniprot tax id as I couldn't find a uniprot entry associated to the mapping")
 
-def build_mapping_data(mapping, mapping_history):
+def build_mapping_data(mapping, mapping_history, fetch_sequence=True):
     #
     # get ensembl/uniprot release
     #
@@ -142,24 +142,26 @@ def build_mapping_data(mapping, mapping_history):
     #
     # fetch transcript sequence from TaRK
     #
-    try:
-        transcript = tark_transcript(ensembl_transcript.enst_id, ensembl_release)
-    except Exception as e:
-        print(e) # TODO: log
-        sequence = None
-    else:
-        # double check we've got the same thing
+    sequence = None
+    if fetch_sequence:
         try:
-            if transcript['loc_start'] != ensembl_transcript.seq_region_start or transcript['loc_end'] != ensembl_transcript.seq_region_end:
-                raise Exception("Mismatch between GIFTS and TaRK transcript {} sequence boundaries".format(ensembl_transcript.enst_id))
-        except KeyError:
-            raise Exception("Transcript {} retrieved from TaRK doesn't have expected sequence boundaries".format(ensembl_transcript.enst_id))
-
-        try:
-            sequence = transcript['sequence']['sequence']
-        except KeyError:
-            # TODO: log anomaly perhaps?
+            transcript = tark_transcript(ensembl_transcript.enst_id, ensembl_release)
+        except Exception as e:
+            print(e) # TODO: log
             sequence = None
+        else:
+            # double check we've got the same thing
+            try:
+                if transcript['loc_start'] != ensembl_transcript.seq_region_start or transcript['loc_end'] != ensembl_transcript.seq_region_end:
+                    raise Exception("Mismatch between GIFTS and TaRK transcript {} sequence boundaries".format(ensembl_transcript.enst_id))
+            except KeyError:
+                raise Exception("Transcript {} retrieved from TaRK doesn't have expected sequence boundaries".format(ensembl_transcript.enst_id))
+
+            try:
+                sequence = transcript['sequence']['sequence']
+            except KeyError:
+                # TODO: log anomaly perhaps?
+                sequence = None
         
     return { 'mappingId':mapping.mapping_id,
              'timeMapped':release_mapping_history.time_mapped,
@@ -295,11 +297,8 @@ class CreateMappingLabelView(APIView):
         except KeyError:
             raise Http404("Should provide 'label' in payload")
 
-        #
-        # TODO
-        #
-        # If the same user has already assigned that label, update the timestamp
-        #
+        # If the mapping has already assigned that label, update the timestamp,
+        # otherwise create one from scratch
         try:
             mapping_label = UeMappingLabel.objects.get(mapping=mapping, label=label.id) # user_stamp=request.user,
         except UeMappingLabel.DoesNotExist:
@@ -406,7 +405,7 @@ class MappingsView(generics.ListAPIView):
     'Facets' are used for filtering and returned by the service based on the result set.
     """
 
-    serializer_class = MappingSerializer
+    serializer_class = MappingsSerializer
     pagination_class = LimitOffsetPagination
     
     def get_queryset(self):
@@ -425,9 +424,9 @@ class MappingsView(generics.ListAPIView):
                 #  or all 'related' mappings? We're returning only that mapping at the moment
                 queryset = [ get_mapping(search_term) ]
             else: # this is either an ENSG/ENST or UniProt accession
-                if re.compile(r"^ENSG").match(search_term):
+                if re.compile(r"^ENS[A-Z]*?G[0-9]+?$").match(search_term):
                     queryset = Mapping.objects.filter(transcript__gene__ensg_id=search_term)
-                elif re.compile(r"^ENST").match(search_term):
+                elif re.compile(r"^ENS[A-Z]*?T[0-9]+?$").match(search_term):
                     queryset = Mapping.objects.filter(transcript__enst_id=search_term)
                 else:
                     queryset = Mapping.objects.filter(uniprot__uniprot_acc=search_term)
@@ -441,11 +440,7 @@ class MappingsView(generics.ListAPIView):
             #
             # Can return an iterator, but this is not compatible with pagination, see comments below
             # queryset = Mapping.objects.all().iterator()
-            #
-            # As we've discussed with Uniprot, it is a sensible thing to return and paginate
-            # just the first xxx results picked from the DB
-            #
-            queryset = Mapping.objects.all()[:100]
+            queryset = Mapping.objects.all()
 
         #
         # Apply filters based on facets parameters
@@ -453,6 +448,7 @@ class MappingsView(generics.ListAPIView):
         # TODO: consider other filters besides organism/status
         #
         if facets_params:
+            queryset = queryset.all()
             # create facets dict from e.g. 'organism:9606,status:unreviewed'
             facets = dict( tuple(param.split(':')) for param in facets_params.split(',') )
 
@@ -480,9 +476,26 @@ class MappingsView(generics.ListAPIView):
 
                 queryset = filter(check_for_status(facets['status']), queryset)
 
-        # group the result set
-        # results in each group share the same ENST or UniProt accession
+        #
+        # Take the first xxx results in case of no search term, as discussed with UniProt
+        # It's done here as Django doesn't allow to filter (based on facets above ) a query once a slice has been taken.
+        #
+        if not search_term:
+            queryset = queryset[:100]
 
+        # group the result set
+        # results in each group share the same ENST or UniProt accession, i.e. the same grouping_id
+        queryset_groups = {}
+        for result in queryset:
+            try:
+                queryset_groups[result.grouping_id].append(result)
+            except (KeyError, AttributeError):
+                queryset_groups[result.grouping_id] = [ result ]
+
+
+        #
+        # Return the result set according to the (latest) specification, i.e.
+        # https://github.com/ebi-uniprot/gifts-mock/blob/master/data/db.json#L159
         #
         # NOTES (Important)
         #
@@ -496,10 +509,11 @@ class MappingsView(generics.ListAPIView):
         #
         # return ( {'taxonomy':get_taxonomy(mapping),
         #           'mapping':get_mapping(result, get_mapping_history(mapping)) } for mapping in queryset )
-        mappings = []
-        for mapping in queryset:
-            mapping_history = get_mapping_history(mapping)
-            mappings.append({ 'taxonomy':build_taxonomy_data(mapping),
-                              'mapping':build_mapping_data(mapping, mapping_history) })
+        results = []
+        for grouping_id in queryset_groups:
+            mapping_group = queryset_groups[grouping_id]
+            results.append({ 'taxonomy':build_taxonomy_data(mapping_group[0]), # taxonomy is supposed to be same for all mappings in the group
+                              'entryMappings':list(map(lambda m: build_mapping_data(m, get_mapping_history(m), fetch_sequence=False), mapping_group))
+            })
 
-        return mappings
+        return results
