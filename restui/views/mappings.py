@@ -37,6 +37,27 @@ def tark_transcript(enst_id, release):
 
     return response['results'][0]
 
+def ensembl_current_release():
+    """
+    Return current Ensembl release number.
+    """
+    
+    r = requests.get("{}/info/software".format(ENSEMBL_REST_SERVER), headers={ "Content-Type" : "application/json"})
+    if not r.ok:
+        r.raise_for_status()
+
+    return r.json()['release']
+
+def ensembl_transcript_sequence(enst_id, release):
+    e_current_release = ensembl_current_release()
+    server = ENSEMBL_REST_SERVER if release == e_current_release else "e{}.rest.ensembl.org".format(release)
+
+    r = requests.get("{}/sequence/id/{}?content-type=text/plain".format(server, enst_id))
+    if not r.ok:
+        r.raise_for_status()
+
+    return r.text
+
 def get_mapping(pk):
     try:
         return Mapping.objects.get(pk=pk)
@@ -145,24 +166,11 @@ def build_mapping_data(mapping, mapping_history, fetch_sequence=True):
     sequence = None
     if fetch_sequence:
         try:
-            sequence = tark_transcript(ensembl_transcript.enst_id, ensembl_release)
+            sequence = ensembl_transcript_sequence(ensembl_transcript.enst_id, ensembl_release)
         except Exception as e:
             print(e) # TODO: log
             sequence = None
-        else:
-            # double check we've got the same thing
-            try:
-                if transcript['loc_start'] != ensembl_transcript.seq_region_start or transcript['loc_end'] != ensembl_transcript.seq_region_end:
-                    raise Exception("Mismatch between GIFTS and TaRK transcript {} sequence boundaries".format(ensembl_transcript.enst_id))
-            except KeyError:
-                raise Exception("Transcript {} retrieved from TaRK doesn't have expected sequence boundaries".format(ensembl_transcript.enst_id))
 
-            try:
-                sequence = transcript['sequence']['sequence']
-            except KeyError:
-                # TODO: log anomaly perhaps?
-                sequence = None
-     
     return { 'mappingId':mapping.mapping_id,
              'timeMapped':release_mapping_history.time_mapped,
              'ensemblRelease':ensembl_release,
