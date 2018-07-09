@@ -270,7 +270,7 @@ class MappingCommentView(APIView):
         try:
             serializer = CommentSerializer(data={ 'time_stamp':timezone.now(),
                                                   # 'user_stamp':request.user,
-                                                  'comment':request.data['comment'],
+                                                  'comment':request.data['text'],
                                                   'mapping':mapping.mapping_id })
         except KeyError:
             raise Http404("Must provide comment")
