@@ -197,7 +197,7 @@ def build_related_mappings_data(mapping):
     # related mapping share the same group_id
     mappings = Mapping.objects.filter(grouping_id=mapping.grouping_id).exclude(pk=mapping.mapping_id)
 
-    return list(map(lambda m: build_mapping_data(m, get_mapping_history(m)), mappings))
+    return list(map(lambda m: build_mapping_data(m, get_mapping_history(m), fetch_sequence=False), mappings))
 
 
 
