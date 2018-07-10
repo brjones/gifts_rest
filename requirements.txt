@@ -15,3 +15,4 @@ requests==2.19.0
 typing==3.6.4
 urllib3==1.23
 requests==2.19.1
+-e git+https://github.com/EMBL-EBI-TSI/aap-client-python
