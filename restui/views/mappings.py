@@ -18,6 +18,8 @@ from rest_framework.pagination import LimitOffsetPagination
 
 from gifts_rest.settings.base import TARK_SERVER
 
+from rest_framework.permissions import IsAuthenticated
+
 def tark_transcript(enst_id, release):
     url = "{}/api/transcript/?stable_id={}&release_short_name={}&expand=sequence"
 
@@ -191,6 +193,7 @@ class MappingView(APIView):
     Retrieve a single mapping.
     """
 
+
     def get(self, request, pk):
         mapping = get_mapping(pk)
         mapping_history = get_mapping_history(mapping)
@@ -208,6 +211,7 @@ class MappingCommentsView(APIView):
     """
     Retrieve all comments relative to a given mapping.
     """
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request, pk):
         mapping = get_mapping(pk)
