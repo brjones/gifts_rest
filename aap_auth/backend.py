@@ -80,3 +80,35 @@ class AAPBackend(authentication.BaseAuthentication):
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
             return None
+
+
+class YesBackend(authentication.BaseAuthentication):
+    """
+    Dummy authentication backend that always says yes.
+    """
+
+    def authenticate(self, request, token=None):
+        """
+        We're going to make a dummy user, no matter what.
+        Used only for testing.
+        """
+        #log WARNING Using dummy authenticator, if you're not testing this is very bad
+
+        user = User(elixir_id='usr-d03bb471-5718-4899-addd-393de8b6ad69',
+                    full_name="Zapp Brannigan",
+                        email="zapp@nimbus.doop")
+        user.is_admin = False
+        user.validated = True
+
+        return user, None
+
+    def get_user(self, user_id):
+        #log WARNING Using dummy authenticator, if you're not testing this is very bad
+
+        user = User(elixir_id='usr-d03bb471-5718-4899-addd-393de8b6ad69',
+                    full_name="Zapp Brannigan",
+                        email="zapp@nimbus.doop")
+        user.is_admin = False
+        user.validated = True
+
+        return user, None
