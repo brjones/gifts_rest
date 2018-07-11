@@ -1,5 +1,3 @@
-import pprint
-
 # from restui.serializers.ensembl import EnsemblTranscriptSerializer
 # from restui.serializers.uniprot import UniprotEntrySerializer
 
@@ -48,7 +46,7 @@ class EnsemblUniprotMappingSerializer(serializers.Serializer):
 
 class MappingSerializer(serializers.Serializer):
     """
-    Serialize data in call to mapping/<id> endpoint.
+    Serialize data in call to mapping/:id endpoint.
 
     JSON specs derived from:
     https://github.com/ebi-uniprot/gifts-mock/blob/master/data/mapping.json
@@ -56,7 +54,15 @@ class MappingSerializer(serializers.Serializer):
     
     taxonomy = TaxonomySerializer()
     mapping = EnsemblUniprotMappingSerializer()
-    relatedMappings = EnsemblUniprotMappingSerializer(many=True, required=False)
+    relatedMappings = EnsemblUniprotMappingSerializer(many=True)
+
+class MappingsSerializer(serializers.Serializer):
+    """
+    Serialize data in call to mappings/ endpoint
+    """
+
+    taxonomy = TaxonomySerializer()
+    entryMappings = EnsemblUniprotMappingSerializer(many=True)
 
 class CommentLabelSerializer(serializers.Serializer):
     """
@@ -69,7 +75,7 @@ class CommentLabelSerializer(serializers.Serializer):
     
 class MappingCommentsSerializer(serializers.Serializer):
     """
-    Serialize data in call to mapping/comments/<mapping_id> endpoint.
+    Serialize data in call to mapping/comments/:id endpoint.
 
     JSON specs derived from https://github.com/ebi-uniprot/gifts-mock/blob/master/data/comments.json
     """
