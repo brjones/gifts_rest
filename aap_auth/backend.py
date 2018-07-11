@@ -1,7 +1,7 @@
 from rest_framework import authentication
 from aap_auth.models import AAPUser as User
 
-from aap_client.tokens import decode_token
+from aap_client.tokens import verify_token
 from jwt import DecodeError, InvalidTokenError as JWTInvalidTokenError
 
 from aap_auth.auth import AAPAcess
@@ -50,7 +50,7 @@ class AAPBackend(authentication.BaseAuthentication):
             return None, None
 
         try:
-            decoded_token = decode_token(jwt, AAPAcess().cert)
+            decoded_token = verify_token(jwt, AAPAcess().cert)
         except DecodeError as err:
             raise_with_traceback(
                 Exception(u'Unable to decode token: {}'.format(err)))
