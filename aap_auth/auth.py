@@ -44,12 +44,21 @@ class AAPAcess(object):
         
         if not os.path.isfile(pem_filename):
             # The pem file hasn't been downloaded yet, grab it
-            self.fetchPEM()
+            try:
+                self.fetchPEM()
+            except Exception:
+                #log Error fetching PEM from AAP when trying to lead PEM
+                raise
         
-        with open(pem_filename, 'r') as cert_file:
-            cert = load_pem(cert_file.read().encode(),
-                            default_backend())
-            self._cert = cert.public_key()
+        try:
+            with open(pem_filename, 'r') as cert_file:
+                cert = load_pem(cert_file.read().encode(),
+                                default_backend())
+                self.cert = cert.public_key()
+        except Exception:
+            #log Error loading PEM from local file
+            #re-raise the exception received
+            raise
     
     def fetchPEM(self):
         """
@@ -63,7 +72,7 @@ class AAPAcess(object):
         #log Fetching PEM certificate from AAP service
         r = requests.get(settings.AAP_PEM_URL)
 
-        if r.status_code is not 200:
+        if r.status_code != requests.codes.ok:
             raise Exception("Unable to fetch AAP PEM certificate")
 
         if r.text is not None:
@@ -76,6 +85,10 @@ class AAPAcess(object):
         Accessor to fetch the certificate
         """
         return self._cert
+
+    @cert.setter
+    def cert(self, cert):
+        self._cert = cert
 
     def fetchProfile(self, elixir_id, token):
         """
@@ -93,7 +106,7 @@ class AAPAcess(object):
     
         r = requests.get(settings.AAP_PROFILE_URL.format(elixir_id), headers=headers)
     
-        if r.status_code is not 200:
+        if r.status_code != requests.codes.ok:
             raise Exception("Error fetching profile, status: {}".format(r.status_code))
     
         return r.json()

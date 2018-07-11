@@ -19,6 +19,10 @@ class AAPBackend(authentication.BaseAuthentication):
         for a bearer token and authenticate against that. Alternatively
         the jwt token could be passed in the token field. The token
         from the request object takes precedence.
+
+        The function will return a tuple of a User object and None (needed
+        by the Django REST framework). If authentication fails, return
+        None in place of a user object.
         """
         #log Authenticating user request
         jwt = None
@@ -26,7 +30,7 @@ class AAPBackend(authentication.BaseAuthentication):
         # the token from the request below.
         if token:
             jwt = token
-            
+
         # verify that the auth header exists
         auth_header = request.META.get('HTTP_AUTHORIZATION', None)
         if auth_header:
