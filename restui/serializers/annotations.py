@@ -17,7 +17,16 @@ class StatusSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return UeMappingStatus.objects.create(**validated_data)
-    
+
+    def update(self, instance, validated_data):
+        instance.time_stamp = validated_data.get('time_stamp', instance.time_stamp)
+        instance.user_stamp = validated_data.get('user_stamp', instance.user_stamp)
+        instance.status = validated_data.get('status', instance.status)
+        instance.mapping = validated_data.get('mapping', instance.mapping)
+
+        instance.save()
+        return instance
+
     class Meta:
         model = UeMappingStatus
         exclude = ('user_stamp',)

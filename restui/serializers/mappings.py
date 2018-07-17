@@ -66,7 +66,7 @@ class MappingsSerializer(serializers.Serializer):
 
 class CommentLabelSerializer(serializers.Serializer):
     """
-    For nested serialization of user comment or label for a mapping in call to mapping/comments/<mapping_id> endpoint.
+    For nested serialization of user comment or label for a mapping in call to comments/<mapping_id> endpoint.
     """
 
     text = serializers.CharField()
@@ -75,7 +75,7 @@ class CommentLabelSerializer(serializers.Serializer):
     
 class MappingCommentsSerializer(serializers.Serializer):
     """
-    Serialize data in call to mapping/comments/:id endpoint.
+    Serialize data in call to comments/<mapping_id> endpoint.
 
     JSON specs derived from https://github.com/ebi-uniprot/gifts-mock/blob/master/data/comments.json
     """

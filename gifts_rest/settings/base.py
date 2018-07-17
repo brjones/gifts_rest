@@ -187,8 +187,10 @@ STATIC_URL = '/static/'
 # TaRK base URL
 TARK_SERVER = "http://betatark.ensembl.org"
 
+# Ensembl REST server
+ENSEMBL_REST_SERVER = "http://rest.ensembl.org"
+
 # AAP service
 AAP_PEM_URL = 'https://explore.api.aai.ebi.ac.uk/meta/public.pem'
 AAP_PROFILE_URL = 'https://explore.api.aai.ebi.ac.uk/users/{}/profile'
 AAP_PEM_FILE = '/tmp/aap.pem'
-
