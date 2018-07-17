@@ -181,3 +181,6 @@ STATIC_URL = '/static/'
 
 # TaRK base URL
 TARK_SERVER = "http://betatark.ensembl.org"
+
+# Ensembl REST server
+ENSEMBL_REST_SERVER = "http://rest.ensembl.org"
