@@ -8,6 +8,7 @@ from restui.models.uniprot import UniprotEntry
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer, MappingsSerializer
 from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
+# from restui.pagination import FacetPagination
 
 from django.http import Http404
 from django.utils import timezone
@@ -50,7 +51,7 @@ def ensembl_current_release():
 
 def ensembl_transcript_sequence(enst_id, release):
     e_current_release = ensembl_current_release()
-    server = ENSEMBL_REST_SERVER if release == e_current_release else "e{}.rest.ensembl.org".format(release)
+    server = ENSEMBL_REST_SERVER if release == e_current_release else "http://e{}.rest.ensembl.org".format(release)
 
     r = requests.get("{}/sequence/id/{}?content-type=text/plain".format(server, enst_id))
     if not r.ok:
