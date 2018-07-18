@@ -18,6 +18,5 @@ def application(environ, start_response):
     # pass the WSGI environment variables on through to os.environ
     for var in env_variables_to_pass:
         os.environ[var] = environ.get(var, '')
-        print("Exporting: {} with {}".format(var, os.environ[var]), file=sys.stderr)
         
     return get_wsgi_application()(environ, start_response)
