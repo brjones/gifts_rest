@@ -8,7 +8,7 @@ from restui.models.uniprot import UniprotEntry
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer, MappingsSerializer
 from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
-# from restui.pagination import FacetPagination
+from restui.pagination import FacetPagination
 
 from django.http import Http404
 from django.utils import timezone
@@ -17,7 +17,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import generics
-from rest_framework.pagination import LimitOffsetPagination
 
 from gifts_rest.settings.base import TARK_SERVER, ENSEMBL_REST_SERVER
 
@@ -291,7 +290,7 @@ class MappingsView(generics.ListAPIView):
     """
 
     serializer_class = MappingsSerializer
-    pagination_class = LimitOffsetPagination
+    pagination_class = FacetPagination
     
     def get_queryset(self):
         # the ENSG, ENST, UniProt accession or mapping id. If none are provided all mappings are returned
