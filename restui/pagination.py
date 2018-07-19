@@ -1,4 +1,3 @@
-import pprint
 from collections import OrderedDict
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
