@@ -1,6 +1,3 @@
-# from restui.serializers.ensembl import EnsemblTranscriptSerializer
-# from restui.serializers.uniprot import UniprotEntrySerializer
-
 from rest_framework import serializers
 
 class TaxonomySerializer(serializers.Serializer):
@@ -12,7 +9,7 @@ class TaxonomySerializer(serializers.Serializer):
     ensemblTaxId = serializers.IntegerField()
     uniprotTaxId = serializers.IntegerField()
 
-class UniprotEntrySerializer(serializers.Serializer):
+class UniprotEntryMappingSerializer(serializers.Serializer):
     uniprotAccession = serializers.CharField()
     entryType = serializers.CharField()
     sequenceVersion = serializers.IntegerField()
@@ -20,7 +17,7 @@ class UniprotEntrySerializer(serializers.Serializer):
     md5 = serializers.CharField()
     ensemblDerived = serializers.NullBooleanField()
 
-class EnsemblTranscriptSerializer(serializers.Serializer):
+class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     enstId = serializers.CharField()
     enstVersion = serializers.IntegerField()
     upi = serializers.CharField()
@@ -40,8 +37,8 @@ class EnsemblUniprotMappingSerializer(serializers.Serializer):
     timeMapped = serializers.DateTimeField()
     uniprotRelease = serializers.CharField()
     ensemblRelease = serializers.CharField()
-    uniprotEntry = UniprotEntrySerializer()
-    ensemblTranscript = EnsemblTranscriptSerializer()
+    uniprotEntry = UniprotEntryMappingSerializer()
+    ensemblTranscript = EnsemblTranscriptMappingSerializer()
     status = serializers.CharField()
 
 class MappingSerializer(serializers.Serializer):

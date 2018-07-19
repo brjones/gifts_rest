@@ -8,7 +8,7 @@ from restui.models.uniprot import UniprotEntry
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer, MappingsSerializer
 from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
-# from restui.pagination import FacetPagination
+from restui.pagination import FacetPagination
 
 from django.http import Http404
 from django.utils import timezone
@@ -17,7 +17,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import generics
-from rest_framework.pagination import LimitOffsetPagination
 
 from gifts_rest.settings.base import TARK_SERVER, ENSEMBL_REST_SERVER
 
@@ -203,8 +202,9 @@ def build_related_mappings_data(mapping):
     Return the list of mappings sharing the same ENST or Uniprot accession of the given mapping.
     """
 
-    # related mapping share the same group_id
-    mappings = Mapping.objects.filter(grouping_id=mapping.grouping_id).exclude(pk=mapping.mapping_id)
+    # related mapping share the same group_id and tax id
+    mappings = Mapping.objects.filter(grouping_id=mapping.grouping_id,
+                                      uniprot__uniprot_tax_id=mapping.uniprot.uniprot_tax_id).exclude(pk=mapping.mapping_id)
 
     return list(map(lambda m: build_mapping_data(m, get_mapping_history(m), fetch_sequence=False), mappings))
 
@@ -291,7 +291,7 @@ class MappingsView(generics.ListAPIView):
     """
 
     serializer_class = MappingsSerializer
-    pagination_class = LimitOffsetPagination
+    pagination_class = FacetPagination
     
     def get_queryset(self):
         # the ENSG, ENST, UniProt accession or mapping id. If none are provided all mappings are returned
