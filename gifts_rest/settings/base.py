@@ -28,8 +28,13 @@ USE_TZ = True
 # SECURITY WARNING: don't run with debug turned on in production!
 if env.PROD_ENV:
     DEBUG = False
+    AUTHENTICATOR_BACKEND = 'aap_auth.backend.AAPBackend'
+elif env.TEST_ENV:
+    DEBUG = True
+    AUTHENTICATOR_BACKEND = 'aap_auth.backend.AAPBackend'
 else:
     DEBUG = True
+    AUTHENTICATOR_BACKEND = 'aap_auth.backend.YesBackend'
 
 ALLOWED_HOSTS = []
 
@@ -54,7 +59,7 @@ REST_FRAMEWORK = {
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE':10,
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'aap_auth.backend.AAPBackend',
+        AUTHENTICATOR_BACKEND,
     )
 }
 
