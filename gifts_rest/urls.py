@@ -16,8 +16,17 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.conf.urls import url, include
+from . import settings
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    url(r'^gifts/', include('restui.urls')),
-]
+if settings.env.DEV_ENV:
+
+    urlpatterns = [
+        path('admin/', admin.site.urls),
+        url(r'^gifts/', include('restui.urls')),
+    ]
+
+else:
+
+    urlpatterns = [
+        url(r'^', include('restui.urls')),
+    ]
