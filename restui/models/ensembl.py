@@ -73,12 +73,9 @@ class EnsemblTranscript(PostgresModel):
         db_table = 'ensembl_transcript'
 
 class EnspUCigar(models.Model):
-    ensp_u_cigar_id = models.BigAutoField(primary_key=True)
+    alignment_id = models.ForeignKey('Alignment', models.DO_NOTHING)
     cigarplus = models.TextField(blank=True, null=True)
     mdz = models.TextField(blank=True, null=True)
-    uniprot_acc = models.CharField(max_length=30)
-    uniprot_seq_version = models.SmallIntegerField()
-    ensp_id = models.CharField(max_length=30)
 
     class Meta:
         managed = False

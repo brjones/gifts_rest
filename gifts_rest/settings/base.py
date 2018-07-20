@@ -16,6 +16,8 @@ from . import env
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Custom User model for the service
+AUTH_USER_MODEL = 'aap_auth.AAPUser'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
@@ -26,8 +28,13 @@ USE_TZ = True
 # SECURITY WARNING: don't run with debug turned on in production!
 if env.PROD_ENV:
     DEBUG = False
+    AUTHENTICATOR_BACKEND = 'aap_auth.backend.AAPBackend'
+elif env.TEST_ENV:
+    DEBUG = True
+    AUTHENTICATOR_BACKEND = 'aap_auth.backend.AAPBackend'
 else:
     DEBUG = True
+    AUTHENTICATOR_BACKEND = 'aap_auth.backend.YesBackend'
 
 ALLOWED_HOSTS = []
 
@@ -44,12 +51,16 @@ INSTALLED_APPS = [
     'rest_framework',
     'django.contrib.postgres',
     'psqlextra',
-    'restui'
+    'restui',
+    'aap_auth.apps.AppAuthConfig'
 ]
 
 REST_FRAMEWORK = {
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE':10
+    'PAGE_SIZE':10,
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        AUTHENTICATOR_BACKEND,
+    )
 }
 
 MIDDLEWARE = [
@@ -81,7 +92,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'gifts_rest.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
@@ -184,3 +194,8 @@ TARK_SERVER = "http://betatark.ensembl.org"
 
 # Ensembl REST server
 ENSEMBL_REST_SERVER = "http://rest.ensembl.org"
+
+# AAP service
+AAP_PEM_URL = 'https://explore.api.aai.ebi.ac.uk/meta/public.pem'
+AAP_PROFILE_URL = 'https://explore.api.aai.ebi.ac.uk/users/{}/profile'
+AAP_PEM_FILE = '/tmp/aap.pem'

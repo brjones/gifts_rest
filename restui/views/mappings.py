@@ -20,6 +20,8 @@ from rest_framework import generics
 
 from gifts_rest.settings.base import TARK_SERVER, ENSEMBL_REST_SERVER
 
+from rest_framework.permissions import IsAuthenticated
+
 def tark_transcript(enst_id, release):
     url = "{}/api/transcript/?stable_id={}&release_short_name={}&expand=sequence"
 
@@ -220,6 +222,7 @@ class MappingView(APIView):
     Retrieve a single mapping, includes related mappings and taxonomy information.
     """
 
+
     def get(self, request, pk):
         mapping = get_mapping(pk)
         mapping_history = get_mapping_history(mapping)
@@ -236,6 +239,7 @@ class MappingCommentsView(APIView):
     """
     Retrieve all comments relative to a given mapping, includes mapping labels.
     """
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request, pk):
         mapping = get_mapping(pk)
