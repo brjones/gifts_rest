@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class CvEntryType(models.Model):
     id = models.BigIntegerField(primary_key=True)
@@ -29,7 +30,7 @@ class CvUeStatus(models.Model):
 class UeMappingComment(models.Model):
     id = models.BigAutoField(primary_key=True)
     time_stamp = models.DateTimeField()
-    user_stamp = models.CharField(max_length=20)
+    user_stamp = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='user_stamp')
     comment = models.TextField()
     mapping = models.ForeignKey('Mapping', models.DO_NOTHING, blank=True, null=True)
 
@@ -41,7 +42,7 @@ class UeMappingComment(models.Model):
 class UeMappingLabel(models.Model):
     id = models.BigAutoField(primary_key=True)
     time_stamp = models.DateTimeField()
-    user_stamp = models.CharField(max_length=20)
+    user_stamp = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='user_stamp')
     label = models.BigIntegerField()
     mapping = models.ForeignKey('Mapping', models.DO_NOTHING)
 
@@ -53,7 +54,7 @@ class UeMappingLabel(models.Model):
 class UeMappingStatus(models.Model):
     id = models.BigAutoField(primary_key=True)
     time_stamp = models.DateTimeField()
-    user_stamp = models.CharField(max_length=20)
+    user_stamp = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='user_stamp')
     status = models.BigIntegerField()
     mapping = models.ForeignKey('Mapping', models.DO_NOTHING)
 
