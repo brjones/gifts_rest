@@ -272,6 +272,7 @@ class MappingCommentsView(APIView):
         serializer = MappingCommentsSerializer(data)
         return Response(serializer.data)
 
+
 #
 # TODO
 #
@@ -416,9 +417,6 @@ class MappingsView(generics.ListAPIView):
 #
 # TODO
 #
-# - add user information (presumably elixir_id attribute from request.user object)
-#   when authentication system is in place
-#
 # - handle transactions when writing/updating content, see
 #   https://docs.djangoproject.com/en/2.0/topics/db/transactions/
 #
@@ -427,6 +425,8 @@ class MappingStatusView(APIView):
     """
     Change the status of a mapping
     """
+
+    permission_classes = (IsAuthenticated,)
 
     def put(self, request, pk):
         mapping = get_mapping(pk)
@@ -448,7 +448,7 @@ class MappingStatusView(APIView):
         except UeMappingStatus.DoesNotExist:
             # create new mapping status
             serializer = StatusSerializer(data={ 'time_stamp':timezone.now(),
-                                                 # 'user_stamp':request.user,
+                                                 'user_stamp':request.user,
                                                  'status':s.id,
                                                  'mapping':mapping.mapping_id })
 
@@ -461,7 +461,7 @@ class MappingStatusView(APIView):
         else:
             # mapping status already exist, update timestamp
             serializer = StatusSerializer(mapping_status, data={ 'time_stamp':timezone.now(),
-                                                                 # 'user_stamp':request.user,
+                                                                 'user_stamp':request.user,
                                                                  'status':s.id,
                                                                  'mapping':mapping.mapping_id })
             
@@ -476,12 +476,14 @@ class MappingCommentView(APIView):
     Add a comment to a mapping
     """
 
+    permission_classes = (IsAuthenticated,)
+
     def post(self, request, pk):
         mapping = get_mapping(pk)
 
         try:
             serializer = CommentSerializer(data={ 'time_stamp':timezone.now(),
-                                                  # 'user_stamp':request.user,
+                                                  'user_stamp':request.user,
                                                   'comment':request.data['text'],
                                                   'mapping':mapping.mapping_id })
         except KeyError:
@@ -498,6 +500,8 @@ class CreateMappingLabelView(APIView):
     Add a label associated to a mapping
     """
 
+    permission_classes = (IsAuthenticated,)
+
     def post(self, request, pk):
         mapping = get_mapping(pk)
 
@@ -513,7 +517,7 @@ class CreateMappingLabelView(APIView):
         except UeMappingLabel.DoesNotExist:
             # create new label associated to the mapping
             serializer = LabelSerializer(data={ 'time_stamp':timezone.now(),
-                                                # 'user_stamp':request.user,
+                                                'user_stamp':request.user,
                                                 'label':label.id,
                                                 'mapping':mapping.mapping_id })
             if serializer.is_valid():
@@ -524,7 +528,7 @@ class CreateMappingLabelView(APIView):
             # mapping label already exists, update timestamp
             # NOTE: have to provide all fields anyway othewise serializer complains
             serializer = LabelSerializer(mapping_label, data={ 'time_stamp':timezone.now(),
-                                                               # 'user_stamp':request.user,
+                                                               'user_stamp':request.user,
                                                                'label':label.id,
                                                                'mapping':mapping.mapping_id })
 
@@ -541,6 +545,8 @@ class DeleteMappingLabelView(APIView):
     """
     Delete label a associated to the given mapping
     """
+
+    permission_classes = (IsAuthenticated,)
 
     def delete(self, request, pk, label):
         mapping = get_mapping(pk)

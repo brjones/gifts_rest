@@ -29,7 +29,7 @@ class StatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UeMappingStatus
-        exclude = ('user_stamp',)
+        fields = '__all__'
 
 class CommentSerializer(serializers.ModelSerializer):
     """
@@ -55,7 +55,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UeMappingComment
-        exclude = ('user_stamp',)
+        fields = '__all__'
 
 class LabelSerializer(serializers.ModelSerializer):
     """
@@ -78,7 +78,7 @@ class LabelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UeMappingLabel
-        exclude = ('user_stamp',)
+        fields = '__all__'
 
 #
 ###################################################################
