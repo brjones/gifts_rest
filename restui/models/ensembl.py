@@ -74,7 +74,7 @@ class EnsemblTranscript(PostgresModel):
         db_table = 'ensembl_transcript'
 
 class EnspUCigar(models.Model):
-    alignment_id = models.OneToOneField('Alignment', primary_key=True, on_delete=CASCADE)
+    alignment = models.OneToOneField('Alignment', primary_key=True, on_delete=CASCADE, related_name='pairwise')
     cigarplus = models.TextField(blank=True, null=True)
     mdz = models.TextField(blank=True, null=True)
 

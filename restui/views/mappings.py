@@ -6,10 +6,12 @@ from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpecies
 from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistory
 from restui.models.uniprot import UniprotEntry
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
-from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer, MappingsSerializer
+from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer, MappingsSerializer,\
+    MappingAlignmentsSerializer
 from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
 from restui.pagination import FacetPagination
 from restui.lib.external import ensembl_sequence
+from restui.lib.alignments import fetch_pairwise
 
 from django.http import Http404
 from django.utils import timezone
@@ -526,3 +528,18 @@ class DeleteMappingLabelView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         raise Http404
+
+class MappingPairwiseAlignment(APIView):
+    """
+    Retrieve a set of pairwise alignments for a single mapping
+    """
+
+    def get(self, request, pk):
+        try:
+            alignments = fetch_pairwise(pk)
+        except:
+            raise Http404
+         
+        serializer = MappingAlignmentsSerializer(alignments)
+         
+        return Response(serializer.data)
