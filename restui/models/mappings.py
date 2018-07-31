@@ -5,7 +5,7 @@ class Alignment(models.Model):
     alignment_run = models.ForeignKey('AlignmentRun', models.DO_NOTHING)
     uniprot_id = models.BigIntegerField(blank=True, null=True)
     transcript = models.ForeignKey('EnsemblTranscript', models.DO_NOTHING, blank=True, null=True)
-    mapping = models.ForeignKey('Mapping', models.DO_NOTHING, blank=True, null=True)
+    mapping = models.ForeignKey('Mapping', models.DO_NOTHING, blank=True, null=True, related_name='alignments')
     score1 = models.FloatField(blank=True, null=True)
     report = models.CharField(max_length=300, blank=True, null=True)
     is_current = models.NullBooleanField()

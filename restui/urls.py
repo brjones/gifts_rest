@@ -28,6 +28,7 @@ urlpatterns = [
     path('mapping/<int:pk>/comments/', mappings.MappingCommentView.as_view()),
     path('mapping/<int:pk>/labels/<label>/', mappings.DeleteMappingLabelView.as_view()),
     path('mapping/<int:pk>/labels/', mappings.CreateMappingLabelView.as_view()),
+    path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),
     path('mapping/<int:pk>/', mappings.MappingView.as_view()),
     path('comments/<int:pk>/', mappings.MappingCommentsView.as_view()),
 #    path('labels/', mappings.LabelsView.as_view()),                                      # retrieve list of possible labels (GET)

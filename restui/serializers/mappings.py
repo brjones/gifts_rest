@@ -81,3 +81,22 @@ class MappingCommentsSerializer(serializers.Serializer):
     status = serializers.CharField()
     comments = CommentLabelSerializer(many=True)
     labels = CommentLabelSerializer(many=True)
+
+class MappingPairwiseAlignmentSerializer(serializers.Serializer):
+    """
+    For a nested pairwise alignment object
+    """
+    uniprot_alignment = serializers.CharField()
+    ensembl_alignment = serializers.CharField()
+    match_str = serializers.CharField()
+    alignment_id = serializers.IntegerField()
+    ensembl_release = serializers.IntegerField()
+    ensembl_id = serializers.CharField()
+    uniprot_id = serializers.CharField()
+    
+class MappingAlignmentsSerializer(serializers.Serializer):
+    """
+    Serializer for pairwise alignment sets
+    """
+    mapping_id = serializers.IntegerField()
+    alignments = MappingPairwiseAlignmentSerializer(many=True)
