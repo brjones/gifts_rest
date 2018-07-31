@@ -36,7 +36,7 @@ else:
     DEBUG = True
     AUTHENTICATOR_BACKEND = 'aap_auth.backend.YesBackend'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
