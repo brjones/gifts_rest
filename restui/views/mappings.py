@@ -9,56 +9,19 @@ from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMapp
 from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer, MappingsSerializer
 from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
 from restui.pagination import FacetPagination
+from restui.lib.external import ensembl_sequence
 
 from django.http import Http404
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.db.models import Max, F
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import generics
 
-from gifts_rest.settings.base import TARK_SERVER, ENSEMBL_REST_SERVER
-
 from rest_framework.permissions import IsAuthenticated
 
-def tark_transcript(enst_id, release):
-    url = "{}/api/transcript/?stable_id={}&release_short_name={}&expand=sequence"
-
-    r = requests.get(url.format(TARK_SERVER, enst_id, release))
-    if not r.ok:
-        raise Http404
-
-    response = r.json()
-    if not response:
-        raise Exception("Couldn't get a response from TaRK for {}".format(enst_id))
-    if response['count'] > 1:
-        raise Exception("Couldn't get a/or unique answer from TaRK for {}".format(enst_id))
-    if not 'results' in response or not response['results']:
-        raise Exception("Empty result set from TaRK for {}".format(enst_id))
-
-    return response['results'][0]
-
-def ensembl_current_release():
-    """
-    Return current Ensembl release number.
-    """
-    
-    r = requests.get("{}/info/software".format(ENSEMBL_REST_SERVER), headers={ "Content-Type" : "application/json"})
-    if not r.ok:
-        r.raise_for_status()
-
-    return r.json()['release']
-
-def ensembl_transcript_sequence(enst_id, release):
-    e_current_release = ensembl_current_release()
-    server = ENSEMBL_REST_SERVER if release == e_current_release else "http://e{}.rest.ensembl.org".format(release)
-
-    r = requests.get("{}/sequence/id/{}?content-type=text/plain".format(server, enst_id))
-    if not r.ok:
-        r.raise_for_status()
-
-    return r.text
 
 def get_mapping(pk):
     try:
@@ -168,7 +131,7 @@ def build_mapping_data(mapping, mapping_history, fetch_sequence=True):
     sequence = None
     if fetch_sequence:
         try:
-            sequence = ensembl_transcript_sequence(ensembl_transcript.enst_id, ensembl_release)
+            sequence = ensembl_sequence(ensembl_transcript.enst_id, ensembl_release)
         except Exception as e:
             print(e) # TODO: log
             sequence = None
@@ -352,26 +315,29 @@ class MappingsView(generics.ListAPIView):
             if 'status' in facets:
                 # create closure to be used in filter function to filter queryset based on status
                 # binds to given status so filter can pass each mapping which is compared against binding param
-                def check_for_status(status):
-                    def has_status(mapping):
-                        # status query can have a different form from the one in the DB, e.g. UNREVIEWED vs NOT REVIEWED
-                        # TODO: under_review, other values?
-                        mapping_status = get_status(mapping).lower()
-                        if mapping_status == 'unreviewed':
-                            mapping_status = 'not reviewed'
+                try:
+                    status_id = CvUeStatus.objects.get(description=facets['status'].upper()).id
+                except:
+                    raise Http404("Invalid status type")
+                    # TODO Should be a 400, how do we make this work with pagination?
+                    #return Response(status=status.HTTP_400_BAD_REQUEST)
 
-                        return mapping_status == status.lower()
-
-                    return has_status
-
-                queryset = filter(check_for_status(facets['status']), queryset)
+                # Left join on the status table, find the 'newest' status only and filter out all other joined rows
+                queryset = queryset.annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).filter(status__status=status_id)
 
         #
         # Take the first xxx results in case of no search term, as discussed with UniProt
         # It's done here as Django doesn't allow to filter (based on facets above ) a query once a slice has been taken.
         #
         if not search_term:
-            queryset = queryset[:100]
+            queryset_truncated = []
+            count = 0
+            for result in queryset:
+                queryset_truncated.append(result)
+                count += 1
+                if count >= 100:
+                    break
+            queryset = queryset_truncated
 
         # group the result set
         # results in each group share the same ENST or UniProt accession, i.e. the same grouping_id

@@ -1,11 +1,13 @@
-from restui.models.ensembl import EnsemblGene
-from restui.serializers.ensembl import EnsemblGeneSerializer
+from restui.models.ensembl import EnsemblGene, EnspUCigar
+from restui.serializers.ensembl import EnsemblGeneSerializer, EnspUCigarSerializer
+from restui.lib.external import ensembl_sequence
 
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework import status
 from rest_framework import mixins
 from rest_framework import generics
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 import pprint
 
@@ -35,3 +37,11 @@ class EnsemblFeature(mixins.CreateModelMixin,
         # this calls self.perform_create(self.get_serializer)
         objs = self.create(request, *args, **kwargs)
         return objs
+
+class EnspUCigarAlignmnent(APIView):
+    """
+    Retrieve a protein alignment and return the pairwise alignment strings.
+    """
+
+    def get(self, request, pk):
+        protein_alignment = get_object_or_404(EnspUCigar, pk=pk)

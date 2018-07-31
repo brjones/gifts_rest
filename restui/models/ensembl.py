@@ -1,6 +1,7 @@
 from django.db import models
 from psqlextra.models import PostgresModel
 from psqlextra.manager import PostgresManager
+from django.db.models.deletion import CASCADE
 
 class EnsemblSpeciesHistory(PostgresModel):
     objects = PostgresManager()
@@ -73,7 +74,7 @@ class EnsemblTranscript(PostgresModel):
         db_table = 'ensembl_transcript'
 
 class EnspUCigar(models.Model):
-    alignment_id = models.ForeignKey('Alignment', models.DO_NOTHING)
+    alignment_id = models.OneToOneField('Alignment', primary_key=True, on_delete=CASCADE)
     cigarplus = models.TextField(blank=True, null=True)
     mdz = models.TextField(blank=True, null=True)
 

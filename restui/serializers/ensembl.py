@@ -141,3 +141,6 @@ class EnsemblGeneSerializer(serializers.Serializer):
         # model = EnsemblGene
         # fields = '__all__'
         list_serializer_class = EnsemblGeneListSerializer
+
+class EnspUCigarSerializer(serializers.Serializer):
+    pass
