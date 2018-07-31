@@ -56,7 +56,7 @@ class UeMappingStatus(models.Model):
     time_stamp = models.DateTimeField()
     user_stamp = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='user_stamp')
     status = models.BigIntegerField()
-    mapping = models.ForeignKey('Mapping', models.DO_NOTHING)
+    mapping = models.ForeignKey('Mapping', related_name='status', on_delete=models.CASCADE)
 
     class Meta:
         managed = False
