@@ -111,7 +111,7 @@ def build_mapping_data(mapping, mapping_history, fetch_sequence=True):
         raise Http404("Couldn't find either transcript or uniprot entry")
 
     # fetch status
-    status = get_status(mapping)
+    status = mapping.status
 
     #
     # fetch entry_type
@@ -124,7 +124,7 @@ def build_mapping_data(mapping, mapping_history, fetch_sequence=True):
     #
     #
     try:
-        entry_type = CvEntryType.objects.get(pk=mapping_history.entry_type).description
+        entry_type = mapping_history.entry_type.description
     except CvEntryType.DoesNotExist:
         raise Http404
 
@@ -216,7 +216,7 @@ class MappingCommentsView(APIView):
             raise Http404("Couldn't find transcript entry associated to mapping {}".format(mapping.mapping_id))
 
         # fetch latest mapping status
-        status = get_status(mapping)
+        status = mapping.status
 
         # fetch mapping comment history
         mapping_comments = UeMappingComment.objects.filter(mapping=mapping).order_by('-time_stamp')
