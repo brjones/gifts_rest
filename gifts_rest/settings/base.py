@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     'restui',
     'aap_auth.apps.AppAuthConfig'
 ]
-
+     
 REST_FRAMEWORK = {
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE':10,
@@ -72,6 +72,17 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+if DEBUG is True:
+    INSTALLED_APPS += ('corsheaders', )
+    MIDDLEWARE.insert(0, 'corsheaders.middleware.CorsMiddleware' )
+#    CORS_ORIGIN_ALLOW_ALL = DEBUG
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_WHITELIST = (
+    'localhost:39093',
+    'localhost:8000',
+)
 
 ROOT_URLCONF = 'gifts_rest.urls'
 

@@ -16,3 +16,4 @@ urllib3==1.23
 requests==2.19.1
 aap-client-python
 sam-alignment-reconstructor
+django-cors-headers==2.4.0
