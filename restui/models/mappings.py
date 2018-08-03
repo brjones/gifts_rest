@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Count
 
 class Alignment(models.Model):
     alignment_id = models.BigAutoField(primary_key=True)
@@ -36,7 +37,95 @@ class AlignmentRun(models.Model):
         managed = False
         db_table = 'alignment_run'
 
+class MappingQuerySet(models.query.QuerySet):
+    _counts = None
+
+    def grouped_counts(self):
+        """
+        Retrieve a list of grouping_id counts from a queryset.
+        eg
+        [{'grouping_id': 1, 'total': 19}, {'grouping_id': 2, 'total': 6}, {'grouping_id': 3, 'total': 4},...]
+        """
+        if self._counts is None:
+            self._counts = self.values('grouping_id').annotate(total=Count('grouping_id')).order_by('grouping_id')
+
+        return self._counts
+
+    @property
+    def grouped_count(self):
+        """
+        Retrieve the total number of groups basedo n grouping_id from a queryset
+        """
+        counts = self.grouped_counts()
+        
+        return len(counts)
+
+    def grouped_slice(self, offset, limit):
+        """
+        Fetch a subset of Mapping records grouped by grouping_id.
+        We first find how many records in to the queryset, counting by
+        grouping_id intervals. Then find the number of records to extract
+        to scoop up limit number of groups.
+        
+        Finally return the groups all nicely packaged up in a dict of lists,
+        where the dict key is the grouping_id and the value is a list of
+        Mapping objects associated with that grouping_id
+        """
+        counts = self.grouped_counts()
+        
+        if offset == 0:
+            qs_offset = 0
+        else:
+            qs_offset = sum(int(row['total']) for row in counts[:offset])
+            
+        qs_limit = sum(int(row['total']) for row in counts[offset:offset+limit])
+
+        print(qs_offset)
+        print(qs_limit)
+        
+        sub_qs = self.order_by('grouping_id')[qs_offset:qs_offset+qs_limit]
+        
+        grouped_results = {}
+        for result in sub_qs:
+            try:
+                grouped_results[result.grouping_id].append(result)
+            except (KeyError, AttributeError):
+                grouped_results[result.grouping_id] = [ result ]
+
+        return grouped_results
+
+    def statuses(self):
+        """
+        Return a list of all the statuses represented in this queryset
+        """
+        status_set = self.values('status__status__description').distinct()
+        
+        status_list = []
+        for status in status_set:
+            status_list.append(status['status__status__description'])
+            
+        return status_list
+
+    def species(self):
+        """
+        Return a list of tuples, of all the tax_id and species in this queryset
+        """
+        species_set = self.values('transcript__transcripthistory__ensembl_species_history__ensembl_tax_id', 'transcript__transcripthistory__ensembl_species_history__species').distinct()
+
+        species_list = []
+        for species in species_set:
+            species_list.append((species['transcript__transcripthistory__ensembl_species_history__ensembl_tax_id'],
+                                 species['transcript__transcripthistory__ensembl_species_history__species']))
+
+        return species_list
+
+class MappingManager(models.Manager):
+    def get_queryset(self):
+        return MappingQuerySet(self.model, using=self._db)
+
 class Mapping(models.Model):
+    objects = MappingManager()
+
     mapping_id = models.BigAutoField(primary_key=True)
     uniprot = models.ForeignKey('UniprotEntry', models.DO_NOTHING, blank=True, null=True)
     transcript = models.ForeignKey('EnsemblTranscript', models.DO_NOTHING, blank=True, null=True)
@@ -54,10 +143,10 @@ class MappingHistory(models.Model):
     mapping_history_id = models.BigAutoField(primary_key=True)
     release_mapping_history = models.ForeignKey('ReleaseMappingHistory', models.DO_NOTHING)
     sequence_version = models.SmallIntegerField()
-    entry_type = models.SmallIntegerField()
+    entry_type = models.ForeignKey('CvEntryType', models.DO_NOTHING, blank=True, null=True, db_column="entry_type")
     entry_version = models.IntegerField()
     enst_version = models.SmallIntegerField()
-    mapping = models.ForeignKey(Mapping, models.DO_NOTHING)
+    mapping = models.ForeignKey(Mapping, models.DO_NOTHING, related_name='mapping_history')
     sp_ensembl_mapping_type = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:

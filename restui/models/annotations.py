@@ -54,8 +54,8 @@ class UeMappingLabel(models.Model):
 class UeMappingStatus(models.Model):
     id = models.BigAutoField(primary_key=True)
     time_stamp = models.DateTimeField()
-    user_stamp = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='user_stamp')
-    status = models.BigIntegerField()
+    user_stamp = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE, db_column='user_stamp')
+    status = models.ForeignKey('CvUeStatus', db_column='status', to_field='id', on_delete=models.CASCADE)
     mapping = models.ForeignKey('Mapping', related_name='status', on_delete=models.CASCADE)
 
     class Meta:

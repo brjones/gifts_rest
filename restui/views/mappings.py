@@ -1,6 +1,7 @@
 import pprint
 import re
 import requests
+from collections import OrderedDict
 
 from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory
 from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistory
@@ -264,6 +265,8 @@ class MappingsView(generics.ListAPIView):
     pagination_class = FacetPagination
     
     def get_queryset(self):
+        results = dict()
+        
         # the ENSG, ENST, UniProt accession or mapping id. If none are provided all mappings are returned
         search_term = self.request.query_params.get('searchTerm', None)
         
@@ -327,54 +330,7 @@ class MappingsView(generics.ListAPIView):
                 # Left join on the status table, find the 'newest' status only and filter out all other joined rows
                 queryset = queryset.annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).filter(status__status=status_id)
 
-        #
-        # Take the first xxx results in case of no search term, as discussed with UniProt
-        # It's done here as Django doesn't allow to filter (based on facets above ) a query once a slice has been taken.
-        #
-        if not search_term:
-            queryset_truncated = []
-            count = 0
-            for result in queryset:
-                queryset_truncated.append(result)
-                count += 1
-                if count >= 100:
-                    break
-            queryset = queryset_truncated
-
-        # group the result set
-        # results in each group share the same ENST or UniProt accession, i.e. the same grouping_id
-        queryset_groups = {}
-        for result in queryset:
-            try:
-                queryset_groups[result.grouping_id].append(result)
-            except (KeyError, AttributeError):
-                queryset_groups[result.grouping_id] = [ result ]
-
-
-        #
-        # Return the result set according to the (latest) specification, i.e.
-        # https://github.com/ebi-uniprot/gifts-mock/blob/master/data/db.json#L159
-        #
-        # NOTES (Important)
-        #
-        # Unfortunately, we have to 'evaluate' the queryset since we need assemble and serialise
-        # objects which do not come straight from the DB. This is a problem when there's no search
-        # term specified, as we're forced to iterate over gazillions of rows.
-        #
-        # I've tried making the queryset an iterator and returning a generator expression,
-        # but pagination in these cases won't work as it expects itself to be able to
-        # compute the length of the given data.
-        #
-        # return ( {'taxonomy':get_taxonomy(mapping),
-        #           'mapping':get_mapping(result, get_mapping_history(mapping)) } for mapping in queryset )
-        results = []
-        for grouping_id in queryset_groups:
-            mapping_group = queryset_groups[grouping_id]
-            results.append({ 'taxonomy':build_taxonomy_data(mapping_group[0]), # taxonomy is supposed to be same for all mappings in the group
-                              'entryMappings':list(map(lambda m: build_mapping_data(m, get_mapping_history(m), fetch_sequence=False), mapping_group))
-            })
-
-        return results
+        return queryset
 
 ###########################
 #                         #
