@@ -12,7 +12,7 @@ class CvEntryType(models.Model):
 
 class CvUeLabel(models.Model):
     id = models.BigIntegerField(primary_key=True)
-    description = models.CharField(max_length=20)
+    description = models.CharField(max_length=40)
 
     class Meta:
         managed = False
@@ -32,7 +32,7 @@ class UeMappingComment(models.Model):
     time_stamp = models.DateTimeField()
     user_stamp = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='user_stamp')
     comment = models.TextField()
-    mapping = models.ForeignKey('Mapping', models.DO_NOTHING, blank=True, null=True)
+    mapping = models.ForeignKey('Mapping', models.DO_NOTHING, related_name='comments', blank=True, null=True)
 
     class Meta:
         managed = False
@@ -43,8 +43,8 @@ class UeMappingLabel(models.Model):
     id = models.BigAutoField(primary_key=True)
     time_stamp = models.DateTimeField()
     user_stamp = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='user_stamp')
-    label = models.BigIntegerField()
-    mapping = models.ForeignKey('Mapping', models.DO_NOTHING)
+    label = models.ForeignKey('CvUeLabel', models.DO_NOTHING, db_column='label')
+    mapping = models.ForeignKey('Mapping', models.DO_NOTHING, related_name='labels', blank=True, null=True)
 
     class Meta:
         managed = False

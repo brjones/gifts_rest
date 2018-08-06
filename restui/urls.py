@@ -25,9 +25,9 @@ urlpatterns = [
     
     # path('mapping/<int:pk>/perfect/'), # is_perfect_eu_match_mapping_id
     path('mapping/<int:pk>/status/', mappings.MappingStatusView.as_view()),
-    path('mapping/<int:pk>/comments/', mappings.MappingCommentView.as_view()),
-    path('mapping/<int:pk>/labels/<label>/', mappings.DeleteMappingLabelView.as_view()),
-    path('mapping/<int:pk>/labels/', mappings.CreateMappingLabelView.as_view()),
+    path('mapping/<int:pk>/comments/', mappings.MappingCommentsView.as_view()),
+    path('mapping/<int:pk>/labels/<label_id>/', mappings.MappingLabelView.as_view()),
+    path('mapping/<int:pk>/labels/', mappings.MappingLabelsView.as_view()),
     path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),
     path('mapping/<int:pk>/', mappings.MappingView.as_view()),
     path('comments/<int:pk>/', mappings.MappingCommentsView.as_view()),

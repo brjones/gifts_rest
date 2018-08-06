@@ -80,6 +80,8 @@ class MappingsSerializer(serializers.Serializer):
             mapping_history = mapping.mapping_history.latest('mapping_history_id')
             release_mapping_history = mapping_history.release_mapping_history
             ensembl_history = mapping_history.release_mapping_history.ensembl_species_history
+            if mapping.status.latest('time_stamp'):
+                status = mapping.status.latest('time_stamp').status.description
 
             sequence = None
             if fetch_sequence:
@@ -112,7 +114,7 @@ class MappingsSerializer(serializers.Serializer):
                                 'ensgId':mapping.transcript.gene.ensg_id,
                                 'sequence':sequence
                                 },
-                           'status':mapping.status
+                           'status': status
                            }
             mapping_set['entryMappings'].append(mapping_obj)
 
@@ -140,10 +142,23 @@ class MappingsSerializer(serializers.Serializer):
         except:
             raise Http404("Couldn't find uniprot tax id as I couldn't find a uniprot entry associated to the mapping")
 
+class LabelSerializer(serializers.Serializer):
+    """
+    Serializer for an individual label
+    """
+    label = serializers.CharField()
+    id = serializers.IntegerField()
+    status = serializers.BooleanField()
 
+class MappingLabelsSerializer(serializers.Serializer):
+    """
+    For nested serialization of user label for a mapping in call to labels/<mapping_id> endpoint.
+    """
+    labels = LabelSerializer(many=True)
+    
 class CommentLabelSerializer(serializers.Serializer):
     """
-    For nested serialization of user comment or label for a mapping in call to comments/<mapping_id> endpoint.
+    For nested serialization of user comment for a mapping in call to comments/<mapping_id> endpoint.
     """
 
     text = serializers.CharField()
@@ -158,7 +173,6 @@ class MappingCommentsSerializer(serializers.Serializer):
     """
 
     mappingId = serializers.IntegerField()
-    status = serializers.CharField()
     comments = CommentLabelSerializer(many=True)
     labels = CommentLabelSerializer(many=True)
 
