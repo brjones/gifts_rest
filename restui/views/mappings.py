@@ -8,7 +8,7 @@ from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistor
 from restui.models.uniprot import UniprotEntry
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer, MappingsSerializer,\
-    MappingAlignmentsSerializer
+    MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer
 from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
 from restui.pagination import FacetPagination
 from restui.lib.external import ensembl_sequence
@@ -111,7 +111,8 @@ def build_mapping_data(mapping, mapping_history, fetch_sequence=True):
         raise Http404("Couldn't find either transcript or uniprot entry")
 
     # fetch status
-    status = mapping.status
+    if mapping.status.latest('time_stamp'):
+        status = mapping.status.latest('time_stamp').status.description
 
     #
     # fetch entry_type
@@ -201,6 +202,75 @@ class MappingView(APIView):
 
         return Response(serializer.data)
 
+class MappingLabelsView(APIView):
+    """
+    Retrieval all labels for a given mapping
+    """
+    
+    def get(self, request, pk):
+        mapping = get_mapping(pk)
+        
+        all_labels = CvUeLabel.objects.all()
+        
+        mapping_labels = mapping.labels.values_list('label', flat=True)
+        
+        label_map = []
+        
+        for label in all_labels:
+            if label.id in mapping_labels:
+                label_map.append({'label': label.description, 'id': label.id, 'status': True})
+            else:
+                label_map.append({'label': label.description, 'id': label.id, 'status': False})
+
+        data = { 'labels': label_map }
+
+        serializer = MappingLabelsSerializer(data)
+        return Response(serializer.data)
+
+class MappingLabelView(APIView):
+    """
+    Delete label a associated to the given mapping
+    """
+
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, pk, label_id):
+        mapping = get_mapping(pk)
+        
+        mapping_labels = UeMappingLabel.objects.filter(mapping=mapping,label=label_id)
+        if mapping_labels:
+            # Mapping already exists, ignore
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        try:
+            label = CvUeLabel.objects.get(pk=label_id)
+            serializer = LabelSerializer(data={ 'time_stamp': timezone.now(),
+                                                'user_stamp': request.user,
+                                                'label': label,
+                                                'mapping': mapping })
+        except KeyError:
+            raise Http404("Must provide valid label")
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, label_id):
+        mapping = get_mapping(pk)
+
+        # delete all labels with the given description attached to the mapping
+        # TODO: only those associated to the given user
+        mapping_labels = UeMappingLabel.objects.filter(mapping=mapping,label=label_id)
+        if mapping_labels:
+            mapping_labels.delete()
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        raise Http404
+
 class MappingCommentsView(APIView):
     """
     Retrieve all comments relative to a given mapping, includes mapping labels.
@@ -210,36 +280,42 @@ class MappingCommentsView(APIView):
     def get(self, request, pk):
         mapping = get_mapping(pk)
 
-        try:
-            ensembl_transcript = mapping.transcript
-        except ObjectDoesNotExist:
-            raise Http404("Couldn't find transcript entry associated to mapping {}".format(mapping.mapping_id))
-
-        # fetch latest mapping status
-        status = mapping.status
-
         # fetch mapping comment history
-        mapping_comments = UeMappingComment.objects.filter(mapping=mapping).order_by('-time_stamp')
-        comments = map(lambda c: { 'text':c.comment, 'timeAdded':c.time_stamp, 'user':c.user_stamp }, mapping_comments)
+        mapping_comments = mapping.comments.order_by('-time_stamp')
+        comments = map(lambda c: { 'text':c.comment, 'timeAdded':c.time_stamp, 'user':c.user_stamp.full_name }, mapping_comments)
 
         # fetch mapping label history
-        mapping_labels = UeMappingLabel.objects.filter(mapping=mapping).order_by('-time_stamp')
-        try:
-            labels = map(lambda l: { 'text':CvUeLabel.objects.get(pk=l.label).description, 'timeAdded':l.time_stamp, 'user':l.user_stamp }, mapping_labels)
-        except CvUeLabel.DoesNotExist:
-            raise Http404("Couldn't fetch label")
+#         mapping_labels = UeMappingLabel.objects.filter(mapping=mapping).order_by('-time_stamp')
+#         try:
+#             labels = map(lambda l: { 'text':CvUeLabel.objects.get(pk=l.label).description, 'timeAdded':l.time_stamp, 'user':l.user_stamp }, mapping_labels)
+#         except CvUeLabel.DoesNotExist:
+#             raise Http404("Couldn't fetch label")
 
-        data = { 'mappingId':mapping.mapping_id,
-                 'status':status,
-                 'comments':list(comments),
-                 'labels':list(labels)
+        data = {  'mappingId': pk,
+                  'comments':list(comments),
+                  'labels': []
         }
 
         serializer = MappingCommentsSerializer(data)
         return Response(serializer.data)
 
+    def post(self, request, pk):
+        mapping = get_mapping(pk)
 
-#
+        try:
+            serializer = CommentSerializer(data={ 'time_stamp':timezone.now(),
+                                                  'user_stamp':request.user,
+                                                  'comment':request.data['text'],
+                                                  'mapping':mapping.mapping_id })
+        except KeyError:
+            raise Http404("Must provide comment")
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 # TODO
 #
 # - Filter based on other facets, besides organism/status
