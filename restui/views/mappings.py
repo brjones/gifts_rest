@@ -83,88 +83,6 @@ def build_taxonomy_data(mapping):
     except:
         raise Http404("Couldn't find uniprot tax id as I couldn't find a uniprot entry associated to the mapping")
 
-def build_mapping_data(mapping, mapping_history, fetch_sequence=True):
-    #
-    # get ensembl/uniprot release
-    #
-    # to get ensembl release, we need the ensembl species history associated to the mapping_history
-    #
-    try:
-        ensembl_species_history = EnsemblSpeciesHistory.objects.get(releasemappinghistory__mappinghistory=mapping_history)
-    except EnsemblSpeciesHistory.DoesNotExist:
-        raise Http404("Could't fetch ensembl species history from mapping history {}".format(mapping_history.mapping_history_id))
-    except MultipleObjectsReturned:
-        raise Http404("Shouldn't be here")
-
-    # uniprot release is an attribute of the associated release mapping history
-    try:
-        release_mapping_history = ReleaseMappingHistory.objects.get(mappinghistory=mapping_history)
-    except ReleaseMappingHistory.DoesNotExist:
-        raise Http404("Couldn't fetch ReleaseMappingHistory from mapping history {}".format(mapping_history.mapping_history_id))
-    
-    ensembl_release, uniprot_release = ensembl_species_history.ensembl_release, release_mapping_history.uniprot_release
-
-    try:
-        ensembl_transcript = mapping.transcript
-        uniprot_entry = mapping.uniprot
-    except ObjectDoesNotExist:
-        raise Http404("Couldn't find either transcript or uniprot entry")
-
-    # fetch status
-    if mapping.status.latest('time_stamp'):
-        status = mapping.status.latest('time_stamp').status.description
-
-    #
-    # fetch entry_type
-    #
-    # NOTE
-    #  Specs at https://github.com/ebi-uniprot/gifts-mock/blob/master/data/mapping.json
-    #  prescribe to report isoform as boolean flag separate from entry_type.
-    #  Here we don't do that, as isoform is an entry type, e.g. Swiss-Prot isoform, so isoform
-    #  status is implicitly reported by entryType.
-    #
-    #
-    try:
-        entry_type = mapping_history.entry_type.description
-    except CvEntryType.DoesNotExist:
-        raise Http404
-
-    #
-    # fetch transcript sequence from TaRK
-    #
-    sequence = None
-    if fetch_sequence:
-        try:
-            sequence = ensembl_sequence(ensembl_transcript.enst_id, ensembl_release)
-        except Exception as e:
-            print(e) # TODO: log
-            sequence = None
-
-    return { 'mappingId':mapping.mapping_id,
-             'timeMapped':release_mapping_history.time_mapped,
-             'ensemblRelease':ensembl_release,
-             'uniprotRelease':uniprot_release,
-             'uniprotEntry': {
-                 'uniprotAccession':uniprot_entry.uniprot_acc,
-                 'entryType':entry_type, 
-                 'sequenceVersion':uniprot_entry.sequence_version,
-                 'upi':uniprot_entry.upi,
-                 'md5':uniprot_entry.md5,
-                 'ensemblDerived':uniprot_entry.ensembl_derived,
-             },
-             'ensemblTranscript': {
-                 'enstId':ensembl_transcript.enst_id,
-                 'enstVersion':ensembl_transcript.enst_version,
-                 'upi':ensembl_transcript.uniparc_accession,
-                 'biotype':ensembl_transcript.biotype,
-                 'deleted':ensembl_transcript.deleted,
-                 'seqRegionStart':ensembl_transcript.seq_region_start,
-                 'seqRegionEnd':ensembl_transcript.seq_region_end,
-                 'ensgId':EnsemblGene.objects.get(ensembltranscript=ensembl_transcript).ensg_id,
-                 'sequence':sequence
-             },
-             'status':status
-    }
 
 def build_related_mappings_data(mapping):
     """
@@ -175,7 +93,7 @@ def build_related_mappings_data(mapping):
     mappings = Mapping.objects.filter(grouping_id=mapping.grouping_id,
                                       uniprot__uniprot_tax_id=mapping.uniprot.uniprot_tax_id).exclude(pk=mapping.mapping_id)
 
-    return list(map(lambda m: build_mapping_data(m, get_mapping_history(m), fetch_sequence=False), mappings))
+    return list(map(lambda m: MappingsSerializer.build_mapping(m, fetch_sequence=False), mappings))
 
 
 ##########################
@@ -192,11 +110,10 @@ class MappingView(APIView):
 
     def get(self, request, pk):
         mapping = get_mapping(pk)
-        mapping_history = get_mapping_history(mapping)
 
-        data = { 'taxonomy':build_taxonomy_data(mapping),
-                 'mapping':build_mapping_data(mapping, mapping_history),
-                 'relatedMappings':build_related_mappings_data(mapping) }
+        data = { 'taxonomy': build_taxonomy_data(mapping),
+                 'mapping': MappingsSerializer.build_mapping(mapping, fetch_sequence=True),
+                 'relatedMappings': build_related_mappings_data(mapping) }
         
         serializer = MappingSerializer(data)
 
@@ -568,8 +485,10 @@ class MappingPairwiseAlignment(APIView):
 
     def get(self, request, pk):
         try:
-            alignments = fetch_pairwise(pk)
-        except:
+            mapping = Mapping.objects.prefetch_related('alignments').select_related('transcript').select_related('uniprot').get(pk=pk)
+            alignments = fetch_pairwise(mapping)
+        except Exception as e:
+            pprint.pprint(e)
             raise Http404
          
         serializer = MappingAlignmentsSerializer(alignments)

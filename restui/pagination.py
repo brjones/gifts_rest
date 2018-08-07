@@ -43,7 +43,7 @@ class FacetPagination(LimitOffsetPagination):
         mapping_groups = []
         self.facets = self.create_facets(queryset)
         for _, group in queryset.grouped_slice(self.offset, self.limit).items():
-            mapping_groups.append(MappingsSerializer.build_mapping(group))
+            mapping_groups.append(MappingsSerializer.build_mapping_group(group))
         
         return mapping_groups
     
