@@ -42,6 +42,7 @@ class EnsemblUniprotMappingSerializer(serializers.Serializer):
     ensemblRelease = serializers.CharField()
     uniprotEntry = UniprotEntryMappingSerializer()
     ensemblTranscript = EnsemblTranscriptMappingSerializer()
+    alignment_difference = serializers.IntegerField()
     status = serializers.CharField()
 
 class MappingSerializer(serializers.Serializer):
@@ -63,9 +64,56 @@ class MappingsSerializer(serializers.Serializer):
 
     taxonomy = TaxonomySerializer()
     entryMappings = EnsemblUniprotMappingSerializer(many=True)
-        
+
     @classmethod
-    def build_mapping(cls, mappings_group, fetch_sequence=False):
+    def build_mapping(cls, mapping, fetch_sequence=False):        
+        mapping_history = mapping.mapping_history.latest('mapping_history_id')
+        release_mapping_history = mapping_history.release_mapping_history
+        ensembl_history = mapping_history.release_mapping_history.ensembl_species_history
+        alignment_difference = mapping.difference
+        
+        if mapping.status.latest('time_stamp'):
+            status = mapping.status.latest('time_stamp').status.description
+
+        sequence = None
+        if fetch_sequence:
+            try:
+                sequence = ensembl_sequence(mapping.transcript.enst_id, ensembl_history.ensembl_release)
+            except Exception as e:
+                print(e) # TODO: log
+                sequence = None
+        
+        mapping_obj = { 'mappingId':mapping.mapping_id,
+                        'timeMapped':release_mapping_history.time_mapped,
+                        'ensemblRelease':ensembl_history.ensembl_release,
+                        'uniprotRelease':release_mapping_history.uniprot_release,
+                        'uniprotEntry': {
+                            'uniprotAccession':mapping.uniprot.uniprot_acc,
+                            'entryType':mapping_history.entry_type.description, 
+                            'sequenceVersion':mapping.uniprot.sequence_version,
+                            'upi':mapping.uniprot.upi,
+                            'md5':mapping.uniprot.md5,
+                            'ensemblDerived':mapping.uniprot.ensembl_derived,
+                            },
+                        'ensemblTranscript': {
+                            'enstId':mapping.transcript.enst_id,
+                            'enstVersion':mapping.transcript.enst_version,
+                            'upi':mapping.transcript.uniparc_accession,
+                            'biotype':mapping.transcript.biotype,
+                            'deleted':mapping.transcript.deleted,
+                            'seqRegionStart':mapping.transcript.seq_region_start,
+                            'seqRegionEnd':mapping.transcript.seq_region_end,
+                            'ensgId':mapping.transcript.gene.ensg_id,
+                            'sequence':sequence
+                            },
+                       'alignment_difference': alignment_difference,
+                       'status': status
+                       }
+
+        return mapping_obj
+
+    @classmethod
+    def build_mapping_group(cls, mappings_group, fetch_sequence=False):
         mapping_set = dict() 
         try:
             mapping_set['taxonomy'] = cls.build_taxonomy_data(mappings_group[0])
@@ -77,46 +125,7 @@ class MappingsSerializer(serializers.Serializer):
         mapping_set['entryMappings'] = []
         
         for mapping in mappings_group:
-            mapping_history = mapping.mapping_history.latest('mapping_history_id')
-            release_mapping_history = mapping_history.release_mapping_history
-            ensembl_history = mapping_history.release_mapping_history.ensembl_species_history
-            if mapping.status.latest('time_stamp'):
-                status = mapping.status.latest('time_stamp').status.description
-
-            sequence = None
-            if fetch_sequence:
-                try:
-                    sequence = ensembl_sequence(mapping.transcript.enst_id, ensembl_history.ensembl_release)
-                except Exception as e:
-                    print(e) # TODO: log
-                    sequence = None
-            
-            mapping_obj = { 'mappingId':mapping.mapping_id,
-                            'timeMapped':release_mapping_history.time_mapped,
-                            'ensemblRelease':ensembl_history.ensembl_release,
-                            'uniprotRelease':release_mapping_history.uniprot_release,
-                            'uniprotEntry': {
-                                'uniprotAccession':mapping.uniprot.uniprot_acc,
-                                'entryType':mapping_history.entry_type.description, 
-                                'sequenceVersion':mapping.uniprot.sequence_version,
-                                'upi':mapping.uniprot.upi,
-                                'md5':mapping.uniprot.md5,
-                                'ensemblDerived':mapping.uniprot.ensembl_derived,
-                                },
-                            'ensemblTranscript': {
-                                'enstId':mapping.transcript.enst_id,
-                                'enstVersion':mapping.transcript.enst_version,
-                                'upi':mapping.transcript.uniparc_accession,
-                                'biotype':mapping.transcript.biotype,
-                                'deleted':mapping.transcript.deleted,
-                                'seqRegionStart':mapping.transcript.seq_region_start,
-                                'seqRegionEnd':mapping.transcript.seq_region_end,
-                                'ensgId':mapping.transcript.gene.ensg_id,
-                                'sequence':sequence
-                                },
-                           'status': status
-                           }
-            mapping_set['entryMappings'].append(mapping_obj)
+            mapping_set['entryMappings'].append(cls.build_mapping(mapping, fetch_sequence=fetch_sequence))
 
         return mapping_set
     
@@ -184,6 +193,7 @@ class MappingPairwiseAlignmentSerializer(serializers.Serializer):
     ensembl_alignment = serializers.CharField()
     match_str = serializers.CharField()
     alignment_id = serializers.IntegerField()
+    alignment_type = serializers.CharField()
     ensembl_release = serializers.IntegerField()
     ensembl_id = serializers.CharField()
     uniprot_id = serializers.CharField()

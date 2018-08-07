@@ -1,6 +1,8 @@
 from django.db import models
 from django.db.models import Count
 
+from restui.lib.alignments import calculate_difference
+
 class Alignment(models.Model):
     alignment_id = models.BigAutoField(primary_key=True)
     alignment_run = models.ForeignKey('AlignmentRun', models.DO_NOTHING)
@@ -130,6 +132,22 @@ class Mapping(models.Model):
     uniprot = models.ForeignKey('UniprotEntry', models.DO_NOTHING, blank=True, null=True)
     transcript = models.ForeignKey('EnsemblTranscript', models.DO_NOTHING, blank=True, null=True)
     grouping_id = models.BigIntegerField(blank=True, null=True)
+
+    @property
+    def difference(self):
+        diff_count = None
+        
+        for alignment in self.alignments.all():
+            if alignment.alignment_run.score1_type == 'perfect_match' and alignment.score1 == 100:
+                return 0;
+            
+            elif alignment.alignment_run.score1_type == 'identity':
+                diff_count = calculate_difference(alignment.pairwise.cigarplus)
+                
+        if diff_count:
+            return diff_count
+        
+        return None
 
     def __str__(self):
         return "{0} - ({1}, {2})".format(self.mapping_id, self.uniprot, self.transcript)
