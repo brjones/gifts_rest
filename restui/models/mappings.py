@@ -138,7 +138,7 @@ class Mapping(models.Model):
         diff_count = None
         
         for alignment in self.alignments.all():
-            if alignment.alignment_run.score1_type == 'perfect_match' and alignment.score1 == 100:
+            if alignment.alignment_run.score1_type == 'perfect_match' and alignment.score1 == 1:
                 return 0;
             
             elif alignment.alignment_run.score1_type == 'identity':

@@ -34,7 +34,7 @@ def fetch_pairwise(mapping):
             # Break out of the loop, we're done
             break
 
-        elif alignment.alignment_run.score1_type == 'perfect_match' and alignment.score1 == 100:
+        elif alignment.alignment_run.score1_type == 'perfect_match' and alignment.score1 == 1:
             ens_release = alignment.alignment_run.ensembl_release
             
             seq = ensembl_sequence(enst, ens_release)
