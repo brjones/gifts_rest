@@ -25,9 +25,12 @@ class FacetPagination(LimitOffsetPagination):
             statuses["items"].append({ "name":status, "label":status.replace("_"," ").capitalize() })
 
         differences = queryset.divergences()
-        sequence["items"].append({ "label": "identical", "name": "identical", "count": differences[0] })
-        sequence["items"].append({ "label": "small", "name": "small", "count": differences[1] })
-        sequence["items"].append({ "label": "large", "name": "large", "count": differences[2] })
+        if differences[0]:
+            sequence["items"].append({ "label": "identical", "name": "identical", "count": differences[0] })
+        if differences[1]:
+            sequence["items"].append({ "label": "small", "name": "small", "count": differences[1] })
+        if differences[2]:
+            sequence["items"].append({ "label": "large", "name": "large", "count": differences[2] })
             
         return [ statuses, organism, sequence, mappings ]
 

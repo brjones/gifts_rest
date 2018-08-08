@@ -8,7 +8,8 @@ from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistor
 from restui.models.uniprot import UniprotEntry
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer, MappingsSerializer,\
-    MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer
+    MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer,\
+    MappingStatsSerializer
 from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
 from restui.pagination import FacetPagination
 from restui.lib.external import ensembl_sequence
@@ -17,7 +18,7 @@ from restui.lib.alignments import fetch_pairwise
 from django.http import Http404
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from django.db.models import Max, F
+from django.db.models import Max, F, Count
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -146,7 +147,7 @@ class MappingLabelsView(APIView):
 
 class MappingLabelView(APIView):
     """
-    Delete label a associated to the given mapping
+    Add or delete label a associated to the given mapping
     """
 
     permission_classes = (IsAuthenticated,)
@@ -503,3 +504,31 @@ class MappingPairwiseAlignment(APIView):
         serializer = MappingAlignmentsSerializer(alignments)
          
         return Response(serializer.data)
+
+class MappingStatsView(APIView):
+    """
+    Return stats on all the mappings
+    """
+    def get(self, request):
+        mappings_count = Mapping.objects.count()
+    
+        all_labels = CvUeLabel.objects.all()
+        
+        label_counts = []
+        
+        for label in all_labels:
+            count = UeMappingLabel.objects.filter(label=label).count()
+            label_counts.append({'label': label.description, 'count': count})
+        
+        status_counts = []
+        statuses = Mapping.objects.annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).values('status__status__description').annotate(total=Count('status__status__description')).order_by('total')
+        for status in statuses:
+            status_counts.append({'status': status['status__status__description'], 'count': status['total']})
+    
+        serializer = MappingStatsSerializer({'totalMappingCount' : mappings_count,
+                                             'statusMappingCount': status_counts,
+                                             'labelMappingCount': label_counts
+                                             })
+
+        return Response(serializer.data)
+    

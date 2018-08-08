@@ -203,3 +203,25 @@ class MappingAlignmentsSerializer(serializers.Serializer):
     """
     mapping_id = serializers.IntegerField()
     alignments = MappingPairwiseAlignmentSerializer(many=True)
+
+class StatusCountSerializer(serializers.Serializer):
+    """
+    Serializer for an individual status' count
+    """
+    status = serializers.CharField()
+    count = serializers.IntegerField()
+
+class LabelCountSerializer(serializers.Serializer):
+    """
+    Serializer for an individual label's count
+    """
+    label = serializers.CharField()
+    count = serializers.IntegerField()
+
+class MappingStatsSerializer(serializers.Serializer):
+    """
+    Serializer for the /stats/ endpoint
+    """
+    totalMappingCount = serializers.IntegerField()
+    statusMappingCount = StatusCountSerializer(many=True)
+    labelMappingCount = LabelCountSerializer(many=True)
