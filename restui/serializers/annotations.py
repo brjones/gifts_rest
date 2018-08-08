@@ -73,8 +73,8 @@ class LabelSerializer(serializers.ModelSerializer):
         instance.label = validated_data.get('label', instance.label)
         instance.mapping = validated_data.get('mapping', instance.mapping)
 
-        instance.save()
-        return instance
+#        instance.save()
+#        return instance
 
     class Meta:
         model = UeMappingLabel
