@@ -84,8 +84,8 @@ class MappingQuerySet(models.query.QuerySet):
 
         print(qs_offset)
         print(qs_limit)
-        
-        sub_qs = self.order_by('grouping_id')[qs_offset:qs_offset+qs_limit]
+
+        sub_qs = self.select_related('uniprot').select_related('transcript').select_related('transcript__gene').order_by('grouping_id')[qs_offset:qs_offset+qs_limit]
         
         grouped_results = {}
         for result in sub_qs:
@@ -100,11 +100,11 @@ class MappingQuerySet(models.query.QuerySet):
         """
         Return a list of all the statuses represented in this queryset
         """
-        status_set = self.values('status__status__description').distinct()
+        status_set = self.values('status__status_id').distinct()
         
         status_list = []
         for status in status_set:
-            status_list.append(status['status__status__description'])
+            status_list.append(status['status__status_id'])
             
         return status_list
 
@@ -112,6 +112,7 @@ class MappingQuerySet(models.query.QuerySet):
         """
         Return a list of tuples, of all the tax_id and species in this queryset
         """
+#        species_set = self.values('transcript__history__ensembl_species_history__ensembl_tax_id', 'transcript__transcripthistory__ensembl_species_history__species').distinct()
         species_set = self.values('transcript__transcripthistory__ensembl_species_history__ensembl_tax_id', 'transcript__transcripthistory__ensembl_species_history__species').distinct()
 
         species_list = []

@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.http import Http404
 
 from restui.lib.external import ensembl_sequence
+from restui.models.annotations import CvEntryType, CvUeStatus
 
 class TaxonomySerializer(serializers.Serializer):
     """
@@ -65,14 +66,40 @@ class MappingsSerializer(serializers.Serializer):
     taxonomy = TaxonomySerializer()
     entryMappings = EnsemblUniprotMappingSerializer(many=True)
 
+    '''
+    The goal of these two functions is to reduce the number of database calls. Rather
+    than a lookup per mapping record, we'll cache these constants for the life of
+    the request in the serializer class.
+    '''
+    _entry_type = None
+    _status_type = None
+    @classmethod
+    def entry_type(cls, id):
+        if not cls._entry_type:
+            entries = {}
+            for entry in CvEntryType.objects.all():
+                entries[entry.id] = entry.description 
+            cls._entry_type = entries
+            
+        return cls._entry_type[id]
+
+    @classmethod
+    def status_type(cls, id):
+        if not cls._status_type:
+            statuses = {}
+            for status in CvUeStatus.objects.all():
+                statuses[status.id] = status.description 
+            cls._status_type = statuses
+            
+        return cls._status_type[id]
+
     @classmethod
     def build_mapping(cls, mapping, fetch_sequence=False):        
-        mapping_history = mapping.mapping_history.latest('mapping_history_id')
+        mapping_history = mapping.mapping_history.select_related('release_mapping_history').select_related('release_mapping_history__ensembl_species_history').latest('mapping_history_id')
         release_mapping_history = mapping_history.release_mapping_history
         ensembl_history = mapping_history.release_mapping_history.ensembl_species_history
         
-        if mapping.status.latest('time_stamp'):
-            status = mapping.status.latest('time_stamp').status.description
+        status = mapping.status.latest('time_stamp').status_id#.description
 
         sequence = None
         if fetch_sequence:
@@ -88,7 +115,7 @@ class MappingsSerializer(serializers.Serializer):
                         'uniprotRelease':release_mapping_history.uniprot_release,
                         'uniprotEntry': {
                             'uniprotAccession':mapping.uniprot.uniprot_acc,
-                            'entryType':mapping_history.entry_type.description, 
+                            'entryType':cls.entry_type(mapping_history.entry_type_id), 
                             'sequenceVersion':mapping.uniprot.sequence_version,
                             'upi':mapping.uniprot.upi,
                             'md5':mapping.uniprot.md5,
@@ -106,7 +133,7 @@ class MappingsSerializer(serializers.Serializer):
                             'sequence':sequence
                             },
                        'alignment_difference': mapping.alignment_difference,
-                       'status': status
+                       'status': cls.status_type(status)
                        }
 
         return mapping_obj
@@ -135,7 +162,7 @@ class MappingsSerializer(serializers.Serializer):
         # Relationship between transcript and history is many to many but we just fetch one history
         # as the tax id remains the same across all of them
         try:
-            ensembl_history = mapping.mapping_history.latest('mapping_history_id').release_mapping_history.ensembl_species_history
+            ensembl_history = mapping.mapping_history.select_related('release_mapping_history').select_related('release_mapping_history__ensembl_species_history').latest('mapping_history_id').release_mapping_history.ensembl_species_history
 #            ensembl_history = mapping.transcript.history.latest('ensembl_release')
             uniprot_tax_id = mapping.uniprot.uniprot_tax_id
         except Exception as e:
