@@ -165,8 +165,8 @@ class MappingLabelView(APIView):
             label = CvUeLabel.objects.get(pk=label_id)
             serializer = LabelSerializer(data={ 'time_stamp': timezone.now(),
                                                 'user_stamp': request.user,
-                                                'label': label,
-                                                'mapping': mapping })
+                                                'label': label_id,
+                                                'mapping': pk })
         except KeyError:
             raise Http404("Must provide valid label")
         
