@@ -34,6 +34,8 @@ urlpatterns = [
 #    path('labels/', mappings.LabelsView.as_view()),                                      # retrieve list of possible labels (GET)
     path('mappings/', mappings.MappingsView.as_view()),                                  # search the mappings (GET)
 
+    path('mappings/stats/', mappings.MappingStatsView.as_view()),
+
     # path('mappings/release_mapping_history/latest/assembly/<accession>'), # retrieve the mappings for the latest (by ensembl species history time loaded) release_mapping_history by assembly accession (GET)
     # path('mappings/release_mapping_history/<int:pk>/'), # get_info_from_perfect_match_alignment_run
 ]
