@@ -70,7 +70,6 @@ class MappingsSerializer(serializers.Serializer):
         mapping_history = mapping.mapping_history.latest('mapping_history_id')
         release_mapping_history = mapping_history.release_mapping_history
         ensembl_history = mapping_history.release_mapping_history.ensembl_species_history
-        alignment_difference = mapping.difference
         
         if mapping.status.latest('time_stamp'):
             status = mapping.status.latest('time_stamp').status.description
@@ -106,7 +105,7 @@ class MappingsSerializer(serializers.Serializer):
                             'ensgId':mapping.transcript.gene.ensg_id,
                             'sequence':sequence
                             },
-                       'alignment_difference': alignment_difference,
+                       'alignment_difference': mapping.alignment_difference,
                        'status': status
                        }
 

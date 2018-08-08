@@ -12,9 +12,9 @@ class FacetPagination(LimitOffsetPagination):
     def create_facets(self, queryset):
         statuses = OrderedDict([('name','status'),('label','Status'),('items',[])])
         organism = OrderedDict([('name','organism'),('label','Organism'),('items',[])])
+        sequence = OrderedDict([('name','sequence'),('label','Sequence'),('items',[])])
         #######
         # TODO
-        sequence = OrderedDict([('name','sequence'),('label','Sequence'),('items',[])])
         mappings = OrderedDict([('name','mappings'),('label','Type'),('items',[])])
         #######
 
@@ -23,6 +23,11 @@ class FacetPagination(LimitOffsetPagination):
     
         for status in queryset.statuses():
             statuses["items"].append({ "name":status, "label":status.replace("_"," ").capitalize() })
+
+        differences = queryset.divergences()
+        sequence["items"].append({ "label": "identical", "name": "identical", "count": differences[0] })
+        sequence["items"].append({ "label": "small", "name": "small", "count": differences[1] })
+        sequence["items"].append({ "label": "large", "name": "large", "count": differences[2] })
             
         return [ statuses, organism, sequence, mappings ]
 
