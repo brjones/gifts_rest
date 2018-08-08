@@ -121,6 +121,16 @@ class MappingQuerySet(models.query.QuerySet):
 
         return species_list
 
+    def divergences(self):
+        """
+        Return a list of all the alignment differences levels represented in the queryset 
+        """
+        identical = self.filter(alignment_difference=0).count()
+        small = self.filter(alignment_difference__gt=0, alignment_difference__lte=5).count()
+        large = self.filter(alignment_difference__gt=5).count()
+        
+        return [identical, small, large]
+
 class MappingManager(models.Manager):
     def get_queryset(self):
         return MappingQuerySet(self.model, using=self._db)
@@ -132,6 +142,7 @@ class Mapping(models.Model):
     uniprot = models.ForeignKey('UniprotEntry', models.DO_NOTHING, blank=True, null=True)
     transcript = models.ForeignKey('EnsemblTranscript', models.DO_NOTHING, blank=True, null=True)
     grouping_id = models.BigIntegerField(blank=True, null=True)
+    alignment_difference = models.IntegerField(blank=True, null=True)
 
     @property
     def difference(self):

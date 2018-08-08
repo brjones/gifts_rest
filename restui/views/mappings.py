@@ -307,6 +307,15 @@ class MappingsView(generics.ListAPIView):
             if 'organism' in facets:
                 queryset = queryset.filter(transcript__transcripthistory__ensembl_species_history__ensembl_tax_id=facets['organism'])
 
+            # Filter on how large a difference between the pairwise aligned protein sequences, if there is an alignment
+            if 'sequence' in facets:
+                if facets['sequence'] == 'identical':
+                    queryset = queryset.filter(alignment_difference=0)
+                elif facets['sequence'] == 'small':
+                    queryset = queryset.filter(alignment_difference__gt=0, alignment_difference__lte=5)
+                elif facets['sequence'] == 'large':
+                    queryset = queryset.filter(alignment_difference__gt=5)
+
             # filter queryset based on status
             # NOTE: cannot directly filter by following relationships,
             #       have to fetch latest status associated to each mapping
