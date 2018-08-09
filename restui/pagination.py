@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 
 from restui.serializers.mappings import MappingsSerializer
+from rest_framework import status
 #
 # TODO
 #
@@ -57,6 +58,9 @@ class FacetPagination(LimitOffsetPagination):
     
     def get_paginated_response(self, data):
         
+        if not data:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+                
         return Response(OrderedDict([
             ('count', self.count),
             ('next', self.get_next_link()),
