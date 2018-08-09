@@ -91,7 +91,7 @@ def build_related_mappings_data(mapping):
     """
 
     # related mapping share the same group_id and tax id
-    mappings = Mapping.objects.filter(grouping_id=mapping.grouping_id,
+    mappings = Mapping.objects.filter(unique_grouping_id=mapping.unique_grouping_id,
                                       uniprot__uniprot_tax_id=mapping.uniprot.uniprot_tax_id).exclude(pk=mapping.mapping_id)
 
     return list(map(lambda m: MappingsSerializer.build_mapping(m, fetch_sequence=False), mappings))

@@ -44,19 +44,19 @@ class MappingQuerySet(models.query.QuerySet):
 
     def grouped_counts(self):
         """
-        Retrieve a list of grouping_id counts from a queryset.
+        Retrieve a list of unique_grouping_id counts from a queryset.
         eg
-        [{'grouping_id': 1, 'total': 19}, {'grouping_id': 2, 'total': 6}, {'grouping_id': 3, 'total': 4},...]
+        [{'unique_grouping_id': 1, 'total': 19}, {'unique_grouping_id': 2, 'total': 6}, {'unique_grouping_id': 3, 'total': 4},...]
         """
         if self._counts is None:
-            self._counts = self.values('grouping_id').annotate(total=Count('grouping_id')).order_by('grouping_id')
+            self._counts = self.values('unique_grouping_id').annotate(total=Count('unique_grouping_id')).order_by('unique_grouping_id')
 
         return self._counts
 
     @property
     def grouped_count(self):
         """
-        Retrieve the total number of groups basedo n grouping_id from a queryset
+        Retrieve the total number of groups based on unique_grouping_id from a queryset
         """
         counts = self.grouped_counts()
         
@@ -64,14 +64,14 @@ class MappingQuerySet(models.query.QuerySet):
 
     def grouped_slice(self, offset, limit):
         """
-        Fetch a subset of Mapping records grouped by grouping_id.
+        Fetch a subset of Mapping records grouped by unique_grouping_id.
         We first find how many records in to the queryset, counting by
-        grouping_id intervals. Then find the number of records to extract
+        unique_grouping_id intervals. Then find the number of records to extract
         to scoop up limit number of groups.
         
         Finally return the groups all nicely packaged up in a dict of lists,
-        where the dict key is the grouping_id and the value is a list of
-        Mapping objects associated with that grouping_id
+        where the dict key is the unique_grouping_id and the value is a list of
+        Mapping objects associated with that unique_grouping_id
         """
         counts = self.grouped_counts()
         
@@ -85,14 +85,14 @@ class MappingQuerySet(models.query.QuerySet):
         print(qs_offset)
         print(qs_limit)
 
-        sub_qs = self.select_related('uniprot').select_related('transcript').select_related('transcript__gene').order_by('grouping_id')[qs_offset:qs_offset+qs_limit]
+        sub_qs = self.select_related('uniprot').select_related('transcript').select_related('transcript__gene').order_by('unique_grouping_id')[qs_offset:qs_offset+qs_limit]
         
         grouped_results = {}
         for result in sub_qs:
             try:
-                grouped_results[result.grouping_id].append(result)
+                grouped_results[result.unique_grouping_id].append(result)
             except (KeyError, AttributeError):
-                grouped_results[result.grouping_id] = [ result ]
+                grouped_results[result.unique_grouping_id] = [ result ]
 
         return grouped_results
 
@@ -143,6 +143,7 @@ class Mapping(models.Model):
     uniprot = models.ForeignKey('UniprotEntry', models.DO_NOTHING, blank=True, null=True)
     transcript = models.ForeignKey('EnsemblTranscript', models.DO_NOTHING, blank=True, null=True)
     grouping_id = models.BigIntegerField(blank=True, null=True)
+    unique_grouping_id = models.BigIntegerField(blank=True, null=True)
     alignment_difference = models.IntegerField(blank=True, null=True)
 
     @property
