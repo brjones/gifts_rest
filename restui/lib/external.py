@@ -45,10 +45,10 @@ def ensembl_protein(enst_id, release):
     e_current_release = ensembl_current_release()
     server = ENSEMBL_REST_SERVER if release == e_current_release else "http://e{}.rest.ensembl.org".format(release)
 
-    r = requests.get("{}/lookup/id/{}?content-type=application/json".format(server, enst_id))
+    r = requests.get("{}/lookup/id/{}?expand=1&content-type=application/json".format(server, enst_id))
     if not r.ok:
         r.raise_for_status()
 
-    ensembl_json = r.json
+    ensembl_json = r.json()
 
     return ensembl_json['Translation']['id']
