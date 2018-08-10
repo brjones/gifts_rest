@@ -19,7 +19,6 @@ def fetch_pairwise(mapping):
             ens_release = alignment.alignment_run.ensembl_release
 
             ensp = ensembl_protein(mapping.transcript.enst_id, ens_release)
-            
             seq = ensembl_sequence(ensp, ens_release)
             
             uniprot_seq, match_str, ensembl_seq = pairwise_alignment(seq, cigarplus, mdz)
