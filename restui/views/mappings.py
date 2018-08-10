@@ -18,7 +18,7 @@ from restui.lib.alignments import fetch_pairwise
 from django.http import Http404
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from django.db.models import Max, F, Count
+from django.db.models import Max, F, Q, Count
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -331,6 +331,7 @@ class MappingsView(generics.ListAPIView):
                     #return Response(status=status.HTTP_400_BAD_REQUEST)
 
                 # Left join on the status table, find the 'newest' status only and filter out all other joined rows
+#                queryset = queryset.annotate(this_status=F('status__status_id')).annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).filter(this_status=status_id)
                 queryset = queryset.annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).filter(status__status=status_id)
 
         return queryset
@@ -367,6 +368,9 @@ class MappingStatusView(APIView):
             raise Http404("Couldn't get status object for {}".format(request.data['status']))
         except MultipleObjectsReturned:
             raise Http404("Couldn't get unique status for {}".format(request.data['status']))
+
+        for old_status in UeMappingStatus.objects.filter(mapping=mapping).filter(~Q(status=s.id)):
+            old_status.delete()
 
         # If the mapping has already been assigned that status, update the timestamp,
         # otherwise create one from scratch
