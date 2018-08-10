@@ -521,9 +521,11 @@ class MappingStatsView(APIView):
             label_counts.append({'label': label.description, 'count': count})
         
         status_counts = []
-        statuses = Mapping.objects.annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).values('status__status__description').annotate(total=Count('status__status__description')).order_by('total')
-        for status in statuses:
-            status_counts.append({'status': status['status__status__description'], 'count': status['total']})
+        for status in CvUeStatus.objects.all():
+            status_count = Mapping.objects.filter(status__status_id=status.id).annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).order_by('status__status_id').values('status__status_id').aggregate(total=Count('status__status_id'))
+
+            if status_count:
+                status_counts.append({'status': status.description, 'count': status_count['total']})
     
         serializer = MappingStatsSerializer({'totalMappingCount' : mappings_count,
                                              'statusMappingCount': status_counts,
