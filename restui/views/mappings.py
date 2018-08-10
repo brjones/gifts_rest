@@ -369,13 +369,14 @@ class MappingStatusView(APIView):
         except MultipleObjectsReturned:
             raise Http404("Couldn't get unique status for {}".format(request.data['status']))
 
-        for old_status in UeMappingStatus.objects.filter(mapping=mapping).filter(~Q(status=s.id)):
-            old_status.delete()
+#        for old_status in UeMappingStatus.objects.filter(mapping=mapping).filter(~Q(status=s.id)):
+#            old_status.delete()
 
         # If the mapping has already been assigned that status, update the timestamp,
         # otherwise create one from scratch
         try:
-            mapping_status = UeMappingStatus.objects.get(mapping=mapping, status=s.id)
+#            mapping_status = UeMappingStatus.objects.get(mapping=mapping, status=s.id)
+            mapping_status = UeMappingStatus.objects.get(mapping=mapping)
         except UeMappingStatus.DoesNotExist:
             # create new mapping status
             serializer = StatusSerializer(data={ 'time_stamp':timezone.now(),
