@@ -331,7 +331,7 @@ class MappingsView(generics.ListAPIView):
                     #return Response(status=status.HTTP_400_BAD_REQUEST)
 
                 # Left join on the status table, find the 'newest' status only and filter out all other joined rows
-                queryset = queryset.filter(status__status=status_id).annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status'))
+                queryset = queryset.annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).filter(status__status=status_id)
 
         return queryset
 
