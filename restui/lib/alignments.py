@@ -1,4 +1,4 @@
-from restui.lib.external import ensembl_sequence
+from restui.lib.external import ensembl_sequence, ensembl_protein
 from sam_alignment_reconstructor.pairwise import pairwise_alignment, cigar_split
 
 def fetch_pairwise(mapping):
@@ -17,8 +17,10 @@ def fetch_pairwise(mapping):
                 mdz = mdz[len('MD:Z:'):]
             
             ens_release = alignment.alignment_run.ensembl_release
+
+            ensp = ensembl_protein(mapping.transcript.enst_id, ens_release)
             
-            seq = ensembl_sequence(enst, ens_release)
+            seq = ensembl_sequence(ensp, ens_release)
             
             uniprot_seq, match_str, ensembl_seq = pairwise_alignment(seq, cigarplus, mdz)
             
@@ -27,7 +29,7 @@ def fetch_pairwise(mapping):
                                         'match_str': match_str,
                                         'alignment_id': alignment.alignment_id,
                                         'ensembl_release': ens_release,
-                                        'ensembl_id': enst,
+                                        'ensembl_id': ensp,
                                         'uniprot_id': uniprot_id,
                                         'alignment_type': 'identity'})
 
