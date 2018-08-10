@@ -33,7 +33,8 @@ class FacetPagination(LimitOffsetPagination):
         if differences[2]:
             sequence["items"].append({ "label": "large", "name": "large", "count": differences[2] })
             
-        return [ statuses, organism, sequence, mappings ]
+#        return [ statuses, organism, sequence, mappings ]
+        return [ statuses, organism, sequence ]
 
     def paginate_queryset(self, queryset, request, view=None):
         self.count = queryset.grouped_count
