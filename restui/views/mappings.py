@@ -97,54 +97,6 @@ def build_related_mappings_data(mapping):
     return list(map(lambda m: MappingsSerializer.build_mapping(m, fetch_sequence=False), mappings))
 
 
-##########################
-#                        #
-# The front-end read API #
-#                        #
-##########################
-
-class MappingView(APIView):
-    """
-    Retrieve a single mapping, includes related mappings and taxonomy information.
-    """
-
-
-    def get(self, request, pk):
-        mapping = get_mapping(pk)
-
-        data = { 'taxonomy': build_taxonomy_data(mapping),
-                 'mapping': MappingsSerializer.build_mapping(mapping, fetch_sequence=True),
-                 'relatedMappings': build_related_mappings_data(mapping) }
-        
-        serializer = MappingSerializer(data)
-
-        return Response(serializer.data)
-
-class MappingLabelsView(APIView):
-    """
-    Retrieval all labels for a given mapping
-    """
-    
-    def get(self, request, pk):
-        mapping = get_mapping(pk)
-        
-        all_labels = CvUeLabel.objects.all()
-        
-        mapping_labels = mapping.labels.values_list('label', flat=True)
-        
-        label_map = []
-        
-        for label in all_labels:
-            if label.id in mapping_labels:
-                label_map.append({'label': label.description, 'id': label.id, 'status': True})
-            else:
-                label_map.append({'label': label.description, 'id': label.id, 'status': False})
-
-        data = { 'labels': label_map }
-
-        serializer = MappingLabelsSerializer(data)
-        return Response(serializer.data)
-
 class MappingLabelView(APIView):
     """
     Add or delete label a associated to the given mapping
@@ -189,9 +141,36 @@ class MappingLabelView(APIView):
 
         raise Http404
 
+
+class MappingLabelsView(APIView):
+    """
+    Retrieve all labels for a given mapping
+    """
+    
+    def get(self, request, pk):
+        mapping = get_mapping(pk)
+        
+        all_labels = CvUeLabel.objects.all()
+        
+        mapping_labels = mapping.labels.values_list('label', flat=True)
+        
+        label_map = []
+        
+        for label in all_labels:
+            if label.id in mapping_labels:
+                label_map.append({'label': label.description, 'id': label.id, 'status': True})
+            else:
+                label_map.append({'label': label.description, 'id': label.id, 'status': False})
+
+        data = { 'labels': label_map }
+
+        serializer = MappingLabelsSerializer(data)
+        return Response(serializer.data)
+
+
 class MappingCommentsView(APIView):
     """
-    Retrieve all comments relative to a given mapping, includes mapping labels.
+    Add a comment/Retrieve all comments relative to a given mapping, includes mapping labels.
     """
     permission_classes = (IsAuthenticated,)
 
@@ -233,6 +212,127 @@ class MappingCommentsView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MappingStatusView(APIView):
+    """
+    Change the status of a mapping
+    """
+
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        mapping = get_mapping(pk)
+
+        # retrieve the status object associated to the given description
+        try:
+            s = CvUeStatus.objects.get(description=request.data['status'])
+        except KeyError:
+            raise Http404("Payload should have 'status'")
+        except CvUeStatus.DoesNotExist:
+            raise Http404("Couldn't get status object for {}".format(request.data['status']))
+        except MultipleObjectsReturned:
+            raise Http404("Couldn't get unique status for {}".format(request.data['status']))
+
+#        for old_status in UeMappingStatus.objects.filter(mapping=mapping).filter(~Q(status=s.id)):
+#            old_status.delete()
+
+        # If the mapping has already been assigned that status, update the timestamp,
+        # otherwise create one from scratch
+        try:
+#            mapping_status = UeMappingStatus.objects.get(mapping=mapping, status=s.id)
+            mapping_status = UeMappingStatus.objects.get(mapping=mapping)
+        except UeMappingStatus.DoesNotExist:
+            # create new mapping status
+            serializer = StatusSerializer(data={ 'time_stamp':timezone.now(),
+                                                 'user_stamp':request.user,
+                                                 'status':s.id,
+                                                 'mapping':mapping.mapping_id })
+
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        except MultipleObjectsReturned:
+            raise Http404("Couldn't get unique status for mapping {}".format(mapping.mapping_id))
+        else:
+            # mapping status already exist, update timestamp
+            serializer = StatusSerializer(mapping_status, data={ 'time_stamp':timezone.now(),
+                                                                 'user_stamp':request.user,
+                                                                 'status':s.id,
+                                                                 'mapping':mapping.mapping_id })
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MappingPairwiseAlignment(APIView):
+    """
+    Retrieve a set of pairwise alignments for a single mapping
+    """
+
+    def get(self, request, pk):
+        try:
+            mapping = Mapping.objects.prefetch_related('alignments').select_related('transcript').select_related('uniprot').get(pk=pk)
+            alignments = fetch_pairwise(mapping)
+        except Exception as e:
+            pprint.pprint(e)
+            raise Http404
+         
+        serializer = MappingAlignmentsSerializer(alignments)
+         
+        return Response(serializer.data)
+
+
+class MappingView(APIView):
+    """
+    Retrieve a single mapping, includes related mappings and taxonomy information.
+    """
+
+    def get(self, request, pk):
+        mapping = get_mapping(pk)
+
+        data = { 'taxonomy': build_taxonomy_data(mapping),
+                 'mapping': MappingsSerializer.build_mapping(mapping, fetch_sequence=True),
+                 'relatedMappings': build_related_mappings_data(mapping) }
+        
+        serializer = MappingSerializer(data)
+
+        return Response(serializer.data)
+
+
+class MappingStatsView(APIView):
+    """
+    Return stats on all the mappings
+    """
+    def get(self, request):
+        mappings_count = Mapping.objects.count()
+    
+        all_labels = CvUeLabel.objects.all()
+        
+        label_counts = []
+        
+        for label in all_labels:
+            count = UeMappingLabel.objects.filter(label=label).count()
+            label_counts.append({'label': label.description, 'count': count})
+        
+        status_counts = []
+        for status in CvUeStatus.objects.all():
+            status_count = Mapping.objects.filter(status__status_id=status.id).annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).order_by('status__status_id').values('status__status_id').aggregate(total=Count('status__status_id'))
+
+            if status_count:
+                status_counts.append({'status': status.description, 'count': status_count['total']})
+    
+        serializer = MappingStatsSerializer({'totalMappingCount' : mappings_count,
+                                             'statusMappingCount': status_counts,
+                                             'labelMappingCount': label_counts
+                                             })
+
+        return Response(serializer.data)
+
 
 # TODO
 #
@@ -335,207 +435,3 @@ class MappingsView(generics.ListAPIView):
                 queryset = queryset.annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).filter(status__status=status_id)
 
         return queryset
-
-###########################
-#                         #
-# The front-end write API #
-#                         #
-###########################
-
-#
-# TODO
-#
-# - handle transactions when writing/updating content, see
-#   https://docs.djangoproject.com/en/2.0/topics/db/transactions/
-#
-
-class MappingStatusView(APIView):
-    """
-    Change the status of a mapping
-    """
-
-    permission_classes = (IsAuthenticated,)
-
-    def put(self, request, pk):
-        mapping = get_mapping(pk)
-
-        # retrieve the status object associated to the given description
-        try:
-            s = CvUeStatus.objects.get(description=request.data['status'])
-        except KeyError:
-            raise Http404("Payload should have 'status'")
-        except CvUeStatus.DoesNotExist:
-            raise Http404("Couldn't get status object for {}".format(request.data['status']))
-        except MultipleObjectsReturned:
-            raise Http404("Couldn't get unique status for {}".format(request.data['status']))
-
-#        for old_status in UeMappingStatus.objects.filter(mapping=mapping).filter(~Q(status=s.id)):
-#            old_status.delete()
-
-        # If the mapping has already been assigned that status, update the timestamp,
-        # otherwise create one from scratch
-        try:
-#            mapping_status = UeMappingStatus.objects.get(mapping=mapping, status=s.id)
-            mapping_status = UeMappingStatus.objects.get(mapping=mapping)
-        except UeMappingStatus.DoesNotExist:
-            # create new mapping status
-            serializer = StatusSerializer(data={ 'time_stamp':timezone.now(),
-                                                 'user_stamp':request.user,
-                                                 'status':s.id,
-                                                 'mapping':mapping.mapping_id })
-
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        except MultipleObjectsReturned:
-            raise Http404("Couldn't get unique status for mapping {}".format(mapping.mapping_id))
-        else:
-            # mapping status already exist, update timestamp
-            serializer = StatusSerializer(mapping_status, data={ 'time_stamp':timezone.now(),
-                                                                 'user_stamp':request.user,
-                                                                 'status':s.id,
-                                                                 'mapping':mapping.mapping_id })
-            
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class MappingCommentView(APIView):
-    """
-    Add a comment to a mapping
-    """
-
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request, pk):
-        mapping = get_mapping(pk)
-
-        try:
-            serializer = CommentSerializer(data={ 'time_stamp':timezone.now(),
-                                                  'user_stamp':request.user,
-                                                  'comment':request.data['text'],
-                                                  'mapping':mapping.mapping_id })
-        except KeyError:
-            raise Http404("Must provide comment")
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class CreateMappingLabelView(APIView):
-    """
-    Add a label associated to a mapping
-    """
-
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request, pk):
-        mapping = get_mapping(pk)
-
-        try:
-            label = get_label(request.data['label'])
-        except KeyError:
-            raise Http404("Should provide 'label' in payload")
-
-        # If the mapping has already assigned that label, update the timestamp,
-        # otherwise create one from scratch
-        try:
-            mapping_label = UeMappingLabel.objects.get(mapping=mapping, label=label.id) # user_stamp=request.user,
-        except UeMappingLabel.DoesNotExist:
-            # create new label associated to the mapping
-            serializer = LabelSerializer(data={ 'time_stamp':timezone.now(),
-                                                'user_stamp':request.user,
-                                                'label':label.id,
-                                                'mapping':mapping.mapping_id })
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status.HTTP_201_CREATED)
-
-        else:
-            # mapping label already exists, update timestamp
-            # NOTE: have to provide all fields anyway othewise serializer complains
-            serializer = LabelSerializer(mapping_label, data={ 'time_stamp':timezone.now(),
-                                                               'user_stamp':request.user,
-                                                               'label':label.id,
-                                                               'mapping':mapping.mapping_id })
-
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#
-# TODO: should remove only the label attached to the mapping by the given user
-#
-class DeleteMappingLabelView(APIView):
-    """
-    Delete label a associated to the given mapping
-    """
-
-    permission_classes = (IsAuthenticated,)
-
-    def delete(self, request, pk, label):
-        mapping = get_mapping(pk)
-
-        # delete all labels with the given description attached to the mapping
-        # TODO: only those associated to the given user
-        mapping_labels = UeMappingLabel.objects.filter(mapping=mapping,label=get_label(label).id)
-        if mapping_labels:
-            mapping_labels.delete()
-
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        raise Http404
-
-class MappingPairwiseAlignment(APIView):
-    """
-    Retrieve a set of pairwise alignments for a single mapping
-    """
-
-    def get(self, request, pk):
-        try:
-            mapping = Mapping.objects.prefetch_related('alignments').select_related('transcript').select_related('uniprot').get(pk=pk)
-            alignments = fetch_pairwise(mapping)
-        except Exception as e:
-            pprint.pprint(e)
-            raise Http404
-         
-        serializer = MappingAlignmentsSerializer(alignments)
-         
-        return Response(serializer.data)
-
-class MappingStatsView(APIView):
-    """
-    Return stats on all the mappings
-    """
-    def get(self, request):
-        mappings_count = Mapping.objects.count()
-    
-        all_labels = CvUeLabel.objects.all()
-        
-        label_counts = []
-        
-        for label in all_labels:
-            count = UeMappingLabel.objects.filter(label=label).count()
-            label_counts.append({'label': label.description, 'count': count})
-        
-        status_counts = []
-        for status in CvUeStatus.objects.all():
-            status_count = Mapping.objects.filter(status__status_id=status.id).annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).order_by('status__status_id').values('status__status_id').aggregate(total=Count('status__status_id'))
-
-            if status_count:
-                status_counts.append({'status': status.description, 'count': status_count['total']})
-    
-        serializer = MappingStatsSerializer({'totalMappingCount' : mappings_count,
-                                             'statusMappingCount': status_counts,
-                                             'labelMappingCount': label_counts
-                                             })
-
-        return Response(serializer.data)
-    
