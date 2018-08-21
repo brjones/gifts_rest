@@ -181,16 +181,8 @@ class MappingCommentsView(APIView):
         mapping_comments = mapping.comments.order_by('-time_stamp')
         comments = map(lambda c: { 'text':c.comment, 'timeAdded':c.time_stamp, 'user':c.user_stamp.full_name }, mapping_comments)
 
-        # fetch mapping label history
-#         mapping_labels = UeMappingLabel.objects.filter(mapping=mapping).order_by('-time_stamp')
-#         try:
-#             labels = map(lambda l: { 'text':CvUeLabel.objects.get(pk=l.label).description, 'timeAdded':l.time_stamp, 'user':l.user_stamp }, mapping_labels)
-#         except CvUeLabel.DoesNotExist:
-#             raise Http404("Couldn't fetch label")
-
         data = {  'mappingId': pk,
-                  'comments':list(comments),
-                  'labels': []
+                  'comments':list(comments)
         }
 
         serializer = MappingCommentsSerializer(data)

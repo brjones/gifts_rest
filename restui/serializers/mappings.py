@@ -209,7 +209,6 @@ class MappingCommentsSerializer(serializers.Serializer):
 
     mappingId = serializers.IntegerField()
     comments = CommentLabelSerializer(many=True)
-    labels = CommentLabelSerializer(many=True)
 
 class MappingPairwiseAlignmentSerializer(serializers.Serializer):
     """
