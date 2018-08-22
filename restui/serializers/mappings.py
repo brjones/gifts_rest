@@ -27,9 +27,12 @@ class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     upi = serializers.CharField()
     biotype = serializers.CharField()
     deleted = serializers.NullBooleanField()
+    chromosome = serializers.CharField()
     seqRegionStart = serializers.IntegerField()
     seqRegionEnd = serializers.IntegerField()
+    seqRegionStrand = serializers.IntegerField()
     ensgId = serializers.CharField()
+    ensgName = serializers.CharField()
     sequence = serializers.CharField(required=False)
 
 class EnsemblUniprotMappingSerializer(serializers.Serializer):
@@ -130,7 +133,9 @@ class MappingsSerializer(serializers.Serializer):
                             'chromosome':mapping.transcript.gene.chromosome,
                             'seqRegionStart':mapping.transcript.seq_region_start,
                             'seqRegionEnd':mapping.transcript.seq_region_end,
+                            'seqRegionStrand': mapping.transcript.gene.seq_region_strand,
                             'ensgId':mapping.transcript.gene.ensg_id,
+                            'ensgName':mapping.transcript.gene.gene_name,
                             'sequence':sequence
                             },
                        'alignment_difference': mapping.alignment_difference,
