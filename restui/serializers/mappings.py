@@ -127,6 +127,7 @@ class MappingsSerializer(serializers.Serializer):
                             'upi':mapping.transcript.uniparc_accession,
                             'biotype':mapping.transcript.biotype,
                             'deleted':mapping.transcript.deleted,
+                            'chromosome':mapping.transcript.gene.chromosome,
                             'seqRegionStart':mapping.transcript.seq_region_start,
                             'seqRegionEnd':mapping.transcript.seq_region_end,
                             'ensgId':mapping.transcript.gene.ensg_id,
