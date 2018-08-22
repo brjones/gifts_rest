@@ -1,7 +1,6 @@
 from django.urls import path
 from django.conf.urls import url
 from restui.views import ensembl, mappings
-#from restui.views import alignments, ensembl, mappings
 
 urlpatterns = [
 #     path('alignments/alignment_run/<int:pk>/', alignments.AlignmentRunFetch.as_view()),    # retrieve alignment run by ID (GET)
@@ -22,20 +21,17 @@ urlpatterns = [
 #    path('ensembl/cigar/uniprot_acc/<uniprot_acc>/uniprot_seq_version/<int:uniprot_seq_version>/ensp_id/<ensp_id>/', ensembl.EnspUCigarFetch.as_view()), # fetch_cigarmdz
     ########
 #    path('ensembl/cigar/', ensembl.EnspUCigarCreate.as_view()), # insert cigarmdz (POST)
-    
-    # path('mapping/<int:pk>/perfect/'), # is_perfect_eu_match_mapping_id
-    path('mapping/<int:pk>/status/', mappings.MappingStatusView.as_view()),
-    path('mapping/<int:pk>/comments/', mappings.MappingCommentsView.as_view()),
-    path('mapping/<int:pk>/labels/<label_id>/', mappings.MappingLabelView.as_view()),
-    path('mapping/<int:pk>/labels/', mappings.MappingLabelsView.as_view()),
-    path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),
-    path('mapping/<int:pk>/', mappings.MappingView.as_view()),
-    path('comments/<int:pk>/', mappings.MappingCommentsView.as_view()),
-#    path('labels/', mappings.LabelsView.as_view()),                                      # retrieve list of possible labels (GET)
-    path('mappings/', mappings.MappingsView.as_view()),                                  # search the mappings (GET)
 
-    path('mappings/stats/', mappings.MappingStatsView.as_view()),
+    # path('mappings/release_mapping_history/latest/assembly/<accession>'),           # retrieve the mappings for the latest (by ensembl species history time loaded) release_mapping_history by assembly accession
+    # path('mappings/release_mapping_history/<int:pk>/'),                             # get_info_from_perfect_match_alignment_run
+    # path('mapping/<int:pk>/perfect/'),                                              # is_perfect_eu_match_mapping_id
+    path('mapping/<int:pk>/labels/<label_id>/', mappings.MappingLabelView.as_view()), # add/delete a label to a mapping
+    path('mapping/<int:pk>/labels/', mappings.MappingLabelsView.as_view()),           # retrieve all labels of a mapping
+    path('mapping/<int:pk>/comments/', mappings.MappingCommentsView.as_view()),       # add comment/retrieve all comments of a mapping
+    path('mapping/<int:pk>/status/', mappings.MappingStatusView.as_view()),           # update mapping status
+    path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),  # retrieve pairwise alignments for a mapping
+    path('mapping/<int:pk>/', mappings.MappingView.as_view()),                        # retrieve single mapping
+    path('mappings/stats/', mappings.MappingStatsView.as_view()),                     # retrieve mapping stats
+    path('mappings/', mappings.MappingsView.as_view()),                               # search the mappings
 
-    # path('mappings/release_mapping_history/latest/assembly/<accession>'), # retrieve the mappings for the latest (by ensembl species history time loaded) release_mapping_history by assembly accession (GET)
-    # path('mappings/release_mapping_history/<int:pk>/'), # get_info_from_perfect_match_alignment_run
 ]
