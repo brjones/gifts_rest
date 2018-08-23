@@ -19,6 +19,8 @@ class UniprotEntryMappingSerializer(serializers.Serializer):
     sequenceVersion = serializers.IntegerField()
     upi = serializers.CharField()
     md5 = serializers.CharField()
+    isCanonical = serializers.NullBooleanField()
+    alias = serializers.CharField()
     ensemblDerived = serializers.NullBooleanField()
 
 class EnsemblTranscriptMappingSerializer(serializers.Serializer):
@@ -122,6 +124,8 @@ class MappingsSerializer(serializers.Serializer):
                             'sequenceVersion':mapping.uniprot.sequence_version,
                             'upi':mapping.uniprot.upi,
                             'md5':mapping.uniprot.md5,
+                            'isCanonical': True if mapping.uniprot.canonical_uniprot_id else False,
+                            'alias': mapping.uniprot.alias,
                             'ensemblDerived':mapping.uniprot.ensembl_derived,
                             },
                         'ensemblTranscript': {
