@@ -45,6 +45,7 @@ class UniprotEntry(models.Model):
     md5 = models.CharField(max_length=32, blank=True, null=True)
     canonical_uniprot_id = models.IntegerField(blank=True, null=True)
     ensembl_derived = models.NullBooleanField()
+    alias = models.CharField(max_length=30, blank=True, null=True)
 
     def __str__(self):
         return "{0} - {1}".format(self.uniprot_id, self.uniprot_acc)
