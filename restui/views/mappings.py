@@ -301,8 +301,57 @@ class MappingStatsView(APIView):
     Return stats on all the mappings
     """
     def get(self, request):
-        mappings_count = Mapping.objects.count()
-    
+
+        #
+        # Mapping stats: general and Uniprot/Ensembl specific
+        #
+        mappings_count = Mapping.objects.count() # tot mappings
+
+        uniprot_mapped_count = Mapping.objects.values('uniprot').distinct().count() # tot mapped uniprot entries
+        uniprot_not_mapped_sp_count = None # tot non mapped Swiss-Prot entries, NOTE: NO WAY TO GET IT AT THE MOMENT
+
+        all_entry_types = dict( (entry.id, entry.description) for entry in CvEntryType.objects.all() )
+        sp_entry_type_ids = [ k for (k, v) in all_entry_types.items() if v.lower().startswith('swiss') ]
+        nonsp_entry_type_ids = list(set(all_entry_types.keys()).difference(sp_entry_type_ids))
+
+        #
+        # NOTE:
+        #  This is not requested but it's computation is reported (commented) here for completeness
+        uniprot_mapped_sp_count = 0 # tot mapped Swiss-Prot entries, NOTE: NOT REQUESTED BUT HERE FOR COMPLETENESS
+        # if sp_entry_type_ids:
+        #     query_filter = Q(mapping_history__entry_type=sp_entry_type_ids[0])
+        #
+        #     for i in range(1, len(sp_entry_type_ids)):
+        #         query_filter = query_filter | Q(mapping_history__entry_type=sp_entry_type_ids[i])
+        #
+        #     uniprot_mapped_sp_count = Mapping.objects.filter(query_filter).values('uniprot').distinct().count()
+        #
+        # tot non mapped genes which none of its transcripts match to any SwissProt entry
+        gene_not_mapped_sp_count = 0
+        #
+        # NOTE:
+        #   Here we're counting genes not mapped to Swiss-Prot entries among the mapped genes.
+        #   As discussed with UniProt, they'd prefer counting among the non mapped genes, which
+        #   in this case coincide with counting the non-mapped genes in general, as done below.
+        #
+        # if nonsp_entry_type_ids:
+        #     query_filter = Q(mapping_history__entry_type=nonsp_entry_type_ids[0])
+        #
+        #     for i in range(1, len(sp_entry_type_ids)):
+        #         query_filter = query_filter | Q(mapping_history__entry_type=nonsp_entry_type_ids[i])
+        #
+        #     gene_not_mapped_sp_count = Mapping.objects.filter(query_filter).values('transcript__gene').distinct().count()
+
+        gene_ids = set( gene.gene_id for gene in EnsemblGene.objects.all() )
+        gene_mapped_ids = set( item['transcript__gene'] for item in Mapping.objects.values('transcript__gene').distinct() )
+        gene_mapped_count = len(gene_mapped_ids) # tot mapped Ensembl genes
+        gene_not_mapped_sp_count = len(gene_ids.difference(gene_mapped_ids))
+
+        transcript_mapped_count = Mapping.objects.values('transcript').distinct().count() # tot mapped Ensembl transcripts
+
+        #
+        # Stats relative to mapping labels
+        #
         all_labels = CvUeLabel.objects.all()
         
         label_counts = []
@@ -310,7 +359,10 @@ class MappingStatsView(APIView):
         for label in all_labels:
             count = UeMappingLabel.objects.filter(label=label).count()
             label_counts.append({'label': label.description, 'count': count})
-        
+
+        #
+        # Stats for mapping status
+        #
         status_counts = []
         for status in CvUeStatus.objects.all():
             status_count = Mapping.objects.filter(status__status_id=status.id).annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).order_by('status__status_id').values('status__status_id').aggregate(total=Count('status__status_id'))
@@ -318,10 +370,14 @@ class MappingStatsView(APIView):
             if status_count:
                 status_counts.append({'status': status.description, 'count': status_count['total']})
     
-        serializer = MappingStatsSerializer({'totalMappingCount' : mappings_count,
-                                             'statusMappingCount': status_counts,
-                                             'labelMappingCount': label_counts
-                                             })
+        serializer = MappingStatsSerializer({'mapping': { 'total': mappings_count,
+                                                          'uniprot': { 'mapped': uniprot_mapped_count,
+                                                                       'not_mapped_sp': uniprot_not_mapped_sp_count },
+                                                          'ensembl': { 'gene_mapped': gene_mapped_count,
+                                                                       'gene_not_mapped_sp': gene_not_mapped_sp_count,
+                                                                       'transcript_mapped': transcript_mapped_count } },
+                                             'status': status_counts,
+                                             'label': label_counts })
 
         return Response(serializer.data)
 

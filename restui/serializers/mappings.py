@@ -236,6 +236,32 @@ class MappingAlignmentsSerializer(serializers.Serializer):
     mapping_id = serializers.IntegerField()
     alignments = MappingPairwiseAlignmentSerializer(many=True)
 
+class UniprotMappedCountSerializer(serializers.Serializer):
+    """
+    Serializer for counts related to mapped/unmapped Uniprot entries
+    """
+
+    mapped = serializers.IntegerField()
+    not_mapped_sp = serializers.IntegerField()
+
+class EnsemblMappedCountSerializer(serializers.Serializer):
+    """
+    Serializer for counts related to mapped/unmapped gene/transcript entries
+    """
+
+    gene_mapped = serializers.IntegerField()
+    gene_not_mapped_sp = serializers.IntegerField()
+    transcript_mapped = serializers.IntegerField()
+
+class MappingCountSerializer(serializers.Serializer):
+    """
+    Serializer for general and specific mapping counts
+    """
+
+    total = serializers.IntegerField()
+    uniprot = UniprotMappedCountSerializer()
+    ensembl = EnsemblMappedCountSerializer()
+
 class StatusCountSerializer(serializers.Serializer):
     """
     Serializer for an individual status' count
@@ -254,6 +280,6 @@ class MappingStatsSerializer(serializers.Serializer):
     """
     Serializer for the /stats/ endpoint
     """
-    totalMappingCount = serializers.IntegerField()
-    statusMappingCount = StatusCountSerializer(many=True)
-    labelMappingCount = LabelCountSerializer(many=True)
+    mapping = MappingCountSerializer()
+    status = StatusCountSerializer(many=True)
+    label = LabelCountSerializer(many=True)
