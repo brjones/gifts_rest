@@ -6,8 +6,8 @@ urlpatterns = [
     path('alignments/alignment_run/<int:pk>/', alignments.AlignmentRunFetch.as_view()), # retrieve alignment run by ID (GET)
     path('alignments/alignment_run/', alignments.AlignmentRunCreate.as_view()),         # insert alignment run (POST),
 #     path('alignments/alignment/latest/assembly/<assembly_accession>/', alignments.LatestAlignmentsFetch.as_view()), # retrieve latest alignments by assembly accession (GET)
-#     path('alignments/alignment/<int:pk>/', alignments.AlignmentFetch.as_view()),           # retrieve alignment by ID (GET)
-#     path('alignments/alignment/', alignments.AlignmentCreate.as_view()),                   # insert alignment (POST)
+    path('alignments/alignment/<int:pk>/', alignments.AlignmentFetch.as_view()),        # retrieve alignment by ID (GET)
+    path('alignments/alignment/', alignments.AlignmentCreate.as_view()),                # insert alignment (POST)
     # path('alignments/perfect_matches/'), # fetch_latest_uniprot_enst_perfect_matches
     
     path('ensembl/load/<species>/<assembly_accession>/<int:ensembl_tax_id>/<int:ensembl_release>/', ensembl.EnsemblFeature.as_view()),

@@ -24,3 +24,18 @@ class AlignmentRunFetch(generics.RetrieveAPIView):
     queryset = AlignmentRun.objects.all()
     serializer_class = AlignmentRunSerializer
     
+class AlignmentCreate(generics.CreateAPIView):
+    """
+    Insert an Alignment
+    """
+
+    serializer_class = AlignmentSerializer
+
+class AlignmentFetch(generics.RetrieveAPIView):
+    """
+    Retrieve an Alignment
+    """
+
+    queryset = Alignment.objects.all()
+    serializer_class = AlignmentSerializer
+
