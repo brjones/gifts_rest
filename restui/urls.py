@@ -1,10 +1,10 @@
 from django.urls import path
 from django.conf.urls import url
-from restui.views import ensembl, mappings
+from restui.views import alignments, ensembl, mappings
 
 urlpatterns = [
-#     path('alignments/alignment_run/<int:pk>/', alignments.AlignmentRunFetch.as_view()),    # retrieve alignment run by ID (GET)
-#     path('alignments/alignment_run/', alignments.AlignmentRunCreate.as_view()),            # insert alignment run (POST),
+    path('alignments/alignment_run/<int:pk>/', alignments.AlignmentRunFetch.as_view()), # retrieve alignment run by ID (GET)
+    path('alignments/alignment_run/', alignments.AlignmentRunCreate.as_view()),         # insert alignment run (POST),
 #     path('alignments/alignment/latest/assembly/<assembly_accession>/', alignments.LatestAlignmentsFetch.as_view()), # retrieve latest alignments by assembly accession (GET)
 #     path('alignments/alignment/<int:pk>/', alignments.AlignmentFetch.as_view()),           # retrieve alignment by ID (GET)
 #     path('alignments/alignment/', alignments.AlignmentCreate.as_view()),                   # insert alignment (POST)
