@@ -5,7 +5,8 @@ from restui.views import alignments, ensembl, mappings
 urlpatterns = [
     path('alignments/alignment_run/<int:pk>/', alignments.AlignmentRunFetch.as_view()), # retrieve alignment run by ID (GET)
     path('alignments/alignment_run/', alignments.AlignmentRunCreate.as_view()),         # insert alignment run (POST),
-#     path('alignments/alignment/latest/assembly/<assembly_accession>/', alignments.LatestAlignmentsFetch.as_view()), # retrieve latest alignments by assembly accession (GET)
+    path('alignments/alignment/latest/assembly/<assembly_accession>/',                  # retrieve latest alignments by assembly accession (GET)
+         alignments.LatestAlignmentsFetch.as_view()),                                   #   param: alignment_type: perfect_match (default), identity
     path('alignments/alignment/<int:pk>/', alignments.AlignmentFetch.as_view()),        # retrieve alignment by ID (GET)
     path('alignments/alignment/', alignments.AlignmentCreate.as_view()),                # insert alignment (POST)
     # path('alignments/perfect_matches/'), # fetch_latest_uniprot_enst_perfect_matches
