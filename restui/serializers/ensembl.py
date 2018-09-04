@@ -6,7 +6,7 @@ from django.core.serializers import serialize
 from rest_framework import serializers
 from psqlextra.query import ConflictAction
 
-from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory, GeneHistory, TranscriptHistory
+from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory, GeneHistory, TranscriptHistory, EnspUCigar
 
 
 #
@@ -142,5 +142,30 @@ class EnsemblGeneSerializer(serializers.Serializer):
         # fields = '__all__'
         list_serializer_class = EnsemblGeneListSerializer
 
-class EnspUCigarSerializer(serializers.Serializer):
-    pass
+class EnspUCigarSerializer(serializers.ModelSerializer):
+    """
+    Serializer for protein alignment instances
+    """
+
+    class Meta:
+        model = EnspUCigar
+        fields = '__all__'
+
+class EnsemblReleaseSerializer(serializers.Serializer):
+    """
+    To serialize the latest Ensembl release whose load is complete
+    """
+
+    release = serializers.IntegerField(min_value=1, required=True)
+
+class SpeciesHistorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = EnsemblSpeciesHistory
+        fields = '__all__'
+
+class TranscriptSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = EnsemblTranscript
+        fields = '__all__'
