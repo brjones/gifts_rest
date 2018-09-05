@@ -1,7 +1,8 @@
-from restui.models.ensembl import EnsemblGene, EnspUCigar
-from restui.serializers.ensembl import EnsemblGeneSerializer, EnspUCigarSerializer
+from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnspUCigar, EnsemblSpeciesHistory
+from restui.serializers.ensembl import EnsemblGeneSerializer, EnspUCigarSerializer, EnsemblReleaseSerializer, SpeciesHistorySerializer, TranscriptSerializer
 from restui.lib.external import ensembl_sequence
 
+from django.http import Http404
 from django.shortcuts import render, get_object_or_404
 from rest_framework import status
 from rest_framework import mixins
@@ -45,3 +46,63 @@ class EnspUCigarAlignmnent(APIView):
 
     def get(self, request, pk):
         protein_alignment = get_object_or_404(EnspUCigar, pk=pk)
+
+class EnspUCigarCreate(generics.CreateAPIView):
+    """
+    Insert an alignment
+    """
+
+    serializer_class = EnspUCigarSerializer
+
+class EnspUCigarFetch(generics.RetrieveAPIView):
+    """
+    Retrieve a protein alignment for an alignment run by uniprot acc/seq version/transcript id.
+    """
+
+    serializer_class = EnspUCigarSerializer
+
+    def get_object(self):
+        try:
+            obj = EnspUCigar.objects.get(alignment__alignment_run=self.kwargs['run'],
+                                         alignment__mapping__uniprot__uniprot_acc=self.kwargs['acc'],
+                                         alignment__mapping__uniprot__sequence_version=self.kwargs['seq_version'],
+                                         alignment__transcript__enst_id=self.kwargs['enst_id'])
+        except:
+            raise Http404
+
+        # may raise a permission denied
+        self.check_object_permissions(self.request, obj)
+
+        return obj
+
+class LatestEnsemblRelease(APIView):
+    """
+    Fetch the latest Ensembl release whose load is complete.
+    """
+
+    def get(self, request, assembly_accession):
+        release = None
+        try:
+            species_history = EnsemblSpeciesHistory.objects.filter(assembly_accession__iexact=assembly_accession,
+                                                                   status='LOAD_COMPLETE').order_by('-time_loaded')[0]
+        except (EnsemblSpeciesHistory.DoesNotExist, IndexError):
+            raise Http404
+
+        serializer = EnsemblReleaseSerializer({ 'release': species_history.ensembl_release })
+        return Response(serializer.data)
+
+class SpeciesHistory(generics.RetrieveAPIView):
+    """
+    Retrieve an Ensembl Species History by id.
+    """
+
+    queryset = EnsemblSpeciesHistory.objects.all()
+    serializer_class = SpeciesHistorySerializer
+
+class Transcript(generics.RetrieveAPIView):
+    """
+    Retrieve transcript instance by id.
+    """
+
+    queryset = EnsemblTranscript.objects.all()
+    serializer_class = TranscriptSerializer
