@@ -172,7 +172,7 @@ class Mapping(models.Model):
 
 class MappingHistory(models.Model):
     mapping_history_id = models.BigAutoField(primary_key=True)
-    release_mapping_history = models.ForeignKey('ReleaseMappingHistory', models.DO_NOTHING)
+    release_mapping_history = models.ForeignKey('ReleaseMappingHistory', models.DO_NOTHING, related_name='mapping_history')
     sequence_version = models.SmallIntegerField()
     entry_type = models.ForeignKey('CvEntryType', models.DO_NOTHING, blank=True, null=True, db_column="entry_type")
     entry_version = models.IntegerField()
@@ -186,7 +186,7 @@ class MappingHistory(models.Model):
 
 class ReleaseMappingHistory(models.Model):
     release_mapping_history_id = models.BigAutoField(primary_key=True)
-    ensembl_species_history = models.ForeignKey('EnsemblSpeciesHistory', models.DO_NOTHING, blank=True, null=True)
+    ensembl_species_history = models.ForeignKey('EnsemblSpeciesHistory', models.DO_NOTHING, related_name='release_mapping_history', blank=True, null=True)
     time_mapped = models.DateTimeField()
     entries_mapped = models.BigIntegerField(blank=True, null=True)
     entries_unmapped = models.BigIntegerField(blank=True, null=True)
