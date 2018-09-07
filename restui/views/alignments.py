@@ -39,6 +39,12 @@ class AlignmentFetch(generics.RetrieveAPIView):
     queryset = Alignment.objects.all()
     serializer_class = AlignmentSerializer
 
+#
+# TODO
+#
+# We should probably filter to those whose mapping has been completed
+# (i.e. MAPPING_COMPLETE in release_mapping_history)
+#
 class LatestAlignmentsFetch(generics.ListAPIView):
     """
     Retrieve either perfect or blast latest alignments for a given assembly
