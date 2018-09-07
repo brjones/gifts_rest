@@ -3,6 +3,8 @@ from django.http import Http404
 
 from restui.lib.external import ensembl_sequence
 from restui.models.annotations import CvEntryType, CvUeStatus
+from restui.models.mappings import Mapping, ReleaseMappingHistory, MappingHistory
+from restui.serializers.ensembl import SpeciesHistorySerializer
 
 class TaxonomySerializer(serializers.Serializer):
     """
@@ -62,6 +64,37 @@ class MappingSerializer(serializers.Serializer):
     taxonomy = TaxonomySerializer()
     mapping = EnsemblUniprotMappingSerializer()
     relatedMappings = EnsemblUniprotMappingSerializer(many=True)
+
+class MappingHistorySerializer(serializers.ModelSerializer):
+    """
+    Serializer for MappingHistory instances
+    """
+
+    class Meta:
+        model = MappingHistory
+        fields = '__all__'
+
+class ReleaseMappingHistorySerializer(serializers.ModelSerializer):
+    """
+    Serializers for ReleaseMappingHistory instances, includes nested ensembl species history
+    """
+    # mapping_history = MappingHistorySerializer(many=True)
+    ensembl_species_history = SpeciesHistorySerializer()
+
+    class Meta:
+        model = ReleaseMappingHistory
+        fields = '__all__'
+
+class MappingByHistorySerializer(serializers.ModelSerializer):
+    """
+    Serializer for mappings returned by the mappings/release_history/<id> endpoint.
+    """
+
+    mapping_history = MappingHistorySerializer(many=True)
+
+    class Meta:
+        model = Mapping
+        fields = '__all__'
 
 class MappingsSerializer(serializers.Serializer):
     """

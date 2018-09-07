@@ -7,7 +7,8 @@ from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpecies
 from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistory
 from restui.models.uniprot import UniprotEntry
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
-from restui.serializers.mappings import MappingSerializer, MappingCommentsSerializer, MappingsSerializer,\
+from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
+    MappingSerializer, MappingCommentsSerializer, MappingsSerializer,\
     MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer,\
     MappingStatsSerializer
 from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
@@ -23,7 +24,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import generics
-
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 
 
@@ -96,6 +97,49 @@ def build_related_mappings_data(mapping):
 
     return list(map(lambda m: MappingsSerializer.build_mapping(m, fetch_sequence=False), mappings))
 
+#
+# TODO: filter by ensembl release (optional argument)
+#
+class LatestReleaseMappingHistory(generics.RetrieveAPIView):
+    """
+    Fetch 'latest' release mapping history for the given assembly accesssion.
+    """
+
+    serializer_class = ReleaseMappingHistorySerializer
+
+    def get_object(self):
+        assembly_accession = self.kwargs["assembly_accession"]
+
+        # optional parameter is ensembl release
+        # ensembl_release = self.request.query_params.get('ensembl_release')
+
+        try:
+            # latest means by ensembl species history time loaded
+            obj = ReleaseMappingHistory.objects.select_related('ensembl_species_history').filter(ensembl_species_history__assembly_accession__iexact=assembly_accession).latest('ensembl_species_history__time_loaded')
+
+        except ReleaseMappingHistory.DoesNotExist:
+            raise Http404
+
+        # may raise a permission denied
+        self.check_object_permissions(self.request, obj)
+
+        return obj
+
+class MappingsByHistory(generics.ListAPIView):
+    """
+    Fetch mappings corresponding to a given release mapping history
+    """
+
+    serializer_class = MappingByHistorySerializer
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        release_mapping_history_id = self.kwargs['pk']
+
+        try:
+            return Mapping.objects.filter(mapping_history__release_mapping_history=release_mapping_history_id)
+        except Mapping.DoesNotExist:
+            raise Http404
 
 class MappingLabelView(APIView):
     """
