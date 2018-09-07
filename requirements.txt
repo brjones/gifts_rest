@@ -12,6 +12,6 @@ pytz==2018.3
 typing==3.6.4
 urllib3==1.23
 requests==2.19.1
-aap-client-python
+-e git+https://github.com/EMBL-EBI-TSI/aap-client-python.git#egg=aap-client-python
 sam-alignment-reconstructor
 django-cors-headers==2.4.0
