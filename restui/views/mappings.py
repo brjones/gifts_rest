@@ -468,12 +468,13 @@ class MappingsView(generics.ListAPIView):
                 #  or all 'related' mappings? We're returning only that mapping at the moment
                 queryset = [ get_mapping(search_term) ]
             else: # this is either an ENSG/ENST or UniProt accession
-                if re.compile(r"^ENS[A-Z]*?G[0-9]+?$").match(search_term):
-                    queryset = Mapping.objects.filter(transcript__gene__ensg_id=search_term)
-                elif re.compile(r"^ENS[A-Z]*?T[0-9]+?$").match(search_term):
-                    queryset = Mapping.objects.filter(transcript__enst_id=search_term)
+                if re.match(r"^ENS[A-Z]*?G[0-9]+?$", search_term, re.I):
+                    queryset = Mapping.objects.filter(transcript__gene__ensg_id__iexact=search_term)
+                elif re.match(r"^ENS[A-Z]*?T[0-9]+?$", search_term, re.I):
+                    queryset = Mapping.objects.filter(transcript__enst_id__iexact=search_term)
                 else:
                     queryset = Mapping.objects.filter(uniprot__uniprot_acc=search_term)
+
         else:
             # no search term: return all mappings
             #
