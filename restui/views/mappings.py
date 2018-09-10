@@ -477,8 +477,8 @@ class MappingsView(generics.ListAPIView):
                     # filter in order to get the isoforms as well
                     queryset = Mapping.objects.filter(uniprot__uniprot_acc__iregex=r"^"+search_term)
                 else:
-                    # should be a search request with a gene name, leave it for later
-                    pass
+                    # should be a search request with a gene name
+                    queryset = Mapping.objects.filter(transcript__gene__gene_name__iregex=r"^"+search_term)
 
         else:
             # no search term: return all mappings
