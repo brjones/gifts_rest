@@ -472,8 +472,13 @@ class MappingsView(generics.ListAPIView):
                     queryset = Mapping.objects.filter(transcript__gene__ensg_id__iexact=search_term)
                 elif re.match(r"^ENS[A-Z]*?T[0-9]+?$", search_term, re.I):
                     queryset = Mapping.objects.filter(transcript__enst_id__iexact=search_term)
+                elif re.match(r"^([O,P,Q][0-9][A-Z, 0-9]{3}[0-9]|[A-N,R-Z]([0-9][A-Z][A-Z, 0-9]{2}){1,2}[0-9])(-\d+)*$",
+                              search_term, re.I): # looks like a Uniprot accession
+                    # filter in order to get the isoforms as well
+                    queryset = Mapping.objects.filter(uniprot__uniprot_acc__iregex=r"^"+search_term)
                 else:
-                    queryset = Mapping.objects.filter(uniprot__uniprot_acc=search_term)
+                    # should be a search request with a gene name, leave it for later
+                    pass
 
         else:
             # no search term: return all mappings
