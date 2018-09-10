@@ -467,7 +467,7 @@ class MappingsView(generics.ListAPIView):
                 #  what does it mean to search with a given mapping ID, return just that mapping
                 #  or all 'related' mappings? We're returning only that mapping at the moment
                 queryset = [ get_mapping(search_term) ]
-            else: # this is either an ENSG/ENST or UniProt accession
+            else: # this is either an ENSG/ENST or UniProt accession or gene name
                 if re.match(r"^ENS[A-Z]*?G[0-9]+?$", search_term, re.I):
                     queryset = Mapping.objects.filter(transcript__gene__ensg_id__iexact=search_term)
                 elif re.match(r"^ENS[A-Z]*?T[0-9]+?$", search_term, re.I):
