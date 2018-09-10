@@ -56,7 +56,7 @@ class EnspUCigarCreate(generics.CreateAPIView):
 
 class EnspUCigarFetch(generics.RetrieveAPIView):
     """
-    Retrieve a protein alignment for an alignment run by uniprot acc/seq version/transcript id.
+    Retrieve a protein alignment for an alignment run by uniprot acc/seq version and transcript id.
     """
 
     serializer_class = EnspUCigarSerializer
@@ -81,10 +81,9 @@ class LatestEnsemblRelease(APIView):
     """
 
     def get(self, request, assembly_accession):
-        release = None
         try:
             species_history = EnsemblSpeciesHistory.objects.filter(assembly_accession__iexact=assembly_accession,
-                                                                   status='LOAD_COMPLETE').order_by('-time_loaded')[0]
+                                                                   status='LOAD_COMPLETE').latest('ensembl_release')
         except (EnsemblSpeciesHistory.DoesNotExist, IndexError):
             raise Http404
 
