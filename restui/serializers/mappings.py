@@ -42,6 +42,7 @@ class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     sequence = serializers.CharField(required=False)
     ensgSymbol = serializers.CharField()
     ensgAccession = serializers.CharField()
+    select = serializers.NullBooleanField()
     
 class EnsemblUniprotMappingSerializer(serializers.Serializer):
     """
@@ -181,7 +182,8 @@ class MappingsSerializer(serializers.Serializer):
                             'ensgName':mapping.transcript.gene.gene_name,
                             'ensgSymbol':mapping.transcript.gene.gene_symbol,
                             'ensgAccession':mapping.transcript.gene.gene_accession,
-                            'sequence':sequence
+                            'sequence':sequence,
+                            'select':mapping.transcript.select
                             },
                        'alignment_difference': mapping.alignment_difference,
                        'status': cls.status_type(status)
