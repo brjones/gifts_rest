@@ -46,6 +46,8 @@ class UniprotEntry(models.Model):
     canonical_uniprot_id = models.IntegerField(blank=True, null=True)
     ensembl_derived = models.NullBooleanField()
     alias = models.CharField(max_length=30, blank=True, null=True)
+    hgnc = models.CharField(max_length=15, blank=True, null=True)
+    entry_type = models.SmallIntegerField(blank=True, null=True)
 
     def __str__(self):
         return "{0} - {1}".format(self.uniprot_id, self.uniprot_acc)
