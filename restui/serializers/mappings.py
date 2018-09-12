@@ -24,6 +24,7 @@ class UniprotEntryMappingSerializer(serializers.Serializer):
     isCanonical = serializers.NullBooleanField()
     alias = serializers.CharField()
     ensemblDerived = serializers.NullBooleanField()
+    hgnc = serializers.CharField()
 
 class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     enstId = serializers.CharField()
@@ -153,13 +154,14 @@ class MappingsSerializer(serializers.Serializer):
                         'uniprotRelease':release_mapping_history.uniprot_release,
                         'uniprotEntry': {
                             'uniprotAccession':mapping.uniprot.uniprot_acc,
-                            'entryType':cls.entry_type(mapping_history.entry_type_id), 
+                            'entryType':cls.entry_type(mapping_history.entry_type_id),
                             'sequenceVersion':mapping.uniprot.sequence_version,
                             'upi':mapping.uniprot.upi,
                             'md5':mapping.uniprot.md5,
                             'isCanonical': True if mapping.uniprot.canonical_uniprot_id else False,
                             'alias': mapping.uniprot.alias,
                             'ensemblDerived':mapping.uniprot.ensembl_derived,
+                            'hgnc':mapping.uniprot.hgnc
                             },
                         'ensemblTranscript': {
                             'enstId':mapping.transcript.enst_id,
