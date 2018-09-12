@@ -39,6 +39,7 @@ class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     ensgId = serializers.CharField()
     ensgName = serializers.CharField()
     sequence = serializers.CharField(required=False)
+    hgnc = serializers.CharField()
 
 class EnsemblUniprotMappingSerializer(serializers.Serializer):
     """
@@ -175,6 +176,7 @@ class MappingsSerializer(serializers.Serializer):
                             'seqRegionStrand': mapping.transcript.gene.seq_region_strand,
                             'ensgId':mapping.transcript.gene.ensg_id,
                             'ensgName':mapping.transcript.gene.gene_name,
+                            'hgnc':mapping.transcript.gene.hgnc,
                             'sequence':sequence
                             },
                        'alignment_difference': mapping.alignment_difference,
