@@ -188,8 +188,6 @@ class ReleaseMappingHistory(models.Model):
     release_mapping_history_id = models.BigAutoField(primary_key=True)
     ensembl_species_history = models.ForeignKey('EnsemblSpeciesHistory', models.DO_NOTHING, related_name='release_mapping_history', blank=True, null=True)
     time_mapped = models.DateTimeField()
-    entries_mapped = models.BigIntegerField(blank=True, null=True)
-    entries_unmapped = models.BigIntegerField(blank=True, null=True)
     uniprot_release = models.CharField(max_length=7, blank=True, null=True)
     uniprot_taxid = models.BigIntegerField(blank=True, null=True)
     status = models.CharField(max_length=20, blank=True, null=True)
@@ -197,3 +195,15 @@ class ReleaseMappingHistory(models.Model):
     class Meta:
         managed = False
         db_table = 'release_mapping_history'
+
+class ReleaseStats(models.Model):
+    release_mapping_history = models.ForeignKey(ReleaseMappingHistory, models.DO_NOTHING)
+    transcripts_total = models.BigIntegerField(blank=True, null=True)
+    uniprot_entries_total = models.BigIntegerField(blank=True, null=True)
+    uniprot_entries_unmapped = models.BigIntegerField(blank=True, null=True)
+    genes_total = models.BigIntegerField(blank=True, null=True)
+    uniprot_entries_unmapped_sp = models.BigIntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'release_stats'
