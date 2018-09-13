@@ -25,6 +25,8 @@ class UniprotEntryMappingSerializer(serializers.Serializer):
     isCanonical = serializers.NullBooleanField()
     alias = serializers.CharField()
     ensemblDerived = serializers.NullBooleanField()
+    gene_symbol = serializers.CharField()
+    gene_accession = serializers.CharField()
 
 class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     enstId = serializers.CharField()
@@ -39,7 +41,12 @@ class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     ensgId = serializers.CharField()
     ensgName = serializers.CharField()
     sequence = serializers.CharField(required=False)
-
+    ensgSymbol = serializers.CharField()
+    ensgAccession = serializers.CharField()
+    enspId = serializers.CharField()
+    enspLen = serializers.IntegerField()
+    select = serializers.NullBooleanField()
+    
 class EnsemblUniprotMappingSerializer(serializers.Serializer):
     """
     For nested serialization of Ensembl-Uniprot mapping in call to mapping/<id> endpoint.
@@ -135,6 +142,8 @@ class MappingsSerializer(serializers.Serializer):
                             'isCanonical': True if mapping.uniprot.canonical_uniprot_id else False,
                             'alias': mapping.uniprot.alias,
                             'ensemblDerived':mapping.uniprot.ensembl_derived,
+                            'gene_symbol':mapping.uniprot.gene_symbol,
+                            'gene_accession':mapping.uniprot.gene_accession,
                             },
                         'ensemblTranscript': {
                             'enstId':mapping.transcript.enst_id,
@@ -148,7 +157,12 @@ class MappingsSerializer(serializers.Serializer):
                             'seqRegionStrand': mapping.transcript.gene.seq_region_strand,
                             'ensgId':mapping.transcript.gene.ensg_id,
                             'ensgName':mapping.transcript.gene.gene_name,
-                            'sequence':sequence
+                            'ensgSymbol':mapping.transcript.gene.gene_symbol,
+                            'ensgAccession':mapping.transcript.gene.gene_accession,
+                            'sequence':sequence,
+                            'enspId':mapping.transcript.ensp_id,
+                            'enspLen':mapping.transcript.ensp_len,
+                            'select':mapping.transcript.select
                             },
                        'alignment_difference': mapping.alignment_difference,
                        'status': Mapping.status_type(status),

@@ -38,6 +38,8 @@ class EnsemblGene(PostgresModel):
     biotype = models.CharField(max_length=40, blank=True, null=True)
     time_loaded = models.DateTimeField(blank=True, null=True)
     history = models.ManyToManyField(EnsemblSpeciesHistory, through='GeneHistory')
+    gene_symbol = models.CharField(max_length=15, blank=True, null=True)
+    gene_accession = models.CharField(max_length=15, blank=True, null=True)
 
     def __str__(self):
         return "{0} - {1} ({2})".format(self.gene_id, self.ensg_id, self.gene_name)
@@ -64,6 +66,9 @@ class EnsemblTranscript(PostgresModel):
     supporting_evidence = models.CharField(max_length=45, blank=True, null=True)
     userstamp = models.CharField(max_length=30, blank=True, null=True)
     time_loaded = models.DateTimeField(blank=True, null=True)
+    select = models.NullBooleanField()
+    ensp_id = models.CharField(max_length=30, blank=True, null=True)
+    ensp_len = models.IntegerField(blank=True, null=True)
     history = models.ManyToManyField(EnsemblSpeciesHistory, through='TranscriptHistory')
 
     def __str__(self):
