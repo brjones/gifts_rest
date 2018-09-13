@@ -47,14 +47,12 @@ def get_mapping_history(mapping):
 
 def get_status(mapping):
     try:
-        # status is assumed to be the latest associated to the given mapping
-        mapping_status = UeMappingStatus.objects.filter(mapping=mapping).order_by('-time_stamp')[0]
-        status = CvUeStatus.objects.get(pk=mapping_status.status).description
+        mapping_status = Mapping.status_type(mapping.status)
     except (IndexError, CvUeStatus.DoesNotExist):
         # TODO: should log this anomaly or do something else
-        status = None
+        mapping_status = None
 
-    return status
+    return mapping_status
 
 def get_label(label):
     """
@@ -270,39 +268,37 @@ class MappingStatusView(APIView):
         except MultipleObjectsReturned:
             raise Http404("Couldn't get unique status for {}".format(request.data['status']))
 
-#        for old_status in UeMappingStatus.objects.filter(mapping=mapping).filter(~Q(status=s.id)):
-#            old_status.delete()
-
         # If the mapping has already been assigned that status, update the timestamp,
         # otherwise create one from scratch
         try:
-#            mapping_status = UeMappingStatus.objects.get(mapping=mapping, status=s.id)
-            mapping_status = UeMappingStatus.objects.get(mapping=mapping)
+            mapping_status = UeMappingStatus.objects.filter(mapping=mapping).latest('time_stamp')
         except UeMappingStatus.DoesNotExist:
-            # create new mapping status
-            serializer = StatusSerializer(data={ 'time_stamp':timezone.now(),
-                                                 'user_stamp':request.user,
-                                                 'status':s.id,
-                                                 'mapping':mapping.mapping_id })
+            # It's alright, for the first status change of a mapping a
+            # historic record won't exist.
+            pass
 
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        except MultipleObjectsReturned:
-            raise Http404("Couldn't get unique status for mapping {}".format(mapping.mapping_id))
         else:
-            # mapping status already exist, update timestamp
-            serializer = StatusSerializer(mapping_status, data={ 'time_stamp':timezone.now(),
-                                                                 'user_stamp':request.user,
-                                                                 'status':s.id,
-                                                                 'mapping':mapping.mapping_id })
-            
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
+            if mapping_status.status == s.id:
+                # The user is trying to change it to what the status
+                # already is, nothing to do.
+                return Response(status=status.HTTP_204_NO_CONTENT)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # create new mapping status
+        serializer = StatusSerializer(data={ 'time_stamp':timezone.now(),
+                                             'user_stamp':request.user,
+                                             'status':s.id,
+                                             'mapping':mapping.mapping_id })
+
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update the status in the mapping record
+        mapping.status = s
+        mapping.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class MappingPairwiseAlignment(APIView):
@@ -332,7 +328,7 @@ class MappingView(APIView):
         mapping = get_mapping(pk)
 
         data = { 'taxonomy': build_taxonomy_data(mapping),
-                 'mapping': MappingsSerializer.build_mapping(mapping, fetch_sequence=True),
+                 'mapping': MappingsSerializer.build_mapping(mapping, fetch_sequence=True, authenticated=request.user.is_authenticated),
                  'relatedMappings': build_related_mappings_data(mapping) }
         
         serializer = MappingSerializer(data)
@@ -408,11 +404,9 @@ class MappingStatsView(APIView):
         # Stats for mapping status
         #
         status_counts = []
-        for status in CvUeStatus.objects.all():
-            status_count = Mapping.objects.filter(status__status_id=status.id).annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).order_by('status__status_id').values('status__status_id').aggregate(total=Count('status__status_id'))
-
-            if status_count:
-                status_counts.append({'status': status.description, 'count': status_count['total']})
+        status_totals = Mapping.objects.values('status').annotate(total=Count('status'))
+        for status_count in status_totals:
+            status_counts.append({'status': Mapping.status_type(status_count['status']), 'count': status_count['total']})
     
         serializer = MappingStatsSerializer({'mapping': { 'total': mappings_count,
                                                           'uniprot': { 'mapped': uniprot_mapped_count,
@@ -528,8 +522,6 @@ class MappingsView(generics.ListAPIView):
                     # TODO Should be a 400, how do we make this work with pagination?
                     #return Response(status=status.HTTP_400_BAD_REQUEST)
 
-                # Left join on the status table, find the 'newest' status only and filter out all other joined rows
-#                queryset = queryset.annotate(this_status=F('status__status_id')).annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).filter(this_status=status_id)
-                queryset = queryset.annotate(latest_status=Max('status__time_stamp')).filter(status__time_stamp=F('latest_status')).filter(status__status=status_id)
+                queryset = queryset.filter(status=status_id)
 
         return queryset
