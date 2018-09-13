@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 
 from restui.serializers.mappings import MappingsSerializer
+from restui.models.mappings import Mapping
 from rest_framework import status
 #
 # TODO
@@ -21,9 +22,8 @@ class FacetPagination(LimitOffsetPagination):
 
         for species in queryset.species():
             organism["items"].append({ "name":species[0], "label":species[1] })
-    
         for status in queryset.statuses():
-            statuses["items"].append({ "name":MappingsSerializer.status_type(status), "label":MappingsSerializer.status_type(status).replace("_"," ").capitalize() })
+            statuses["items"].append({ "name":Mapping.status_type(status), "label":Mapping.status_type(status).replace("_"," ").capitalize() })
 
         differences = queryset.divergences()
         if differences[0]:

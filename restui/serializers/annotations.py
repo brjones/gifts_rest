@@ -31,6 +31,14 @@ class StatusSerializer(serializers.ModelSerializer):
         model = UeMappingStatus
         fields = '__all__'
 
+class StatusHistorySerializer(serializers.Serializer):
+    """
+    Serialize a status history record
+    """
+    status = serializers.CharField()
+    time_stamp = serializers.DateTimeField()
+    user = serializers.CharField()
+
 class CommentSerializer(serializers.ModelSerializer):
     """
     mapping/:id/comments endpoint

@@ -2,6 +2,8 @@ from django.db import models
 from django.db.models import Count
 
 from restui.lib.alignments import calculate_difference
+from django.template.defaultfilters import default
+from restui.models.annotations import CvEntryType, CvUeStatus
 
 class Alignment(models.Model):
     alignment_id = models.BigAutoField(primary_key=True)
@@ -100,11 +102,11 @@ class MappingQuerySet(models.query.QuerySet):
         """
         Return a list of all the statuses represented in this queryset
         """
-        status_set = self.values('status__status_id').distinct()
+        status_set = self.values('status').distinct()
         
         status_list = []
         for status in status_set:
-            status_list.append(status['status__status_id'])
+            status_list.append(status['status'])
             
         return status_list
 
@@ -145,6 +147,7 @@ class Mapping(models.Model):
     grouping_id = models.BigIntegerField(blank=True, null=True)
     unique_grouping_id = models.BigIntegerField(blank=True, null=True)
     alignment_difference = models.IntegerField(blank=True, null=True)
+    status = models.ForeignKey('CvUeStatus', db_column='status', to_field='id', on_delete=models.CASCADE, default=1)
 
     @property
     def difference(self):
@@ -161,6 +164,50 @@ class Mapping(models.Model):
             return diff_count
         
         return None
+
+    def statuses(self, usernames=False):
+        """
+        Return a list of all the status history of this mapping
+        """
+        status_set = self.status_history.order_by('time_stamp')
+        statuses = []
+
+        for status in status_set:
+            if usernames and status.user_stamp:
+                user = status.user_stamp.full_name
+            else:
+                user = None
+
+            statuses.append({'status': Mapping.status_type(status.status.id), 'time_stamp': status.time_stamp, 'user': user})
+
+        return statuses
+
+    '''
+    The goal of these two functions is to reduce the number of database calls. Rather
+    than a lookup per mapping record, we'll cache these constants for the life of
+    the request in the serializer class.
+    '''
+    _entry_type = None
+    _status_type = None
+    @classmethod
+    def entry_type(cls, id):
+        if not cls._entry_type:
+            entries = {}
+            for entry in CvEntryType.objects.all():
+                entries[entry.id] = entry.description
+            cls._entry_type = entries
+
+        return cls._entry_type[id]
+
+    @classmethod
+    def status_type(cls, id):
+        if not cls._status_type:
+            statuses = {}
+            for status in CvUeStatus.objects.all():
+                statuses[status.id] = status.description
+            cls._status_type = statuses
+
+        return cls._status_type[id]
 
     def __str__(self):
         return "{0} - ({1}, {2})".format(self.mapping_id, self.uniprot, self.transcript)
