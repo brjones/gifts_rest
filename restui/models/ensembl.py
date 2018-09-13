@@ -67,6 +67,8 @@ class EnsemblTranscript(PostgresModel):
     userstamp = models.CharField(max_length=30, blank=True, null=True)
     time_loaded = models.DateTimeField(blank=True, null=True)
     select = models.NullBooleanField()
+    ensp_id = models.CharField(max_length=30, blank=True, null=True)
+    ensp_len = models.IntegerField(blank=True, null=True)
     history = models.ManyToManyField(EnsemblSpeciesHistory, through='TranscriptHistory')
 
     def __str__(self):
