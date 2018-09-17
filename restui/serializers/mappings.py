@@ -27,6 +27,7 @@ class UniprotEntryMappingSerializer(serializers.Serializer):
     ensemblDerived = serializers.NullBooleanField()
     gene_symbol = serializers.CharField()
     gene_accession = serializers.CharField()
+    length = serializers.IntegerField()
 
 class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     enstId = serializers.CharField()
@@ -144,6 +145,7 @@ class MappingsSerializer(serializers.Serializer):
                             'ensemblDerived':mapping.uniprot.ensembl_derived,
                             'gene_symbol':mapping.uniprot.gene_symbol,
                             'gene_accession':mapping.uniprot.gene_accession,
+                            'length':mapping.uniprot.length
                             },
                         'ensemblTranscript': {
                             'enstId':mapping.transcript.enst_id,
