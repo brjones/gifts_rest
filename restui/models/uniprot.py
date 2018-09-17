@@ -49,6 +49,7 @@ class UniprotEntry(models.Model):
     gene_symbol = models.CharField(max_length=15, blank=True, null=True)
     gene_accession = models.CharField(max_length=15, blank=True, null=True)
     entry_type = models.SmallIntegerField(blank=True, null=True)
+    length = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         return "{0} - {1}".format(self.uniprot_id, self.uniprot_acc)
