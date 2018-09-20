@@ -1,6 +1,22 @@
 from django.urls import path
-from django.conf.urls import url
+from django.http import Http404
+from django.views.decorators.csrf import csrf_exempt
 from restui.views import alignments, ensembl, mappings, uniprot
+from restui.exceptions import FalloverROException
+from django.conf import settings
+
+@csrf_exempt
+def method_router(request, *args, **kwargs):
+    if settings.FALLOVER and (request.method == 'POST' or request.method == 'PUT'):
+        raise Http404
+        # This doesn't work for some reason, maybe Alessandro can figure it out.
+#        raise FalloverROException
+
+    view = kwargs.pop('VIEW', None)
+    if view is not None:
+        return view(request, *args, **kwargs)
+
+    raise Http404
 
 urlpatterns = [
     path('alignments/alignment_run/<int:pk>/', alignments.AlignmentRunFetch.as_view()), # retrieve alignment run by ID
@@ -23,10 +39,10 @@ urlpatterns = [
     path('mappings/release_history/latest/assembly/<assembly_accession>/',              # fetch latest release_mapping_history for a given assembly
          mappings.LatestReleaseMappingHistory.as_view()),
     path('mappings/release_history/<int:pk>/', mappings.MappingsByHistory.as_view()),   # fetch mappings related to a given release mapping history (paginated results)
-    path('mapping/<int:pk>/labels/<label_id>/', mappings.MappingLabelView.as_view()),   # add/delete a label to a mapping
+    path('mapping/<int:pk>/labels/<label_id>/', method_router, {'VIEW': mappings.MappingLabelView.as_view()}),   # add/delete a label to a mapping
     path('mapping/<int:pk>/labels/', mappings.MappingLabelsView.as_view()),             # retrieve all labels of a mapping
-    path('mapping/<int:pk>/comments/', mappings.MappingCommentsView.as_view()),         # add comment/retrieve all comments of a mapping
-    path('mapping/<int:pk>/status/', mappings.MappingStatusView.as_view()),             # update mapping status
+    path('mapping/<int:pk>/comments/', method_router, {'VIEW': mappings.MappingCommentsView.as_view()}),         # add comment/retrieve all comments of a mapping
+    path('mapping/<int:pk>/status/', method_router, {'VIEW': mappings.MappingStatusView.as_view()}),             # update mapping status
     # path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),  # retrieve pairwise alignments for a mapping
     path('mapping/<int:pk>/', mappings.MappingView.as_view()),                          # retrieve single mapping
     path('mappings/stats/', mappings.MappingStatsView.as_view()),                       # retrieve mapping stats

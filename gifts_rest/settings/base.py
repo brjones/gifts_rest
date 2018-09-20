@@ -36,6 +36,8 @@ else:
     DEBUG = True
     AUTHENTICATOR_BACKEND = 'aap_auth.backend.YesBackend'
 
+FALLOVER = env.FALLOVER == True
+
 ALLOWED_HOSTS = ['*']
 
 
@@ -60,7 +62,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE':10,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         AUTHENTICATOR_BACKEND,
-    )
+    ),
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
 }
 
 MIDDLEWARE = [
