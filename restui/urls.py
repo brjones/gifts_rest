@@ -1,12 +1,9 @@
 from django.urls import path
 from django.http import Http404
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.response import Response
-from rest_framework import status
 from restui.views import alignments, ensembl, mappings, uniprot
 from restui.exceptions import FalloverROException
 from django.conf import settings
-from rest_framework.exceptions import PermissionDenied
 
 @csrf_exempt
 def method_router(request, *args, **kwargs):
