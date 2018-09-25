@@ -173,14 +173,18 @@ class UnmappedEntries(APIView):
             # release = UniprotEntryHistory.objects.aggregate(Max('release_version'))['release_version__max']
             release_mapping_history = ReleaseMappingHistory.objects.filter(uniprot_taxid=taxid).latest('release_mapping_history_id')
             # get the Uniprot entries corresponding to that species and uniprot release
-            release_uniprot_entries = UniprotEntry.objects.filter(uniprot_tax_id=taxid,uniprotentryhistory__release_version=release_mapping_history.uniprot_release)
+            release_uniprot_entries = UniprotEntry.objects.filter(uniprot_tax_id=taxid,uniprotentryhistory__release_version=release_mapping_history.uniprot_release).select_related('entry_type')
             # find the mapped uniprot entries for the release and species
-            release_mapped_uniprot_entries = UniprotEntry.objects.filter(mapping__mapping_history__release_mapping_history=release_mapping_history).distinct()
+            release_mapped_uniprot_entries = UniprotEntry.objects.filter(mapping__mapping_history__release_mapping_history=release_mapping_history).distinct().select_related('entry_type')
             
             # the unmapped swiss-prot entries
+            # NOTE: using select_related('entry_type') to speed up query generates 'Index out of range' error, using it in the two sets above works
             release_unmapped_sp_entries = release_uniprot_entries.difference(release_mapped_uniprot_entries).filter(entry_type__description__icontains='swiss')
 
-            data=list(map(lambda ue: { 'uniprot_acc': ue.uniprot_acc }, release_unmapped_sp_entries))
+            data=list(map(lambda ue: { 'uniprotAccession':ue.uniprot_acc,
+                                       "entryType":ue.entry_type.description if ue.entry_type else None,
+                                       "isCanonical": False if ue.canonical_uniprot_id else True,
+                                       "alias":ue.alias if ue.alias else None}, release_unmapped_sp_entries))
             
             page = self.paginate_queryset(data)
             if page is not None:

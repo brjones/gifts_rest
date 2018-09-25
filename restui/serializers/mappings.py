@@ -323,9 +323,13 @@ class MappingStatsSerializer(serializers.Serializer):
 
 class UnmappedSwissprotEntrySerializer(serializers.Serializer):
     """
+    Serializer for unmapped Swissprot entries /mappings/unmapped/<taxid>/swissprot endpoint.
     """
-    uniprot_acc = serializers.CharField()
 
+    uniprotAccession = serializers.CharField()
+    entryType = serializers.CharField()
+    isCanonical = serializers.NullBooleanField()
+    alias = serializers.CharField()
     
 class UnmappedEnsemblEntrySerializer(serializers.Serializer):
     """
