@@ -1,7 +1,7 @@
 from django.urls import path
 from django.http import Http404
 from django.views.decorators.csrf import csrf_exempt
-from restui.views import alignments, ensembl, mappings, uniprot
+from restui.views import alignments, ensembl, mappings, uniprot, stats
 from restui.exceptions import FalloverROException
 from django.conf import settings
 
@@ -10,7 +10,7 @@ def method_router(request, *args, **kwargs):
     if settings.FALLOVER and (request.method == 'POST' or request.method == 'PUT'):
         raise Http404
         # This doesn't work for some reason, maybe Alessandro can figure it out.
-#        raise FalloverROException
+        # raise FalloverROException
 
     view = kwargs.pop('VIEW', None)
     if view is not None:
@@ -39,16 +39,20 @@ urlpatterns = [
     path('mappings/release_history/latest/assembly/<assembly_accession>/',              # fetch latest release_mapping_history for a given assembly
          mappings.LatestReleaseMappingHistory.as_view()),
     path('mappings/release_history/<int:pk>/', mappings.MappingsByHistory.as_view()),   # fetch mappings related to a given release mapping history (paginated results)
+    path('mappings/unmapped/<int:taxid>/<source>/', mappings.UnmappedEntries.as_view()), # fetch unmapped entries (Swissprot, Ensembl)
     path('mapping/<int:pk>/labels/<label_id>/', method_router, {'VIEW': mappings.MappingLabelView.as_view()}),   # add/delete a label to a mapping
+    path('mapping/<int:pk>/labels/<label_id>/', mappings.MappingLabelView.as_view()),   # add/delete a label to a mapping
     path('mapping/<int:pk>/labels/', mappings.MappingLabelsView.as_view()),             # retrieve all labels of a mapping
     path('mapping/<int:pk>/comments/', method_router, {'VIEW': mappings.MappingCommentsView.as_view()}),         # add comment/retrieve all comments of a mapping
     path('mapping/<int:pk>/status/', method_router, {'VIEW': mappings.MappingStatusView.as_view()}),             # update mapping status
     # path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),  # retrieve pairwise alignments for a mapping
     path('mapping/<int:pk>/', mappings.MappingView.as_view()),                          # retrieve single mapping
-    path('mappings/stats/', mappings.MappingStatsView.as_view()),                       # retrieve mapping stats
     path('mappings/', mappings.MappingsView.as_view()),                                 # search the mappings (limit/offset paginated results)
 
-    path('uniprot/entry/<int:pk>/', uniprot.UniprotEntryFetch.as_view()),                       # fetch uniprot entry by db ID
+    path('uniprot/entry/<int:pk>/', uniprot.UniprotEntryFetch.as_view()),               # fetch uniprot entry by db ID
+
+    path('stats/mapped/', stats.MappedStats.as_view()),                                 # retrieve mapping stats
+    path('stats/unmapped/', stats.UnmappedStats.as_view()),                             # stats: total not mapped (Swissprot & Ensembl gene)
 ]
 
 #
