@@ -140,7 +140,7 @@ class MappingsSerializer(serializers.Serializer):
                             'sequenceVersion':mapping.uniprot.sequence_version,
                             'upi':mapping.uniprot.upi,
                             'md5':mapping.uniprot.md5,
-                            'isCanonical': True if mapping.uniprot.canonical_uniprot_id else False,
+                            'isCanonical': False if mapping.uniprot.canonical_uniprot_id else True,
                             'alias': mapping.uniprot.alias,
                             'ensemblDerived':mapping.uniprot.ensembl_derived,
                             'gene_symbol':mapping.uniprot.gene_symbol,
@@ -312,3 +312,23 @@ class MappingStatsSerializer(serializers.Serializer):
     mapping = MappingCountSerializer()
     status = StatusCountSerializer(many=True)
     label = LabelCountSerializer(many=True)
+
+# class StringListField(serializers.ListField):
+#     child = serializers.CharField()
+    
+# class UnmappedSwissprotEntriesSerializer(serializers.Serializer):
+#     """
+#     """
+#     entries = serializers.ListField(child=serializers.CharField())
+
+# class UnmappedSwissprotEntrySerializer(serializers.Serializer):
+#     """
+#     """
+#     uniprot_acc = serializers.CharField()
+
+    
+# class UnmappedEnsemblEntrySerializer(serializers.Serializer):
+#     """
+#     """
+#     gene = serializers.CharField()
+#     transcript = serializers.CharField() #transcripts = serializers.ListField(child=serializers.CharField())
