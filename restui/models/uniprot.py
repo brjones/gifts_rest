@@ -1,4 +1,5 @@
 from django.db import models
+from restui.models.annotations import CvEntryType
 
 class Isoform(models.Model):
     isoform_id = models.BigAutoField(primary_key=True)
@@ -48,7 +49,7 @@ class UniprotEntry(models.Model):
     alias = models.CharField(max_length=30, blank=True, null=True)
     gene_symbol = models.CharField(max_length=15, blank=True, null=True)
     gene_accession = models.CharField(max_length=15, blank=True, null=True)
-    entry_type = models.SmallIntegerField(blank=True, null=True)
+    entry_type = models.ForeignKey('CvEntryType', models.DO_NOTHING, blank=True, null=True, db_column="entry_type")
     length = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
