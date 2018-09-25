@@ -1,7 +1,7 @@
 import pprint
 import re
 import requests
-from collections import OrderedDict
+from collections import defaultdict, OrderedDict
 
 from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory
 from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistory
@@ -10,7 +10,7 @@ from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMapp
 from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
     MappingSerializer, MappingCommentsSerializer, MappingsSerializer,\
     MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer,\
-    MappingStatsSerializer
+    MappingStatsSerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer
 from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
 from restui.pagination import FacetPagination
 from restui.lib.external import ensembl_sequence
@@ -24,7 +24,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import generics
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 
 
@@ -138,6 +138,138 @@ class MappingsByHistory(generics.ListAPIView):
             return Mapping.objects.filter(mapping_history__release_mapping_history=release_mapping_history_id)
         except Mapping.DoesNotExist:
             raise Http404
+
+class UnmappedEntries(APIView):
+    """
+    Present the details for Swissprot/Ensembl not mapped entities for the latest release for a given species
+    """
+    pagination_class = PageNumberPagination # settings.DEFAULT_PAGINATION_CLASS
+    
+    # pagination_class = PageNumberPagination
+
+    # def paginate_queryset(self, queryset):
+    #     """
+    #     Return a single page of results, or `None` if pagination is disabled.
+    #     """
+    #     if self.paginator is None:
+    #         return None
+    #     return self.paginator.paginate_queryset(queryset, self.request, view=self)
+
+    # def get_paginated_response(self, data):
+    #     """
+    #     Return a paginated style `Response` object for the given output data.
+    #     """
+    #     assert self.paginator is not None
+    #     return self.paginator.get_paginated_response(data)
+    
+    def get(self, request, taxid, source):
+        if source == 'swissprot':
+            # the Swissprot entries:
+            # uniprot_entry_history for release X  minus mapping_history for release X
+            # = all unmapped uniprot entries for release X
+            # that all can be filtered by entry type
+
+            # find the latest uniprot release corresponding to the species
+            # release = UniprotEntryHistory.objects.aggregate(Max('release_version'))['release_version__max']
+            release_mapping_history = ReleaseMappingHistory.objects.filter(uniprot_taxid=taxid).latest('release_mapping_history_id')
+            # get the Uniprot entries corresponding to that species and uniprot release
+            release_uniprot_entries = UniprotEntry.objects.filter(uniprot_tax_id=taxid,uniprotentryhistory__release_version=release_mapping_history.uniprot_release)
+            # find the mapped uniprot entries for the release and species
+            release_mapped_uniprot_entries = UniprotEntry.objects.filter(mapping__mapping_history__release_mapping_history=release_mapping_history).distinct()
+            
+            # the unmapped swiss-prot entries
+            release_unmapped_sp_entries = release_uniprot_entries.difference(release_mapped_uniprot_entries).filter(entry_type__description__icontains='swiss')
+
+            data=list(map(lambda ue: { 'uniprot_acc': ue.uniprot_acc }, release_unmapped_sp_entries))
+            
+            page = self.paginate_queryset(data)
+            if page is not None:
+                serializer = UnmappedSwissprotEntrySerializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            # if pagination is not defined
+            serializer = UnmappedSwissprotEntrySerializer(data, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        elif source == 'ensembl':
+            # genes = set( gene.gene_id for gene in EnsemblGene.objects.all() )
+            # transcripts = set( transcript.transcript_id for transcript in EnsemblTranscript.objects.all() )
+            
+            # mapped_genes = set( item['transcript__gene'] for item in Mapping.objects.values('transcript__gene').distinct() )
+            # mapped_transcripts = set ( item['transcript'] for item in Mapping.objects.values('transcript').distinct() )
+            
+            # unmapped_genes = genes.difference(mapped_genes)
+            # unmapped_transcripts = transcript.difference(mapped_transcripts)
+
+            # # WRONG this might include mapped transcripts
+            # # unmapped_transcripts = EnsemblTranscripts.objects.filter(gene_id__in=unmapped_genes)
+            
+            # # for each unmapped gene specify the list of unmapped transcripts
+            # data = defaultdict(list)
+            # for unmapped_transcript in unmapped_transcripts:
+            #     data[unmapped_transcript.gene.ensg_id].append(unmapped_transcript.enst_id)
+                
+            # # for unmapped_gene in EnsemblGene.objects.filter(pk__in=unmapped_genes):
+            # #     for transcript in unmapped_gene.ensembltranscript_set.all():
+            # #         if transcript.transcript_id not in mapped_transcripts:
+            # #             data[unmapped_gene.ensg_id].append(transcript.enst_id)
+
+            release_mapping_history = ReleaseMappingHistory.objects.filter(ensembl_species_history__ensembl_tax_id=taxid).latest('release_mapping_history_id')
+            release_transcripts = EnsemblTranscript.objects.filter(transcripthistory__ensembl_species_history=release_mapping_history.ensembl_species_history)
+            release_mapped_transcripts = EnsemblTranscript.objects.filter(mapping__mapping_history__release_mapping_history=release_mapping_history).distinct()
+            release_unmapped_transcripts = release_transcripts.difference(release_mapped_transcripts)
+            
+            # TODO: optmize
+            # data = list(map(lambda t: { 'gene':t.gene.gene_id, 'transcript':t.enst_id }, release_unmapped_transcripts))
+
+            # gene_to_transcripts = defaultdict(list)
+            # for unmapped_transcript in release_unmapped_transcripts:
+            #     gene_to_transcripts[unmapped_transcript.gene.ensg_id].append(unmapped_transcript.enst_id)
+            # data = list(map(lambda gene_id: { 'gene':gene_id, 'transcripts':gene_to_transcripts[gene_id] }, gene_to_transcripts.keys()))
+
+            # page = self.paginate_queryset(data)
+            page = self.paginate_queryset(release_unmapped_transcripts)
+            if page is not None:
+                serializer = UnmappedEnsemblEntrySerializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            # if pagination is not defined
+            serializer = UnmappedEnsemblEntrySerializer(data, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        else:
+            raise Http404('Unknown source')
+        
+    @property
+    def paginator(self):
+        """
+        The paginator instance associated with the view, or `None`.
+        """
+        if not hasattr(self, '_paginator'):
+            if self.pagination_class is None:
+                self._paginator = None
+            else:
+                self._paginator = self.pagination_class()
+        return self._paginator
+
+    def paginate_queryset(self, queryset):
+        """
+        Return a single page of results, or `None` if pagination is disabled.
+        """
+        if self.paginator is None:
+            return None
+        
+        return self.paginator.paginate_queryset(queryset, self.request, view=self)
+        # limit = self.request.query_params.get('limit', 100)
+        # offset = self.request.query_params.get('offset', 0)
+        
+        
+    def get_paginated_response(self, data):
+        """
+        Return a paginated style `Response` object for the given output data.
+        """
+        assert self.paginator is not None
+        return self.paginator.get_paginated_response(data)
 
 class MappingLabelView(APIView):
     """
@@ -334,91 +466,6 @@ class MappingView(APIView):
         serializer = MappingSerializer(data)
 
         return Response(serializer.data)
-
-
-class MappingStatsView(APIView):
-    """
-    Return stats on all the mappings
-    """
-    def get(self, request):
-
-        #
-        # Mapping stats: general and Uniprot/Ensembl specific
-        #
-        mappings_count = Mapping.objects.count() # tot mappings
-
-        uniprot_mapped_count = Mapping.objects.values('uniprot').distinct().count() # tot mapped uniprot entries
-        uniprot_not_mapped_sp_count = None # tot non mapped Swiss-Prot entries, NOTE: NO WAY TO GET IT AT THE MOMENT
-
-        all_entry_types = dict( (entry.id, entry.description) for entry in CvEntryType.objects.all() )
-        sp_entry_type_ids = [ k for (k, v) in all_entry_types.items() if v.lower().startswith('swiss') ]
-        nonsp_entry_type_ids = list(set(all_entry_types.keys()).difference(sp_entry_type_ids))
-
-        #
-        # NOTE:
-        #  This is not requested but it's computation is reported (commented) here for completeness
-        uniprot_mapped_sp_count = 0 # tot mapped Swiss-Prot entries, NOTE: NOT REQUESTED BUT HERE FOR COMPLETENESS
-        # if sp_entry_type_ids:
-        #     query_filter = Q(mapping_history__entry_type=sp_entry_type_ids[0])
-        #
-        #     for i in range(1, len(sp_entry_type_ids)):
-        #         query_filter = query_filter | Q(mapping_history__entry_type=sp_entry_type_ids[i])
-        #
-        #     uniprot_mapped_sp_count = Mapping.objects.filter(query_filter).values('uniprot').distinct().count()
-        #
-        # tot non mapped genes which none of its transcripts match to any SwissProt entry
-        gene_not_mapped_sp_count = 0
-        #
-        # NOTE:
-        #   Here we're counting genes not mapped to Swiss-Prot entries among the mapped genes.
-        #   As discussed with UniProt, they'd prefer counting among the non mapped genes, which
-        #   in this case coincide with counting the non-mapped genes in general, as done below.
-        #
-        # if nonsp_entry_type_ids:
-        #     query_filter = Q(mapping_history__entry_type=nonsp_entry_type_ids[0])
-        #
-        #     for i in range(1, len(sp_entry_type_ids)):
-        #         query_filter = query_filter | Q(mapping_history__entry_type=nonsp_entry_type_ids[i])
-        #
-        #     gene_not_mapped_sp_count = Mapping.objects.filter(query_filter).values('transcript__gene').distinct().count()
-
-        gene_ids = set( gene.gene_id for gene in EnsemblGene.objects.all() )
-        gene_mapped_ids = set( item['transcript__gene'] for item in Mapping.objects.values('transcript__gene').distinct() )
-        gene_mapped_count = len(gene_mapped_ids) # tot mapped Ensembl genes
-        gene_not_mapped_sp_count = len(gene_ids.difference(gene_mapped_ids))
-
-        transcript_mapped_count = Mapping.objects.values('transcript').distinct().count() # tot mapped Ensembl transcripts
-
-        #
-        # Stats relative to mapping labels
-        #
-        all_labels = CvUeLabel.objects.all()
-        
-        label_counts = []
-        
-        for label in all_labels:
-            count = UeMappingLabel.objects.filter(label=label).count()
-            label_counts.append({'label': label.description, 'count': count})
-
-        #
-        # Stats for mapping status
-        #
-        status_counts = []
-        status_totals = Mapping.objects.values('status').annotate(total=Count('status'))
-        for status_count in status_totals:
-            status_counts.append({'status': Mapping.status_type(status_count['status']), 'count': status_count['total']})
-    
-        serializer = MappingStatsSerializer({'mapping': { 'total': mappings_count,
-                                                          'uniprot': { 'mapped': uniprot_mapped_count,
-                                                                       'not_mapped_sp': uniprot_not_mapped_sp_count },
-                                                          'ensembl': { 'gene_mapped': gene_mapped_count,
-                                                                       'gene_not_mapped_sp': gene_not_mapped_sp_count,
-                                                                       'transcript_mapped': transcript_mapped_count } },
-                                             'status': status_counts,
-                                             'label': label_counts })
-
-        return Response(serializer.data)
-
 
 # TODO
 #

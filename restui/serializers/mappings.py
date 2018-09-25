@@ -321,14 +321,14 @@ class MappingStatsSerializer(serializers.Serializer):
 #     """
 #     entries = serializers.ListField(child=serializers.CharField())
 
-# class UnmappedSwissprotEntrySerializer(serializers.Serializer):
-#     """
-#     """
-#     uniprot_acc = serializers.CharField()
+class UnmappedSwissprotEntrySerializer(serializers.Serializer):
+    """
+    """
+    uniprot_acc = serializers.CharField()
 
     
-# class UnmappedEnsemblEntrySerializer(serializers.Serializer):
-#     """
-#     """
-#     gene = serializers.CharField()
-#     transcript = serializers.CharField() #transcripts = serializers.ListField(child=serializers.CharField())
+class UnmappedEnsemblEntrySerializer(serializers.Serializer):
+    """
+    """
+    gene = serializers.CharField()
+    transcript = serializers.CharField() #transcripts = serializers.ListField(child=serializers.CharField())
