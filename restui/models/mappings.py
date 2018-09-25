@@ -84,9 +84,6 @@ class MappingQuerySet(models.query.QuerySet):
             
         qs_limit = sum(int(row['total']) for row in counts[offset:offset+limit])
 
-        print(qs_offset)
-        print(qs_limit)
-
         sub_qs = self.select_related('uniprot').select_related('transcript').select_related('transcript__gene').order_by('unique_grouping_id')[qs_offset:qs_offset+qs_limit]
         
         grouped_results = {}
@@ -244,7 +241,7 @@ class ReleaseMappingHistory(models.Model):
         db_table = 'release_mapping_history'
 
 class ReleaseStats(models.Model):
-    release_mapping_history = models.ForeignKey(ReleaseMappingHistory, models.DO_NOTHING)
+    release_mapping_history = models.ForeignKey(ReleaseMappingHistory, models.DO_NOTHING, primary_key=True)
     transcripts_total = models.BigIntegerField(blank=True, null=True)
     uniprot_entries_total = models.BigIntegerField(blank=True, null=True)
     uniprot_entries_unmapped = models.BigIntegerField(blank=True, null=True)
