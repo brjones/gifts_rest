@@ -3,7 +3,8 @@ import re
 import requests
 from collections import OrderedDict
 
-from restui.models.mappings import ReleaseStats
+from restui.models.ensembl import EnsemblGene
+from restui.models.mappings import Mapping, ReleaseStats
 from restui.models.uniprot import UniprotEntry
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.stats import ReleaseStatsSerializer

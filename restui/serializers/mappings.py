@@ -313,22 +313,40 @@ class MappingStatsSerializer(serializers.Serializer):
     status = StatusCountSerializer(many=True)
     label = LabelCountSerializer(many=True)
 
-# class StringListField(serializers.ListField):
-#     child = serializers.CharField()
-    
-# class UnmappedSwissprotEntriesSerializer(serializers.Serializer):
-#     """
-#     """
-#     entries = serializers.ListField(child=serializers.CharField())
-
 class UnmappedSwissprotEntrySerializer(serializers.Serializer):
     """
+    Serializer for unmapped Swissprot entries /mappings/unmapped/<taxid>/swissprot endpoint.
     """
-    uniprot_acc = serializers.CharField()
 
+    uniprotAccession = serializers.CharField()
+    entryType = serializers.CharField()
+    isCanonical = serializers.NullBooleanField()
+    alias = serializers.CharField()
+
+class UnmappedEnsemblGeneSerializer(serializers.Serializer):
+    ensgId = serializers.CharField()
+    ensgName = serializers.CharField()
+    chromosome = serializers.CharField()
+    seqRegionStart = serializers.IntegerField()
+    seqRegionEnd = serializers.IntegerField()
+    seqRegionStrand = serializers.IntegerField()
     
 class UnmappedEnsemblEntrySerializer(serializers.Serializer):
     """
+    Serializer for unmapped ensembl entries /mappings/unmapped/<taxid>/ensembl endpoint.
     """
-    gene = serializers.CharField()
-    transcript = serializers.CharField() #transcripts = serializers.ListField(child=serializers.CharField())
+
+    gene = UnmappedEnsemblGeneSerializer()
+    transcripts = serializers.ListField(child=serializers.CharField())
+
+    @classmethod
+    def build_group(cls, ensg_id, group):
+        gene = group[0].gene
+
+        return { 'gene':{ 'ensgId':gene.ensg_id,
+	                  'ensgName':gene.gene_name,
+	                  'chromosome':gene.chromosome,
+	                  'seqRegionStart':gene.seq_region_start,
+	                  'seqRegionEnd':gene.seq_region_end,
+	                  'seqRegionStrand':gene.seq_region_strand },
+                 'transcripts':[ t.enst_id for t in group ] }
