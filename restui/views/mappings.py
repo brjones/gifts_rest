@@ -12,7 +12,7 @@ from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappi
     MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer,\
     MappingStatsSerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer
 from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
-from restui.pagination import FacetPagination
+from restui.pagination import FacetPagination, UnmappedEnsemblEntryPagination
 from restui.lib.external import ensembl_sequence
 from restui.lib.alignments import fetch_pairwise
 
@@ -24,7 +24,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import generics
-from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
+from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 
 
@@ -143,24 +143,7 @@ class UnmappedEntries(APIView):
     """
     Present the details for Swissprot/Ensembl not mapped entities for the latest release for a given species
     """
-    pagination_class = PageNumberPagination # settings.DEFAULT_PAGINATION_CLASS
-    
-    # pagination_class = PageNumberPagination
-
-    # def paginate_queryset(self, queryset):
-    #     """
-    #     Return a single page of results, or `None` if pagination is disabled.
-    #     """
-    #     if self.paginator is None:
-    #         return None
-    #     return self.paginator.paginate_queryset(queryset, self.request, view=self)
-
-    # def get_paginated_response(self, data):
-    #     """
-    #     Return a paginated style `Response` object for the given output data.
-    #     """
-    #     assert self.paginator is not None
-    #     return self.paginator.get_paginated_response(data)
+    # pagination_class = PageNumberPagination # settings.DEFAULT_PAGINATION_CLASS
     
     def get(self, request, taxid, source):
         if source == 'swissprot':
@@ -173,16 +156,17 @@ class UnmappedEntries(APIView):
             # release = UniprotEntryHistory.objects.aggregate(Max('release_version'))['release_version__max']
             release_mapping_history = ReleaseMappingHistory.objects.filter(uniprot_taxid=taxid).latest('release_mapping_history_id')
             # get the Uniprot entries corresponding to that species and uniprot release
-            release_uniprot_entries = UniprotEntry.objects.filter(uniprot_tax_id=taxid,uniprotentryhistory__release_version=release_mapping_history.uniprot_release).select_related('entry_type')
+            release_uniprot_entries = UniprotEntry.objects.select_related('entry_type').filter(uniprot_tax_id=taxid,uniprotentryhistory__release_version=release_mapping_history.uniprot_release,entry_type__description__icontains='swiss')
             # find the mapped uniprot entries for the release and species
-            release_mapped_uniprot_entries = UniprotEntry.objects.filter(mapping__mapping_history__release_mapping_history=release_mapping_history).distinct().select_related('entry_type')
+            release_mapped_uniprot_entries = UniprotEntry.objects.select_related('entry_type').filter(mapping__mapping_history__release_mapping_history=release_mapping_history,entry_type__description__icontains='swiss').distinct()
             
             # the unmapped swiss-prot entries
             # NOTE: using select_related('entry_type') to speed up query generates 'Index out of range' error, using it in the two sets above works
-            release_unmapped_sp_entries = release_uniprot_entries.difference(release_mapped_uniprot_entries).filter(entry_type__description__icontains='swiss')
+            release_unmapped_sp_entries = release_uniprot_entries.difference(release_mapped_uniprot_entries)
+            # release_unmapped_sp_entries = release_uniprot_entries.exclude(uniprot_id__in=release_mapped_uniprot_entries.values_list('uniprot_id',flat=True))
 
             data=list(map(lambda ue: { 'uniprotAccession':ue.uniprot_acc,
-                                       "entryType":ue.entry_type.description if ue.entry_type else None,
+                                       "entryType":ue.entry_type.description,
                                        "isCanonical": False if ue.canonical_uniprot_id else True,
                                        "alias":ue.alias if ue.alias else None}, release_unmapped_sp_entries))
             
@@ -196,42 +180,14 @@ class UnmappedEntries(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         elif source == 'ensembl':
-            # genes = set( gene.gene_id for gene in EnsemblGene.objects.all() )
-            # transcripts = set( transcript.transcript_id for transcript in EnsemblTranscript.objects.all() )
-            
-            # mapped_genes = set( item['transcript__gene'] for item in Mapping.objects.values('transcript__gene').distinct() )
-            # mapped_transcripts = set ( item['transcript'] for item in Mapping.objects.values('transcript').distinct() )
-            
-            # unmapped_genes = genes.difference(mapped_genes)
-            # unmapped_transcripts = transcript.difference(mapped_transcripts)
-
-            # # WRONG this might include mapped transcripts
-            # # unmapped_transcripts = EnsemblTranscripts.objects.filter(gene_id__in=unmapped_genes)
-            
-            # # for each unmapped gene specify the list of unmapped transcripts
-            # data = defaultdict(list)
-            # for unmapped_transcript in unmapped_transcripts:
-            #     data[unmapped_transcript.gene.ensg_id].append(unmapped_transcript.enst_id)
-                
-            # # for unmapped_gene in EnsemblGene.objects.filter(pk__in=unmapped_genes):
-            # #     for transcript in unmapped_gene.ensembltranscript_set.all():
-            # #         if transcript.transcript_id not in mapped_transcripts:
-            # #             data[unmapped_gene.ensg_id].append(transcript.enst_id)
-
             release_mapping_history = ReleaseMappingHistory.objects.filter(ensembl_species_history__ensembl_tax_id=taxid).latest('release_mapping_history_id')
-            release_transcripts = EnsemblTranscript.objects.filter(transcripthistory__ensembl_species_history=release_mapping_history.ensembl_species_history)
-            release_mapped_transcripts = EnsemblTranscript.objects.filter(mapping__mapping_history__release_mapping_history=release_mapping_history).distinct()
-            release_unmapped_transcripts = release_transcripts.difference(release_mapped_transcripts)
-            
-            # TODO: optmize
-            # data = list(map(lambda t: { 'gene':t.gene.gene_id, 'transcript':t.enst_id }, release_unmapped_transcripts))
+            release_transcripts = EnsemblTranscript.objects.select_related('gene').filter(transcripthistory__ensembl_species_history=release_mapping_history.ensembl_species_history)
+            release_mapped_transcripts = EnsemblTranscript.objects.select_related('gene').filter(mapping__mapping_history__release_mapping_history=release_mapping_history).distinct()
+            # certain SQL operations, e.g.  values(), count(), order_by, don't work on union/intersection/difference
+            # see https://docs.djangoproject.com/en/1.11/ref/models/querysets/#django.db.models.query.QuerySet.union
+            # release_unmapped_transcripts = release_transcripts.difference(release_mapped_transcripts)
+            release_unmapped_transcripts = release_transcripts.exclude(transcript_id__in=release_mapped_transcripts.values_list('transcript_id', flat=True))
 
-            # gene_to_transcripts = defaultdict(list)
-            # for unmapped_transcript in release_unmapped_transcripts:
-            #     gene_to_transcripts[unmapped_transcript.gene.ensg_id].append(unmapped_transcript.enst_id)
-            # data = list(map(lambda gene_id: { 'gene':gene_id, 'transcripts':gene_to_transcripts[gene_id] }, gene_to_transcripts.keys()))
-
-            # page = self.paginate_queryset(data)
             page = self.paginate_queryset(release_unmapped_transcripts)
             if page is not None:
                 serializer = UnmappedEnsemblEntrySerializer(page, many=True)
@@ -250,10 +206,18 @@ class UnmappedEntries(APIView):
         The paginator instance associated with the view, or `None`.
         """
         if not hasattr(self, '_paginator'):
-            if self.pagination_class is None:
-                self._paginator = None
+            # if self.pagination_class is None:
+            #     self._paginator = None
+            # else:
+            #     self._paginator = self.pagination_class()
+            source = self.kwargs['source']
+            if source == 'ensembl':
+                self._paginator = UnmappedEnsemblEntryPagination()
+            elif source == 'swissprot':
+                self._paginator = LimitOffsetPagination()
             else:
-                self._paginator = self.pagination_class()
+                raise Exception('Unknown source')
+
         return self._paginator
 
     def paginate_queryset(self, queryset):
@@ -262,7 +226,7 @@ class UnmappedEntries(APIView):
         """
         if self.paginator is None:
             return None
-        
+
         return self.paginator.paginate_queryset(queryset, self.request, view=self)
         # limit = self.request.query_params.get('limit', 100)
         # offset = self.request.query_params.get('offset', 0)
