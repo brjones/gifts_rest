@@ -3,7 +3,7 @@ from django.http import Http404
 
 from restui.lib.external import ensembl_sequence
 from restui.models.annotations import CvEntryType, CvUeStatus
-from restui.models.mappings import Mapping, ReleaseMappingHistory, MappingHistory
+from restui.models.mappings import Mapping, ReleaseMappingHistory, MappingHistory, ReleaseStats
 from restui.serializers.ensembl import SpeciesHistorySerializer
 from restui.serializers.annotations import StatusSerializer, StatusHistorySerializer
 
@@ -305,13 +305,14 @@ class LabelCountSerializer(serializers.Serializer):
     label = serializers.CharField()
     count = serializers.IntegerField()
 
-class MappingStatsSerializer(serializers.Serializer):
+class ReleaseStatsSerializer(serializers.ModelSerializer):
     """
-    Serializer for the /stats/ endpoint
+    Serializer for ReleaseStats instances
     """
-    mapping = MappingCountSerializer()
-    status = StatusCountSerializer(many=True)
-    label = LabelCountSerializer(many=True)
+
+    class Meta:
+        model = ReleaseStats
+        fields = '__all__'
 
 class UnmappedSwissprotEntrySerializer(serializers.Serializer):
     """

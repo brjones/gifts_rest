@@ -4,13 +4,13 @@ import requests
 from collections import defaultdict, OrderedDict
 
 from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory
-from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistory
+from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistory, ReleaseStats
 from restui.models.uniprot import UniprotEntry
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
     MappingSerializer, MappingCommentsSerializer, MappingsSerializer,\
     MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer,\
-    MappingStatsSerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer
+    ReleaseStatsSerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer
 from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
 from restui.pagination import FacetPagination, UnmappedEnsemblEntryPagination
 from restui.lib.external import ensembl_sequence
@@ -238,6 +238,23 @@ class UnmappedEntries(APIView):
         """
         assert self.paginator is not None
         return self.paginator.get_paginated_response(data)
+
+class ReleaseMappingStats(APIView):
+    """
+    Species latest release mapped/unmapped stats (Swissprot/Ensembl)
+    """
+
+    def get(self, request, taxid):
+        # client is interested in latest release mapping history
+        try:
+            # find the release stats for the species latest release mapping
+            rmh = ReleaseMappingHistory.objects.filter(uniprot_taxid=taxid).latest('release_mapping_history_id')
+            release_stats = ReleaseStats.objects.get(release_mapping_history=rmh)
+        except:
+            raise Http404("Unable to find stats for latest species {} release mapping history".format(taxid))
+
+        serializer = ReleaseStatsSerializer(release_stats)
+        return Response(serializer.data)
 
 class MappingLabelView(APIView):
     """
