@@ -36,10 +36,11 @@ urlpatterns = [
          ensembl.EnspUCigarFetch.as_view()),
     path('ensembl/cigar/', ensembl.EnspUCigarCreate.as_view()),                                     # insert cigar/mdz
 
-    path('mappings/release_history/latest/assembly/<assembly_accession>/',              # fetch latest release_mapping_history for a given assembly
+    path('mappings/release_history/latest/assembly/<assembly_accession>/',               # fetch latest release_mapping_history for a given assembly
          mappings.LatestReleaseMappingHistory.as_view()),
-    path('mappings/release_history/<int:pk>/', mappings.MappingsByHistory.as_view()),   # fetch mappings related to a given release mapping history (paginated results)
+    path('mappings/release_history/<int:pk>/', mappings.MappingsByHistory.as_view()),    # fetch mappings related to a given release mapping history (paginated results)
     path('mappings/unmapped/<int:taxid>/<source>/', mappings.UnmappedEntries.as_view()), # fetch unmapped entries (Swissprot, Ensembl)
+    path('mappings/stats/<int:taxid>/', mappings.ReleaseMappingStats.as_view()),                # species mapped/unmapped release stats
     path('mapping/<int:pk>/labels/<label_id>/', method_router, {'VIEW': mappings.MappingLabelView.as_view()}),   # add/delete a label to a mapping
     path('mapping/<int:pk>/labels/<label_id>/', mappings.MappingLabelView.as_view()),   # add/delete a label to a mapping
     path('mapping/<int:pk>/labels/', mappings.MappingLabelsView.as_view()),             # retrieve all labels of a mapping
@@ -51,8 +52,6 @@ urlpatterns = [
 
     path('uniprot/entry/<int:pk>/', uniprot.UniprotEntryFetch.as_view()),               # fetch uniprot entry by db ID
 
-    path('stats/mapped/', stats.MappedStats.as_view()),                                 # retrieve mapping stats
-    path('stats/unmapped/', stats.UnmappedStats.as_view()),                             # stats: total not mapped (Swissprot & Ensembl gene)
 ]
 
 #
