@@ -1,6 +1,9 @@
+from collections import defaultdict
+
 from django.db import models
+from django.db.models import Count
 from psqlextra.models import PostgresModel
-from psqlextra.manager import PostgresManager
+from psqlextra.manager import PostgresManager, PostgresQuerySet
 from django.db.models.deletion import CASCADE
 
 class EnsemblSpeciesHistory(PostgresModel):
@@ -49,9 +52,62 @@ class EnsemblGene(PostgresModel):
         managed = False
         db_table = 'ensembl_gene'
 
+class EnsemblTranscriptQuerySet(models.query.QuerySet): #(PostgresQuerySet):
+    """
+    A specialised query set to be able to deal with groupings
+    of transcripts based on their corresponding gene.
+
+    Used for efficiently paginate the unmapped ensembl entries.
+    """
+
+    _counts = None
+
+    def grouped_counts(self):
+        """
+        Retrieve a list of unique gene counts from a queryset.
+        """
+
+        if self._counts is None:
+            self._counts = self.values('gene').annotate(total=Count('gene')).order_by('gene')
+
+        return self._counts
+
+    @property
+    def grouped_count(self):
+        """
+        Retrieve the total number of transcript groups (i.e. genes) from a queryset.
+        """
+
+        return len(self.grouped_counts())
+
+    def grouped_slice(self, offset, limit):
+        """
+        Fetch a subset of EnsemblTranscript instances grouped by gene.
+        """
+
+        counts = self.grouped_counts()
+
+        if offset == 0:
+            qs_offset = 0
+        else:
+            qs_offset = sum(int(row['total']) for row in counts[:offset])
+
+        qs_limit = sum(int(row['total']) for row in counts[offset:offset+limit])
+
+        sub_qs = self.order_by('gene')[qs_offset:qs_offset+qs_limit]
+
+        grouped_results = defaultdict(list)
+        for result in sub_qs:
+            grouped_results[result.gene.ensg_id].append(result)
+
+        return grouped_results
+
+class EnsemblTranscriptManager(PostgresManager):
+    def get_queryset(self):
+        return EnsemblTranscriptQuerySet(self.model, using=self._db)
 
 class EnsemblTranscript(PostgresModel):
-    objects = PostgresManager()
+    objects = EnsemblTranscriptManager()
 
     transcript_id = models.BigAutoField(primary_key=True)
     gene = models.ForeignKey(EnsemblGene, models.DO_NOTHING, blank=True, null=True)
