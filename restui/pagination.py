@@ -2,7 +2,7 @@ from collections import OrderedDict
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 
-from restui.serializers.mappings import MappingsSerializer
+from restui.serializers.mappings import MappingsSerializer, UnmappedEnsemblEntrySerializer
 from restui.models.mappings import Mapping
 from rest_framework import status
 #
@@ -70,4 +70,43 @@ class FacetPagination(LimitOffsetPagination):
             ('previous', self.get_previous_link()),
             ('results', data),
             ('facets', self.facets)
+        ]))
+
+class UnmappedEnsemblEntryPagination(LimitOffsetPagination):
+    """
+    Paginate unmapped ensembl transcripts
+    """
+
+    def paginate_queryset(self, queryset, request, view=None):
+        self.count = queryset.grouped_count
+        self.limit = self.get_limit(request)
+
+        if self.limit is None:
+            return None
+
+        self.offset = self.get_offset(request)
+
+        self.request = request
+        if self.count > self.limit and self.template is not None:
+            self.display_page_controls = True
+
+        if self.count == 0 or self.offset > self.count:
+            return []
+
+        unmapped_groups = []
+        for ensg_id, group in queryset.grouped_slice(self.offset, self.limit).items():
+            unmapped_groups.append( UnmappedEnsemblEntrySerializer.build_group(ensg_id, group) )
+
+
+        return unmapped_groups
+
+    def get_paginated_response(self, data):
+        if not data:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response(OrderedDict([
+            ('count', self.count),
+            ('next', self.get_next_link()),
+            ('previous', self.get_previous_link()),
+            ('results', data)
         ]))
