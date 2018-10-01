@@ -131,6 +131,12 @@ class MappingQuerySet(models.query.QuerySet):
         
         return [identical, small, large]
 
+    def chromosomes(self):
+        """
+        Return a list of all chromosomes for the genes represented in the queryset
+        """
+        return sorted( pair['transcript__gene__chromosome'] for pair in self.values('transcript__gene__chromosome').distinct() )
+
 class MappingManager(models.Manager):
     def get_queryset(self):
         return MappingQuerySet(self.model, using=self._db)
