@@ -1,3 +1,4 @@
+import pprint
 from collections import OrderedDict
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
@@ -8,19 +9,18 @@ from rest_framework import status
 #
 # TODO
 #
-# sequence and mappings facets
+# chromosome and mappings facets
 #
 class FacetPagination(LimitOffsetPagination):
     def create_facets(self, queryset):
         statuses = OrderedDict([('name','status'),('label','Status'),('items',[])])
         organism = OrderedDict([('name','organism'),('label','Organism'),('items',[])])
         sequence = OrderedDict([('name','sequence'),('label','Sequence'),('items',[])])
-        #######
         # TODO
-        mappings = OrderedDict([('name','mappings'),('label','Type'),('items',[])])
-        #######
+        # mappings = OrderedDict([('name','mappings'),('label','Type'),('items',[])])
 
-        for species in queryset.species():
+        species_set = queryset.species()
+        for species in species_set:
             organism["items"].append({ "name":species[0], "label":species[1] })
         for status in queryset.statuses():
             statuses["items"].append({ "name":Mapping.status_type(status), "label":Mapping.status_type(status).replace("_"," ").capitalize() })
@@ -32,9 +32,17 @@ class FacetPagination(LimitOffsetPagination):
             sequence["items"].append({ "label": "small", "name": "small", "count": differences[1] })
         if differences[2]:
             sequence["items"].append({ "label": "large", "name": "large", "count": differences[2] })
+
+        if len(species_set) == 1:
+            chromosomes = OrderedDict([('name','chromosomes'),('label','Chromosomes'),('items',[])])
             
-#        return [ statuses, organism, sequence, mappings ]
+            for chromosome in queryset.chromosomes():
+                chromosomes["items"].append({ 'name':chromosome.lower(), 'label':chromosome.upper() })
+
+            return [ statuses, organism, sequence, chromosomes ]
+
         return [ statuses, organism, sequence ]
+
 
     def paginate_queryset(self, queryset, request, view=None):
         self.count = queryset.grouped_count
