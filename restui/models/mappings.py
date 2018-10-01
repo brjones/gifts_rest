@@ -247,7 +247,9 @@ class ReleaseStats(models.Model):
     uniprot_entries_unmapped = models.BigIntegerField(blank=True, null=True)
     genes_total = models.BigIntegerField(blank=True, null=True)
     uniprot_entries_unmapped_sp = models.BigIntegerField(blank=True, null=True)
-
+    transcripts_unmapped = models.BigIntegerField(blank=True, null=True)
+    genes_unmapped = models.BigIntegerField(blank=True, null=True)
+    
     class Meta:
         managed = False
         db_table = 'release_stats'
