@@ -556,4 +556,7 @@ class MappingsView(generics.ListAPIView):
 
                 queryset = queryset.filter(status=status_id)
 
+            if 'chromosomes' in facets:
+                queryset = queryset.filter(transcript__gene__chromosome=facets['chromosomes'])
+
         return queryset
