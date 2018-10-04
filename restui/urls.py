@@ -46,7 +46,7 @@ urlpatterns = [
     path('mapping/<int:pk>/labels/', mappings.MappingLabelsView.as_view()),             # retrieve all labels of a mapping
     path('mapping/<int:pk>/comments/', method_router, {'VIEW': mappings.MappingCommentsView.as_view()}),         # add comment/retrieve all comments of a mapping
     path('mapping/<int:pk>/status/', method_router, {'VIEW': mappings.MappingStatusView.as_view()}),             # update mapping status
-    # path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),  # retrieve pairwise alignments for a mapping
+    path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),  # retrieve pairwise alignments for a mapping
     path('mapping/<int:pk>/', mappings.MappingView.as_view()),                          # retrieve single mapping
     path('mappings/', mappings.MappingsView.as_view()),                                 # search the mappings (limit/offset paginated results)
 

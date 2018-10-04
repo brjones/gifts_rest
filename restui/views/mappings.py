@@ -445,7 +445,7 @@ class MappingView(APIView):
         mapping = get_mapping(pk)
 
         data = { 'taxonomy': build_taxonomy_data(mapping),
-                 'mapping': MappingsSerializer.build_mapping(mapping, fetch_sequence=True, authenticated=request.user.is_authenticated),
+                 'mapping': MappingsSerializer.build_mapping(mapping, fetch_sequence=True, authenticated=True if request.user and request.user.is_authenticated else False),
                  'relatedMappings': build_related_mappings_data(mapping) }
         
         serializer = MappingSerializer(data)
