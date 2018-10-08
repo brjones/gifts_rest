@@ -23,6 +23,8 @@ urlpatterns = [
     path('alignments/alignment_run/', alignments.AlignmentRunCreate.as_view()),         # insert alignment run
     path('alignments/alignment/latest/assembly/<assembly_accession>/',                  # retrieve latest alignments by assembly accession
          alignments.LatestAlignmentsFetch.as_view()),                                   #   param: alignment_type: perfect_match (default), identity
+    path('alignments/alignment/alignment_run/<int:pk>/',
+         alignments.AlignmentByAlignmentRunFetch().as_view()),                          # fetch alignments by alignment run ID
     path('alignments/alignment/<int:pk>/', alignments.AlignmentFetch.as_view()),        # retrieve alignment by ID
     path('alignments/alignment/', alignments.AlignmentCreate.as_view()),                # insert alignment
     
