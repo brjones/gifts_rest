@@ -39,6 +39,22 @@ class AlignmentFetch(generics.RetrieveAPIView):
     queryset = Alignment.objects.all()
     serializer_class = AlignmentSerializer
 
+class AlignmentByAlignmentRunFetch(generics.ListAPIView):
+    """
+    Retrieve all alignments for a given alignment run
+    """
+
+    serializer_class = AlignmentSerializer
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        try:
+            alignment_run = AlignmentRun.objects.get(pk=self.kwargs["pk"])
+        except (AlignmentRun.DoesNotExist, IndexError):
+            raise Http404
+
+        return Alignment.objects.filter(alignment_run=alignment_run)
+
 #
 # TODO
 #
