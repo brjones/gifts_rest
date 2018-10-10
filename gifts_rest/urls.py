@@ -22,7 +22,7 @@ if settings.env.DEV_ENV:
 
     urlpatterns = [
         path('admin/', admin.site.urls),
-        url(r'^gifts/', include('restui.urls')),
+        url(r'^', include('restui.urls')),
     ]
 
 else:
