@@ -168,7 +168,7 @@ class UnmappedEntries(APIView):
             data=list(map(lambda ue: { 'uniprotAccession':ue.uniprot_acc,
                                        "entryType":ue.entry_type.description,
                                        "isCanonical": False if ue.canonical_uniprot_id else True,
-                                       "alias":ue.alias if ue.alias else None}, release_unmapped_sp_entries))
+                                       "alias":ue.alias if ue.alias else None}, release_unmapped_sp_entries.order_by('uniprot_acc')))
             
             page = self.paginate_queryset(data)
             if page is not None:
