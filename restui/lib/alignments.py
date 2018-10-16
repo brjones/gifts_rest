@@ -18,7 +18,7 @@ def fetch_pairwise(mapping):
             
             ens_release = alignment.alignment_run.ensembl_release
 
-            ensp = ensembl_protein(mapping.transcript.enst_id, ens_release)
+            ensp = ensembl_protein(enst, ens_release)
             seq = ensembl_sequence(ensp, ens_release)
             
             uniprot_seq, match_str, ensembl_seq = pairwise_alignment(seq, cigarplus, mdz)
@@ -37,15 +37,16 @@ def fetch_pairwise(mapping):
 
         elif alignment.alignment_run.score1_type == 'perfect_match' and alignment.score1 == 1:
             ens_release = alignment.alignment_run.ensembl_release
+
+            ensp = ensembl_protein(enst, ens_release)
+            seq = ensembl_sequence(ensp, ens_release)
             
-            seq = ensembl_sequence(enst, ens_release)
-                        
             pairwise_alignments.append({'uniprot_alignment': seq,
                                         'ensembl_alignment': seq,
                                         'match_str': '|' * len(seq),
                                         'alignment_id': alignment.alignment_id,
                                         'ensembl_release': ens_release,
-                                        'ensembl_id': enst,
+                                        'ensembl_id': ensp,
                                         'uniprot_id': uniprot_id,
                                         'alignment_type': 'perfect_match'})
             
