@@ -105,6 +105,7 @@ class UnmappedEnsemblEntryPagination(LimitOffsetPagination):
         for ensg_id, group in queryset.grouped_slice(self.offset, self.limit).items():
             unmapped_groups.append( UnmappedEnsemblEntrySerializer.build_group(ensg_id, group) )
 
+        unmapped_groups.sort(key=lambda e: e['gene']['ensgName'])
 
         return unmapped_groups
 
