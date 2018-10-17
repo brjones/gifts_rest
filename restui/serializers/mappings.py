@@ -44,6 +44,7 @@ class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     sequence = serializers.CharField(required=False)
     ensgSymbol = serializers.CharField()
     ensgAccession = serializers.CharField()
+    ensgRegionAccession = serializers.CharField()
     enspId = serializers.CharField()
     enspLen = serializers.IntegerField()
     select = serializers.NullBooleanField()
@@ -161,6 +162,7 @@ class MappingsSerializer(serializers.Serializer):
                             'ensgName':mapping.transcript.gene.gene_name,
                             'ensgSymbol':mapping.transcript.gene.gene_symbol,
                             'ensgAccession':mapping.transcript.gene.gene_accession,
+                            'ensgRegionAccession':mapping.transcript.gene.region_accession,
                             'sequence':sequence,
                             'enspId':mapping.transcript.ensp_id,
                             'enspLen':mapping.transcript.ensp_len,
