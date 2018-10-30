@@ -104,17 +104,3 @@ class MappedStats(APIView):
 
         return Response(serializer.data)
 
-class UnmappedStats(APIView):
-    """
-    Total counts for Swissprot/Ensembl not mapped entries
-    """
-
-    def get(self, request):
-        # client is interested in latest release mapping history
-        try:
-            release_stats = ReleaseStats.objects.latest('release_mapping_history')
-        except:
-            raise Http404
-
-        serializer = ReleaseStatsSerializer(release_stats)
-        return Response(serializer.data)
