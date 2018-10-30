@@ -46,19 +46,19 @@ class MappingQuerySet(models.query.QuerySet):
 
     def grouped_counts(self):
         """
-        Retrieve a list of unique_grouping_id counts from a queryset.
+        Retrieve a list of unique grouping_id counts from a queryset.
         eg
-        [{'unique_grouping_id': 1, 'total': 19}, {'unique_grouping_id': 2, 'total': 6}, {'unique_grouping_id': 3, 'total': 4},...]
+        [{'mapping_history__grouping_id': 1, 'total': 19}, {'mapping_history__grouping_id': 2, 'total': 6}, {'mapping_history__grouping_id': 3, 'total': 4},...]
         """
         if self._counts is None:
-            self._counts = self.values('unique_grouping_id').annotate(total=Count('unique_grouping_id')).order_by('unique_grouping_id')
+            self._counts = self.values('mapping_history__grouping_id').annotate(total=Count('mapping_history__grouping_id')).order_by('mapping_history__grouping_id')
 
         return self._counts
 
     @property
     def grouped_count(self):
         """
-        Retrieve the total number of groups based on unique_grouping_id from a queryset
+        Retrieve the total number of groups based on unique grouping_id from a queryset
         """
         counts = self.grouped_counts()
         
@@ -66,14 +66,14 @@ class MappingQuerySet(models.query.QuerySet):
 
     def grouped_slice(self, offset, limit):
         """
-        Fetch a subset of Mapping records grouped by unique_grouping_id.
+        Fetch a subset of Mapping records grouped by unique grouping_id.
         We first find how many records in to the queryset, counting by
-        unique_grouping_id intervals. Then find the number of records to extract
+        unique grouping_id intervals. Then find the number of records to extract
         to scoop up limit number of groups.
         
         Finally return the groups all nicely packaged up in a dict of lists,
-        where the dict key is the unique_grouping_id and the value is a list of
-        Mapping objects associated with that unique_grouping_id
+        where the dict key is the unique grouping_id and the value is a list of
+        Mapping objects associated with that grouping_id
         """
         counts = self.grouped_counts()
         
@@ -84,14 +84,14 @@ class MappingQuerySet(models.query.QuerySet):
             
         qs_limit = sum(int(row['total']) for row in counts[offset:offset+limit])
 
-        sub_qs = self.select_related('uniprot').select_related('transcript').select_related('transcript__gene').order_by('unique_grouping_id')[qs_offset:qs_offset+qs_limit]
+        sub_qs = self.select_related('uniprot').select_related('transcript').select_related('transcript__gene').order_by('mapping_history__grouping_id')[qs_offset:qs_offset+qs_limit]
         
         grouped_results = {}
         for result in sub_qs:
             try:
-                grouped_results[result.unique_grouping_id].append(result)
+                grouped_results[result.mapping_history.latest('release_mapping_history__time_mapped').grouping_id].append(result)
             except (KeyError, AttributeError):
-                grouped_results[result.unique_grouping_id] = [ result ]
+                grouped_results[result.mapping_history.latest('release_mapping_history__time_mapped').grouping_id] = [ result ]
 
         return grouped_results
 
@@ -147,8 +147,6 @@ class Mapping(models.Model):
     mapping_id = models.BigAutoField(primary_key=True)
     uniprot = models.ForeignKey('UniprotEntry', models.DO_NOTHING, blank=True, null=True)
     transcript = models.ForeignKey('EnsemblTranscript', models.DO_NOTHING, blank=True, null=True)
-    grouping_id = models.BigIntegerField(blank=True, null=True)
-    unique_grouping_id = models.BigIntegerField(blank=True, null=True)
     alignment_difference = models.IntegerField(blank=True, null=True)
     status = models.ForeignKey('CvUeStatus', db_column='status', to_field='id', on_delete=models.CASCADE, default=1)
 
@@ -229,6 +227,7 @@ class MappingHistory(models.Model):
     enst_version = models.SmallIntegerField()
     mapping = models.ForeignKey(Mapping, models.DO_NOTHING, related_name='mapping_history')
     sp_ensembl_mapping_type = models.CharField(max_length=50, blank=True, null=True)
+    grouping_id = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
