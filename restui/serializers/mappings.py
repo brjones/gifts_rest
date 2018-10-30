@@ -353,3 +353,11 @@ class UnmappedEnsemblEntrySerializer(serializers.Serializer):
 	                  'seqRegionEnd':gene.seq_region_end,
 	                  'seqRegionStrand':gene.seq_region_strand },
                  'transcripts':[ t.enst_id for t in group ] }
+
+class ReleasePerSpeciesSerializer(serializers.Serializer):
+    """
+    Serializeer for ensembl/uniprot release numbers /mappings/release/<taxid>/ endpoint
+    """
+
+    ensembl = serializers.IntegerField()
+    uniprot = serializers.CharField()

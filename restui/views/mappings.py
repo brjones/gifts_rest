@@ -10,7 +10,7 @@ from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMapp
 from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
     MappingSerializer, MappingCommentsSerializer, MappingsSerializer,\
     MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer,\
-    ReleaseStatsSerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer
+    ReleaseStatsSerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer, ReleasePerSpeciesSerializer
 from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
 from restui.pagination import FacetPagination, UnmappedEnsemblEntryPagination
 from restui.lib.external import ensembl_sequence
@@ -90,8 +90,7 @@ def build_related_mappings_data(mapping):
     """
 
     # related mapping share the same group_id and tax id
-    mappings = Mapping.objects.filter(unique_grouping_id=mapping.unique_grouping_id,
-                                      uniprot__uniprot_tax_id=mapping.uniprot.uniprot_tax_id).exclude(pk=mapping.mapping_id)
+    mappings = Mapping.objects.filter(mapping_history__grouping_id=mapping.mapping_history.latest('release_mapping_history__time_mapped').grouping_id, uniprot__uniprot_tax_id=mapping.uniprot.uniprot_tax_id).exclude(pk=mapping.mapping_id)
 
     return list(map(lambda m: MappingsSerializer.build_mapping(m, fetch_sequence=False), mappings))
 
@@ -238,6 +237,20 @@ class UnmappedEntries(APIView):
         """
         assert self.paginator is not None
         return self.paginator.get_paginated_response(data)
+
+class ReleasePerSpecies(APIView):
+    """
+    Retrieve Ensembl/Uniprot release per species
+    """
+
+    def get(self, request, taxid):
+        # find the latest uniprot release corresponding to the species
+        release_mapping_history = ReleaseMappingHistory.objects.filter(uniprot_taxid=taxid).latest('release_mapping_history_id')
+
+        serializer = ReleasePerSpeciesSerializer({ 'ensembl': release_mapping_history.ensembl_species_history.ensembl_release,
+                                                   'uniprot': release_mapping_history.uniprot_release })
+
+        return Response(serializer.data)
 
 class ReleaseMappingStats(APIView):
     """
