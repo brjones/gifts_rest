@@ -89,10 +89,17 @@ def build_related_mappings_data(mapping):
     Return the list of mappings sharing the same ENST or Uniprot accession of the given mapping.
     """
 
-    # related mapping share the same group_id and tax id
-    mappings = Mapping.objects.filter(mapping_history__grouping_id=mapping.mapping_history.latest('release_mapping_history__time_mapped').grouping_id, uniprot__uniprot_tax_id=mapping.uniprot.uniprot_tax_id).exclude(pk=mapping.mapping_id)
+    # related mappings share the same group_id and tax id
+    mapping_mh = mapping.mapping_history.latest('release_mapping_history__time_mapped')
+    mapping_mh_rmh = mapping_mh.release_mapping_history
+    mapping_grouping_id = mapping_mh.grouping_id
 
-    return list(map(lambda m: MappingsSerializer.build_mapping(m, fetch_sequence=False), mappings))
+    related_mappings_mh = MappingHistory.objects.filter(release_mapping_history=mapping_mh_rmh, grouping_id=mapping_grouping_id)
+    related_mappings = filter(lambda m: m.mapping_id != mapping.mapping_id, ( mh.mapping for mh in related_mappings_mh ) )
+
+    # mappings = Mapping.objects.filter(mapping_history__grouping_id=mapping.mapping_history.latest('release_mapping_history__time_mapped').grouping_id, uniprot__uniprot_tax_id=mapping.uniprot.uniprot_tax_id).exclude(pk=mapping.mapping_id)
+
+    return list(map(lambda m: MappingsSerializer.build_mapping(m, fetch_sequence=False), related_mappings))
 
 #
 # TODO: filter by ensembl release (optional argument)
