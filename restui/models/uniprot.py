@@ -63,6 +63,7 @@ class UniprotEntry(models.Model):
 class UniprotEntryHistory(models.Model):
     release_version = models.CharField(max_length=30)
     uniprot = models.ForeignKey(UniprotEntry, models.DO_NOTHING, primary_key=True)
+    grouping_id = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
