@@ -5,7 +5,7 @@ from collections import defaultdict, OrderedDict
 
 from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory
 from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistory, ReleaseStats
-from restui.models.uniprot import UniprotEntry
+from restui.models.uniprot import UniprotEntry, UniprotEntryHistory
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
     MappingSerializer, MappingCommentsSerializer, MappingsSerializer,\
@@ -100,6 +100,32 @@ def build_related_mappings_data(mapping):
     # mappings = Mapping.objects.filter(mapping_history__grouping_id=mapping.mapping_history.latest('release_mapping_history__time_mapped').grouping_id, uniprot__uniprot_tax_id=mapping.uniprot.uniprot_tax_id).exclude(pk=mapping.mapping_id)
 
     return list(map(lambda m: MappingsSerializer.build_mapping(m, fetch_sequence=False), related_mappings))
+
+def build_related_unmapped_entries_data(mapping):
+    """
+    Return the list of unmapped entries releated to the mapping (via grouping_id)
+    """
+
+    # related unmapped entries share the same grouping_id and tax id
+    mapping_mh = mapping.mapping_history.latest('release_mapping_history__time_mapped')
+    mapping_mh_rmh = mapping_mh.release_mapping_history
+    mapping_grouping_id = mapping_mh.grouping_id
+
+    related_unmapped_entries_histories = UniprotEntryHistory.objects.filter(release_version=mapping_mh_rmh.uniprot_release,
+                                                                            grouping_id=mapping_grouping_id)
+    related_unmapped_entries = map( lambda ue: { 'uniprotAccession': ue.uniprot_acc,
+                                                 'entryType': None, # info in mapping_history but this is unmapped
+                                                 'sequenceVersion': ue.sequence_version,
+                                                 'upi': ue.upi,
+                                                 'md5': ue.md5,
+                                                 'isCanonical': False if ue.canonical_uniprot_id else True,
+                                                 'alias': ue.alias,
+                                                 'ensemblDerived': ue.ensembl_derived,
+                                                 'gene_symbol': ue.gene_symbol,
+                                                 'gene_accession': ue.gene_accession,
+                                                 'length': ue.length }, ( ueh.uniprot for ueh in related_unmapped_entries_histories ) )
+
+    return list(related_unmapped_entries)
 
 #
 # TODO: filter by ensembl release (optional argument)
@@ -466,26 +492,19 @@ class MappingView(APIView):
 
         data = { 'taxonomy': build_taxonomy_data(mapping),
                  'mapping': MappingsSerializer.build_mapping(mapping, fetch_sequence=True, authenticated=True if request.user and request.user.is_authenticated else False),
-                 'relatedMappings': build_related_mappings_data(mapping) }
-        
+                 'relatedEntries': { 'mapped': build_related_mappings_data(mapping),
+                                     'unmapped': build_related_unmapped_entries_data(mapping) } }
+
         serializer = MappingSerializer(data)
 
         return Response(serializer.data)
 
-# TODO
 #
-# - Filter based on other facets, besides organism/status
-#
-# - Group mappings if they share ENST or UniProt accessions,
-#   see https://github.com/ebi-uniprot/gifts-mock/blob/master/data/mappings.json
+# NOTES
 #
 # - What does it mean to search with a given mapping ID, return just that mapping
 #   or all 'related' mappings?
 #   We're returning only that mapping at the moment, to discuss with Uniprot
-#
-# - facet filtering based on mapping status: consider query potential values and DB values might be different
-#   |
-#   --> Action: agree with Uniprot on a common vocabulary
 #
 class MappingsView(generics.ListAPIView):
     """

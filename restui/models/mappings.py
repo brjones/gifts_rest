@@ -149,6 +149,7 @@ class Mapping(models.Model):
     transcript = models.ForeignKey('EnsemblTranscript', models.DO_NOTHING, blank=True, null=True)
     alignment_difference = models.IntegerField(blank=True, null=True)
     status = models.ForeignKey('CvUeStatus', db_column='status', to_field='id', on_delete=models.CASCADE, default=1)
+    first_release_mapping_history_id = models.BigIntegerField(blank=True, null=True)
 
     @property
     def difference(self):

@@ -64,6 +64,15 @@ class EnsemblUniprotMappingSerializer(serializers.Serializer):
     status = serializers.CharField()
     status_history = StatusHistorySerializer(many=True)
 
+
+class RelatedEntriesSerializer(serializers.Serializer):
+    """
+    For nested serialization of mapped/unmapped mapping releated entries
+    """
+
+    mapped = EnsemblUniprotMappingSerializer(many=True)
+    unmapped = UniprotEntryMappingSerializer(many=True)
+
 class MappingSerializer(serializers.Serializer):
     """
     Serialize data in call to mapping/:id endpoint.
@@ -74,7 +83,7 @@ class MappingSerializer(serializers.Serializer):
     
     taxonomy = TaxonomySerializer()
     mapping = EnsemblUniprotMappingSerializer()
-    relatedMappings = EnsemblUniprotMappingSerializer(many=True)
+    relatedEntries = RelatedEntriesSerializer()
 
 class MappingHistorySerializer(serializers.ModelSerializer):
     """
