@@ -11,7 +11,7 @@ from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappi
     MappingSerializer, MappingCommentsSerializer, MappingsSerializer,\
     MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer,\
     ReleaseStatsSerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer, ReleasePerSpeciesSerializer
-from restui.serializers.annotations import StatusSerializer, CommentSerializer, LabelSerializer
+from restui.serializers.annotations import StatusSerializer, CvUeStatusSerializer, CommentSerializer, LabelSerializer
 from restui.pagination import FacetPagination, UnmappedEnsemblEntryPagination
 from restui.lib.external import ensembl_sequence
 from restui.lib.alignments import fetch_pairwise
@@ -301,6 +301,14 @@ class ReleaseMappingStats(APIView):
 
         serializer = ReleaseStatsSerializer(release_stats)
         return Response(serializer.data)
+
+class AvailableStatuses(generics.ListAPIView):
+    """
+    Retrieve available statuses
+    """
+
+    serializer_class = CvUeStatusSerializer
+    queryset = CvUeStatus.objects.all()
 
 class MappingLabelView(APIView):
     """
