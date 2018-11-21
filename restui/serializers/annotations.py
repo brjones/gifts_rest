@@ -1,4 +1,4 @@
-from restui.models.annotations import UeMappingStatus, UeMappingComment, UeMappingLabel
+from restui.models.annotations import UeMappingStatus, UeMappingComment, UeMappingLabel, CvUeStatus
 
 from rest_framework import serializers
 
@@ -29,6 +29,11 @@ class StatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UeMappingStatus
+        fields = '__all__'
+
+class CvUeStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CvUeStatus
         fields = '__all__'
 
 class StatusHistorySerializer(serializers.Serializer):
