@@ -155,7 +155,7 @@ class MappingsSerializer(serializers.Serializer):
                             'alias': mapping.uniprot.alias,
                             'ensemblDerived':mapping.uniprot.ensembl_derived,
                             'gene_symbol':mapping.uniprot.gene_symbol,
-                            'gene_accession':mapping.uniprot.gene_accession,
+                            'gene_accession':mapping.uniprot.chromosome_line,
                             'length':mapping.uniprot.length
                             },
                         'ensemblTranscript': {
