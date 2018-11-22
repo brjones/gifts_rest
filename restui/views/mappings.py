@@ -122,7 +122,7 @@ def build_related_unmapped_entries_data(mapping):
                                                  'alias': ue.alias,
                                                  'ensemblDerived': ue.ensembl_derived,
                                                  'gene_symbol': ue.gene_symbol,
-                                                 'gene_accession': ue.gene_accession,
+                                                 'gene_accession': ue.chromosome_line,
                                                  'length': ue.length }, ( ueh.uniprot for ueh in related_unmapped_entries_histories ) )
 
     return list(related_unmapped_entries)
