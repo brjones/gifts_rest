@@ -36,6 +36,7 @@ class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     biotype = serializers.CharField()
     deleted = serializers.NullBooleanField()
     chromosome = serializers.CharField()
+    regionAccession = serializers.CharField()
     seqRegionStart = serializers.IntegerField()
     seqRegionEnd = serializers.IntegerField()
     seqRegionStrand = serializers.IntegerField()
@@ -164,6 +165,7 @@ class MappingsSerializer(serializers.Serializer):
                             'biotype':mapping.transcript.biotype,
                             'deleted':mapping.transcript.deleted,
                             'chromosome':mapping.transcript.gene.chromosome,
+                            'regionAccession':mapping.transcript.gene.region_accession,
                             'seqRegionStart':mapping.transcript.seq_region_start,
                             'seqRegionEnd':mapping.transcript.seq_region_end,
                             'seqRegionStrand': mapping.transcript.gene.seq_region_strand,
@@ -339,6 +341,7 @@ class UnmappedEnsemblGeneSerializer(serializers.Serializer):
     ensgId = serializers.CharField()
     ensgName = serializers.CharField()
     chromosome = serializers.CharField()
+    regionAccession = serializers.CharField()
     seqRegionStart = serializers.IntegerField()
     seqRegionEnd = serializers.IntegerField()
     seqRegionStrand = serializers.IntegerField()
@@ -358,6 +361,7 @@ class UnmappedEnsemblEntrySerializer(serializers.Serializer):
         return { 'gene':{ 'ensgId':gene.ensg_id,
 	                  'ensgName':gene.gene_name,
 	                  'chromosome':gene.chromosome,
+                          'regionAccession':gene.region_accession,
 	                  'seqRegionStart':gene.seq_region_start,
 	                  'seqRegionEnd':gene.seq_region_end,
 	                  'seqRegionStrand':gene.seq_region_strand },
@@ -365,7 +369,7 @@ class UnmappedEnsemblEntrySerializer(serializers.Serializer):
 
 class ReleasePerSpeciesSerializer(serializers.Serializer):
     """
-    Serializeer for ensembl/uniprot release numbers /mappings/release/<taxid>/ endpoint
+    Serializer for ensembl/uniprot release numbers /mappings/release/<taxid>/ endpoint
     """
 
     ensembl = serializers.IntegerField()
