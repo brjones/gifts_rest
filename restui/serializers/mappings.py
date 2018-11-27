@@ -345,6 +345,10 @@ class UnmappedEnsemblGeneSerializer(serializers.Serializer):
     seqRegionStart = serializers.IntegerField()
     seqRegionEnd = serializers.IntegerField()
     seqRegionStrand = serializers.IntegerField()
+
+class UnmappedEnsemblTranscriptSerializer(serializers.Serializer):
+    enstId = serializers.CharField()
+    biotype = serializers.CharField()
     
 class UnmappedEnsemblEntrySerializer(serializers.Serializer):
     """
@@ -352,7 +356,7 @@ class UnmappedEnsemblEntrySerializer(serializers.Serializer):
     """
 
     gene = UnmappedEnsemblGeneSerializer()
-    transcripts = serializers.ListField(child=serializers.CharField())
+    transcripts = UnmappedEnsemblTranscriptSerializer(many=True) # serializers.ListField(child=serializers.CharField())
 
     @classmethod
     def build_group(cls, ensg_id, group):
@@ -365,7 +369,7 @@ class UnmappedEnsemblEntrySerializer(serializers.Serializer):
 	                  'seqRegionStart':gene.seq_region_start,
 	                  'seqRegionEnd':gene.seq_region_end,
 	                  'seqRegionStrand':gene.seq_region_strand },
-                 'transcripts':[ t.enst_id for t in group ] }
+                 'transcripts':[ { 'enstId':t.enst_id, 'biotype':t.biotype }  for t in group ] }
 
 class ReleasePerSpeciesSerializer(serializers.Serializer):
     """
