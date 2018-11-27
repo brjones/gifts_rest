@@ -28,7 +28,8 @@ class UniprotEntryMappingSerializer(serializers.Serializer):
     gene_symbol = serializers.CharField()
     gene_accession = serializers.CharField()
     length = serializers.IntegerField()
-
+    protein_existence_id = serializers.IntegerField()
+    
 class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     enstId = serializers.CharField()
     enstVersion = serializers.IntegerField()
@@ -156,7 +157,8 @@ class MappingsSerializer(serializers.Serializer):
                             'ensemblDerived':mapping.uniprot.ensembl_derived,
                             'gene_symbol':mapping.uniprot.gene_symbol,
                             'gene_accession':mapping.uniprot.chromosome_line,
-                            'length':mapping.uniprot.length
+                            'length':mapping.uniprot.length,
+                            'protein_existence_id':mapping.uniprot.protein_existence_id
                             },
                         'ensemblTranscript': {
                             'enstId':mapping.transcript.enst_id,
@@ -336,6 +338,11 @@ class UnmappedSwissprotEntrySerializer(serializers.Serializer):
     entryType = serializers.CharField()
     isCanonical = serializers.NullBooleanField()
     alias = serializers.CharField()
+    gene_symbol = serializers.CharField()
+    gene_accession = serializers.CharField()
+    length = serializers.IntegerField()
+    protein_existence_id = serializers.IntegerField()
+
 
 class UnmappedEnsemblGeneSerializer(serializers.Serializer):
     ensgId = serializers.CharField()

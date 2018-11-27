@@ -200,7 +200,11 @@ class UnmappedEntries(APIView):
             data=list(map(lambda ue: { 'uniprotAccession':ue.uniprot_acc,
                                        "entryType":ue.entry_type.description,
                                        "isCanonical": False if ue.canonical_uniprot_id else True,
-                                       "alias":ue.alias if ue.alias else None}, release_unmapped_sp_entries.order_by('uniprot_acc')))
+                                       "alias":ue.alias if ue.alias else None,
+                                       "gene_symbol":ue.gene_symbol,
+                                       "gene_accession":ue.chromosome_line,
+                                       "length":ue.length,
+                                       "protein_existence_id":ue.protein_existence_id }, release_unmapped_sp_entries.order_by('uniprot_acc')))
             
             page = self.paginate_queryset(data)
             if page is not None:
