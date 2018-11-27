@@ -48,9 +48,10 @@ class UniprotEntry(models.Model):
     ensembl_derived = models.NullBooleanField()
     alias = models.CharField(max_length=30, blank=True, null=True)
     gene_symbol = models.CharField(max_length=30, blank=True, null=True)
-    chromosome_line = models.CharField(max_length=30, blank=True, null=True)
+    chromosome_line = models.CharField(max_length=50, blank=True, null=True)
     entry_type = models.ForeignKey('CvEntryType', models.DO_NOTHING, blank=True, null=True, db_column="entry_type")
     length = models.IntegerField(blank=True, null=True)
+    protein_existence_id = models.SmallIntegerField(blank=True, null=True)
 
     def __str__(self):
         return "{0} - {1}".format(self.uniprot_id, self.uniprot_acc)
