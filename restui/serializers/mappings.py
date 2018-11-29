@@ -49,6 +49,7 @@ class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     ensgRegionAccession = serializers.CharField()
     enspId = serializers.CharField()
     enspLen = serializers.IntegerField()
+    source = serializers.CharField()
     select = serializers.NullBooleanField()
     
 class EnsemblUniprotMappingSerializer(serializers.Serializer):
@@ -179,6 +180,7 @@ class MappingsSerializer(serializers.Serializer):
                             'sequence':sequence,
                             'enspId':mapping.transcript.ensp_id,
                             'enspLen':mapping.transcript.ensp_len,
+                            'source':mapping.transcript.source,
                             'select':mapping.transcript.select
                             },
                        'alignment_difference': mapping.alignment_difference,
@@ -352,11 +354,13 @@ class UnmappedEnsemblGeneSerializer(serializers.Serializer):
     seqRegionStart = serializers.IntegerField()
     seqRegionEnd = serializers.IntegerField()
     seqRegionStrand = serializers.IntegerField()
+    source = serializers.CharField()
 
 class UnmappedEnsemblTranscriptSerializer(serializers.Serializer):
     enstId = serializers.CharField()
     biotype = serializers.CharField()
-    
+    source = serializers.CharField()
+
 class UnmappedEnsemblEntrySerializer(serializers.Serializer):
     """
     Serializer for unmapped ensembl entries /mappings/unmapped/<taxid>/ensembl endpoint.
@@ -375,8 +379,9 @@ class UnmappedEnsemblEntrySerializer(serializers.Serializer):
                           'regionAccession':gene.region_accession,
 	                  'seqRegionStart':gene.seq_region_start,
 	                  'seqRegionEnd':gene.seq_region_end,
-	                  'seqRegionStrand':gene.seq_region_strand },
-                 'transcripts':[ { 'enstId':t.enst_id, 'biotype':t.biotype }  for t in group ] }
+	                  'seqRegionStrand':gene.seq_region_strand,
+                          'source':gene.source },
+                 'transcripts':[ { 'enstId':t.enst_id, 'biotype':t.biotype, 'source':t.source }  for t in group ] }
 
 class ReleasePerSpeciesSerializer(serializers.Serializer):
     """
