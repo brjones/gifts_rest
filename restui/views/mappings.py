@@ -3,7 +3,7 @@ import re
 import requests
 from collections import defaultdict, OrderedDict
 
-from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory
+from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory, TranscriptHistory
 from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistory, ReleaseStats
 from restui.models.uniprot import UniprotEntry, UniprotEntryHistory
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
@@ -111,22 +111,47 @@ def build_related_unmapped_entries_data(mapping):
     mapping_mh_rmh = mapping_mh.release_mapping_history
     mapping_grouping_id = mapping_mh.grouping_id
 
-    related_unmapped_entries_histories = UniprotEntryHistory.objects.filter(release_version=mapping_mh_rmh.uniprot_release,
-                                                                            grouping_id=mapping_grouping_id)
-    related_unmapped_entries = map( lambda ue: { 'uniprotAccession': ue.uniprot_acc,
-                                                 'entryType': None, # info in mapping_history but this is unmapped
-                                                 'sequenceVersion': ue.sequence_version,
-                                                 'upi': ue.upi,
-                                                 'md5': ue.md5,
-                                                 'isCanonical': False if ue.canonical_uniprot_id else True,
-                                                 'alias': ue.alias,
-                                                 'ensemblDerived': ue.ensembl_derived,
-                                                 'gene_symbol': ue.gene_symbol,
-                                                 'gene_accession': ue.chromosome_line,
-                                                 'length': ue.length,
-                                                 'protein_existence_id': ue.protein_existence_id }, ( ueh.uniprot for ueh in related_unmapped_entries_histories ) )
+    related_unmapped_ue_histories = UniprotEntryHistory.objects.filter(release_version=mapping_mh_rmh.uniprot_release,
+                                                                       grouping_id=mapping_grouping_id)
+    related_unmapped_ue_entries = map( lambda ue: { 'uniprotAccession': ue.uniprot_acc,
+                                                    'entryType': None, # info in mapping_history but this is unmapped
+                                                    'sequenceVersion': ue.sequence_version,
+                                                    'upi': ue.upi,
+                                                    'md5': ue.md5,
+                                                    'isCanonical': False if ue.canonical_uniprot_id else True,
+                                                    'alias': ue.alias,
+                                                    'ensemblDerived': ue.ensembl_derived,
+                                                    'gene_symbol': ue.gene_symbol,
+                                                    'gene_accession': ue.chromosome_line,
+                                                    'length': ue.length,
+                                                    'protein_existence_id': ue.protein_existence_id }, ( ueh.uniprot for ueh in related_unmapped_ue_histories ) )
 
-    return list(related_unmapped_entries)
+    related_unmapped_transcript_histories = TranscriptHistory.objects.filter(ensembl_species_history=mapping_mh_rmh.ensembl_species_history,
+                                                                             grouping_id=mapping_grouping_id)
+    related_unmapped_transcripts = map(lambda transcript: { 'enstId':transcript.enst_id,
+                                                            'enstVersion':transcript.enst_version,
+                                                            'upi':transcript.uniparc_accession,
+                                                            'biotype':transcript.biotype,
+                                                            'deleted':transcript.deleted,
+                                                            'chromosome':transcript.gene.chromosome,
+                                                            'regionAccession':transcript.gene.region_accession,
+                                                            'seqRegionStart':transcript.seq_region_start,
+                                                            'seqRegionEnd':transcript.seq_region_end,
+                                                            'seqRegionStrand':transcript.gene.seq_region_strand,
+                                                            'ensgId':transcript.gene.ensg_id,
+                                                            'ensgName':transcript.gene.gene_name,
+                                                            'ensgSymbol':transcript.gene.gene_symbol,
+                                                            'ensgAccession':transcript.gene.gene_accession,
+                                                            'ensgRegionAccession':transcript.gene.region_accession,
+                                                            'sequence':None,
+                                                            'enspId':transcript.ensp_id,
+                                                            'enspLen':transcript.ensp_len,
+                                                            'source':transcript.source,
+                                                            'select':transcript.select }, ( th.transcript for th in related_unmapped_transcript_histories ) )
+
+
+    return { 'ensembl':list(related_unmapped_transcripts),
+             'uniprot':list(related_unmapped_ue_entries) }
 
 #
 # TODO: filter by ensembl release (optional argument)
@@ -497,7 +522,7 @@ class MappingPairwiseAlignment(APIView):
 
 class MappingView(APIView):
     """
-    Retrieve a single mapping, includes related mappings and taxonomy information.
+    Retrieve a single mapping, includes related mappings/unmapped entries and taxonomy information.
     """
 
     def get(self, request, pk):
