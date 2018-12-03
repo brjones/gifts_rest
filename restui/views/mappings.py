@@ -114,7 +114,7 @@ def build_related_unmapped_entries_data(mapping):
     related_unmapped_ue_histories = UniprotEntryHistory.objects.filter(release_version=mapping_mh_rmh.uniprot_release,
                                                                        grouping_id=mapping_grouping_id)
     related_unmapped_ue_entries = map( lambda ue: { 'uniprotAccession': ue.uniprot_acc,
-                                                    'entryType': None, # info in mapping_history but this is unmapped
+                                                    'entryType': Mapping.entry_type(ue.entry_type_id),
                                                     'sequenceVersion': ue.sequence_version,
                                                     'upi': ue.upi,
                                                     'md5': ue.md5,
