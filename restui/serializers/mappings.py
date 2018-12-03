@@ -67,6 +67,12 @@ class EnsemblUniprotMappingSerializer(serializers.Serializer):
     status = serializers.CharField()
     status_history = StatusHistorySerializer(many=True)
 
+class EnsemblUniprotRelatedUnmappedSerializer(serializers.Serializer):
+    """
+    Nested serialization of Ensembl-Uniprot unmapped entries related to a mapping
+    """
+    ensembl = EnsemblTranscriptMappingSerializer(many=True)
+    uniprot = UniprotEntryMappingSerializer(many=True)
 
 class RelatedEntriesSerializer(serializers.Serializer):
     """
@@ -74,7 +80,7 @@ class RelatedEntriesSerializer(serializers.Serializer):
     """
 
     mapped = EnsemblUniprotMappingSerializer(many=True)
-    unmapped = UniprotEntryMappingSerializer(many=True)
+    unmapped = EnsemblUniprotRelatedUnmappedSerializer()
 
 class MappingSerializer(serializers.Serializer):
     """

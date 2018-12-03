@@ -58,7 +58,7 @@ class EnsemblTranscriptQuerySet(models.query.QuerySet): #(PostgresQuerySet):
     A specialised query set to be able to deal with groupings
     of transcripts based on their corresponding gene.
 
-    Used for efficiently paginate the unmapped ensembl entries.
+    Used for either efficiently paginate the unmapped ensembl entries
     """
 
     _counts = None
@@ -162,6 +162,7 @@ class TranscriptHistory(PostgresModel):
     
     ensembl_species_history = models.ForeignKey(EnsemblSpeciesHistory, models.DO_NOTHING, primary_key=True)
     transcript = models.ForeignKey(EnsemblTranscript, models.DO_NOTHING)
+    grouping_id = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
