@@ -56,11 +56,9 @@ class EnsemblGene(PostgresModel):
 class EnsemblTranscriptQuerySet(models.query.QuerySet): #(PostgresQuerySet):
     """
     A specialised query set to be able to deal with groupings
-    of transcripts based either on their corresponding gene or 
-    the grouping_id assigned by Uniprot
+    of transcripts based on their corresponding gene.
 
-    Used for either efficiently paginate either the unmapped ensembl entries
-    or provide the related unmapped ensembl entries for a mapping
+    Used for either efficiently paginate the unmapped ensembl entries
     """
 
     _counts = None
