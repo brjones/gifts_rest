@@ -1,7 +1,7 @@
 from django.urls import path
 from django.http import Http404
 from django.views.decorators.csrf import csrf_exempt
-from restui.views import alignments, ensembl, mappings, uniprot, stats
+from restui.views import alignments, ensembl, mappings, uniprot, service
 from restui.exceptions import FalloverROException
 from django.conf import settings
 
@@ -57,6 +57,7 @@ urlpatterns = [
 
     path('uniprot/entry/<int:pk>/', uniprot.UniprotEntryFetch.as_view()),               # fetch uniprot entry by db ID
 
+    path('service/ping/', service.PingService.as_view())                                # return service status
 ]
 
 #
