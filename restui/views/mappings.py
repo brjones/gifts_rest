@@ -308,7 +308,7 @@ class ReleasePerSpecies(APIView):
 
     def get(self, request, taxid):
         # find the latest uniprot release corresponding to the species
-        release_mapping_history = ReleaseMappingHistory.objects.filter(uniprot_taxid=taxid).latest('release_mapping_history_id')
+        release_mapping_history = ReleaseMappingHistory.objects.select_related('ensembl_species_history').filter(uniprot_taxid=taxid).latest('release_mapping_history_id')
 
         serializer = ReleasePerSpeciesSerializer({ 'ensembl': release_mapping_history.ensembl_species_history.ensembl_release,
                                                    'uniprot': release_mapping_history.uniprot_release })
@@ -580,8 +580,10 @@ class MappingsView(generics.ListAPIView):
                     # filter in order to get the isoforms as well
                     queryset = Mapping.objects.filter(uniprot__uniprot_acc__iregex=r"^"+search_term)
                 else:
-                    # should be a search request with a gene name
-                    queryset = Mapping.objects.filter(transcript__gene__gene_name__iregex=r"^"+search_term)
+                    # should be a search request with a gene symbol and possibly name
+                    query_filter = Q(transcript__gene__gene_symbol__iregex=r"^"+search_term)
+                    query_filter |= Q(transcript__gene__gene_name__iregex=r"^"+search_term)
+                    queryset = Mapping.objects.filter(query_filter)
 
         else:
             # no search term: return all mappings
