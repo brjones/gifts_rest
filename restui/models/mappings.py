@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django.db import models
 from django.db.models import Count
 
@@ -87,11 +89,20 @@ class MappingQuerySet(models.query.QuerySet):
         sub_qs = self.select_related('uniprot').select_related('transcript').select_related('transcript__gene').order_by('mapping_history__grouping_id')[qs_offset:qs_offset+qs_limit]
         
         grouped_results = {}
+        grouped_results_added = defaultdict(set)
+
         for result in sub_qs:
+            grouping_id = result.mapping_history.latest('release_mapping_history__time_mapped').grouping_id
+
+            if result.mapping_id in grouped_results_added[grouping_id]:
+                continue
+
             try:
-                grouped_results[result.mapping_history.latest('release_mapping_history__time_mapped').grouping_id].append(result)
+                grouped_results[grouping_id].append(result)
             except (KeyError, AttributeError):
-                grouped_results[result.mapping_history.latest('release_mapping_history__time_mapped').grouping_id] = [ result ]
+                grouped_results[grouping_id] = [ result ]
+            finally:
+                grouped_results_added[grouping_id].add(result.mapping_id)
 
         return grouped_results
 
