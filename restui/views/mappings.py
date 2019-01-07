@@ -600,8 +600,6 @@ class MappingsView(generics.ListAPIView):
         #
         # Apply filters based on facets parameters
         #
-        # TODO: consider other filters besides organism/status
-        #
         if facets_params:
             queryset = queryset.all()
             # create facets dict from e.g. 'organism:9606,status:unreviewed'
