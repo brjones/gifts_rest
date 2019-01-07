@@ -89,12 +89,22 @@ class MappingQuerySet(models.query.QuerySet):
         sub_qs = self.select_related('uniprot').select_related('transcript').select_related('transcript__gene').order_by('mapping_history__grouping_id')[qs_offset:qs_offset+qs_limit]
         
         grouped_results = {}
-        grouped_results_added = defaultdict(set)
+        grouped_results_added = defaultdict(set) # there are duplicates in each group, don't know yet why
 
         for result in sub_qs:
             grouping_id = result.mapping_history.latest('release_mapping_history__time_mapped').grouping_id
 
+            # skip if the mapping has already been added to the group
             if result.mapping_id in grouped_results_added[grouping_id]:
+                continue
+
+            # a mapping might refer to an older release mapping history,
+            # keep only those relative to the most recent for a certain species
+            result_rmh = result.mapping_history.latest('release_mapping_history__time_mapped').release_mapping_history
+            result_species = result_rmh.uniprot_taxid
+            species_latest_rmh = ReleaseMappingHistory.objects.filter(uniprot_taxid=result_species).latest('time_mapped')
+
+            if result_rmh != species_latest_rmh:
                 continue
 
             try:
