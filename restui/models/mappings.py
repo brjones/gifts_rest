@@ -276,6 +276,18 @@ class ReleaseStats(models.Model):
     uniprot_entries_unmapped_sp = models.BigIntegerField(blank=True, null=True)
     transcripts_unmapped = models.BigIntegerField(blank=True, null=True)
     genes_unmapped = models.BigIntegerField(blank=True, null=True)
+    uniprot_entries_unmapped_isoform = models.BigIntegerField(blank=True, null=True)
+    uniprot_entries_sp_total = models.BigIntegerField(blank=True, null=True)
+    uniprot_entries_isoform_total = models.BigIntegerField(blank=True, null=True)
+    uniprot_entries_trembl_total = models.BigIntegerField(blank=True, null=True)
+    transcripts_protein_coding_total = models.BigIntegerField(blank=True, null=True)
+    transcripts_protein_coding_mapped = models.BigIntegerField(blank=True, null=True)
+    transcripts_protein_other_total = models.BigIntegerField(blank=True, null=True)
+    transcripts_protein_other_mapped = models.BigIntegerField(blank=True, null=True)
+    genes_mapped_pc = models.BigIntegerField(blank=True, null=True)
+    genes_mapped_nonpc = models.BigIntegerField(blank=True, null=True)
+    genes_unmapped_pc = models.BigIntegerField(blank=True, null=True)
+    genes_unmapped_nonpc = models.BigIntegerField(blank=True, null=True)
     
     class Meta:
         managed = False
