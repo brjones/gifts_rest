@@ -8,6 +8,9 @@ from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.schemas import ManualSchema
+
+import coreapi, coreschema
 
 class AlignmentRunCreate(generics.CreateAPIView):
     """
@@ -46,6 +49,16 @@ class AlignmentByAlignmentRunFetch(generics.ListAPIView):
 
     serializer_class = AlignmentSerializer
     pagination_class = PageNumberPagination
+    schema = ManualSchema(description="Retrieve all alignments for a given alignment run",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="Alignmet run id"
+                              )
+                          ])
 
     def get_queryset(self):
         try:
@@ -68,7 +81,23 @@ class LatestAlignmentsFetch(generics.ListAPIView):
 
     serializer_class = AlignmentSerializer
     pagination_class = PageNumberPagination
-    
+    schema = ManualSchema(description="Retrieve either perfect or blast latest alignments for a given assembly",
+                          fields=[
+                              coreapi.Field(
+                                  name="assembly_accession",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.String(),
+                                  description="Assembly accession"
+                              ),
+                              coreapi.Field(
+                                  name="type",
+                                  location="query",
+                                  schema=coreschema.String(),
+                                  description="Type of the alignments to retrieve, either 'perfect_match' or 'identity' (default: perfect_match)"
+                              )
+                          ])
+
     def get_queryset(self):
         assembly_accession = self.kwargs["assembly_accession"]
 

@@ -26,7 +26,9 @@ from rest_framework import status
 from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.schemas import ManualSchema
 
+import coreapi, coreschema
 
 def get_mapping(pk):
     try:
@@ -162,6 +164,15 @@ class LatestReleaseMappingHistory(generics.RetrieveAPIView):
     """
 
     serializer_class = ReleaseMappingHistorySerializer
+    schema = ManualSchema(description="Fetch 'latest' release mapping history for the given assembly accesssion",
+                          fields=[
+                              coreapi.Field(
+                                  name="assembly_accession",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.String(),
+                                  description="Assembly accession"
+                              ),])
 
     def get_object(self):
         assembly_accession = self.kwargs["assembly_accession"]
@@ -188,6 +199,15 @@ class MappingsByHistory(generics.ListAPIView):
 
     serializer_class = MappingByHistorySerializer
     pagination_class = PageNumberPagination
+    schema = ManualSchema(description="Fetch mappings corresponding to a given release mapping history",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying this release mapping history."
+                              ),])
 
     def get_queryset(self):
         release_mapping_history_id = self.kwargs['pk']
@@ -199,10 +219,27 @@ class MappingsByHistory(generics.ListAPIView):
 
 class UnmappedEntries(APIView):
     """
-    Present the details for Swissprot/Ensembl not mapped entities for the latest release for a given species
+    Present the details for Swissprot/Ensembl unmapped entities for the latest release for a given species
     """
+
     # pagination_class = PageNumberPagination # settings.DEFAULT_PAGINATION_CLASS
-    
+    schema = ManualSchema(description="Present the details for Swissprot/Ensembl unmapped entities for the latest release for a given species",
+                          fields=[
+                              coreapi.Field(
+                                  name="taxid",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="Taxonomy id"
+                              ),
+                              coreapi.Field(
+                                  name="source",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.String(),
+                                  description="Source, either 'swissprot' or 'ensembl'"
+                              ),])
+
     def get(self, request, taxid, source):
         if source == 'swissprot':
             # the Swissprot entries:
@@ -306,6 +343,16 @@ class ReleasePerSpecies(APIView):
     Retrieve Ensembl/Uniprot release per species
     """
 
+    schema = ManualSchema(description="Retrieve Ensembl/Uniprot release per species",
+                          fields=[
+                              coreapi.Field(
+                                  name="taxid",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="Taxonomy id"
+                              ),])
+
     def get(self, request, taxid):
         # find the latest uniprot release corresponding to the species
         release_mapping_history = ReleaseMappingHistory.objects.select_related('ensembl_species_history').filter(uniprot_taxid=taxid).latest('release_mapping_history_id')
@@ -319,6 +366,16 @@ class ReleaseMappingStats(APIView):
     """
     Species latest release mapped/unmapped stats (Swissprot/Ensembl)
     """
+
+    schema = ManualSchema(description="Species latest release mapped/unmapped stats (Swissprot/Ensembl)",
+                          fields=[
+                              coreapi.Field(
+                                  name="taxid",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="Taxonomy id"
+                              ),])
 
     def get(self, request, taxid):
         # client is interested in latest release mapping history
@@ -346,6 +403,22 @@ class MappingLabelView(APIView):
     """
 
     permission_classes = (IsAuthenticated,)
+    schema = ManualSchema(description="Add or delete label a associated to the given mapping",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the mapping"
+                              ),
+                              coreapi.Field(
+                                  name="label_id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the label"
+                              ),])
 
     def post(self, request, pk, label_id):
         mapping = get_mapping(pk)
@@ -389,7 +462,17 @@ class MappingLabelsView(APIView):
     """
     Retrieve all labels for a given mapping
     """
-    
+
+    schema = ManualSchema(description="Retrieve all labels for a given mapping",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the mapping"
+                              ),])
+
     def get(self, request, pk):
         mapping = get_mapping(pk)
         
@@ -415,7 +498,17 @@ class MappingCommentsView(APIView):
     """
     Add a comment/Retrieve all comments relative to a given mapping, includes mapping labels.
     """
+
     permission_classes = (IsAuthenticated,)
+    schema = ManualSchema(description="Add a comment/Retrieve all comments relative to a given mapping, includes mapping labels.",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the mapping"
+                              ),])
 
     def get(self, request, pk):
         mapping = get_mapping(pk)
@@ -455,6 +548,15 @@ class MappingStatusView(APIView):
     """
 
     permission_classes = (IsAuthenticated,)
+    schema = ManualSchema(description="Change the status of a mapping",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the mapping"
+                              ),])
 
     def put(self, request, pk):
         mapping = get_mapping(pk)
@@ -507,6 +609,17 @@ class MappingPairwiseAlignment(APIView):
     Retrieve a set of pairwise alignments for a single mapping
     """
 
+    schema = ManualSchema(description="Retrieve a set of pairwise alignments for a single mapping",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the mapping"
+                              ),])
+
+
     def get(self, request, pk):
         try:
             mapping = Mapping.objects.prefetch_related('alignments').select_related('transcript').select_related('uniprot').get(pk=pk)
@@ -524,6 +637,16 @@ class MappingView(APIView):
     """
     Retrieve a single mapping, includes related mappings/unmapped entries and taxonomy information.
     """
+
+    schema = ManualSchema(description="Retrieve a single mapping, includes related mappings/unmapped entries and taxonomy information.",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the mapping"
+                              ),])
 
     def get(self, request, pk):
         mapping = get_mapping(pk)
@@ -552,6 +675,33 @@ class MappingsView(generics.ListAPIView):
 
     serializer_class = MappingsSerializer
     pagination_class = FacetPagination
+    schema = ManualSchema(description="Retrieve a single mapping, includes related mappings/unmapped entries and taxonomy information.",
+                          fields=[
+                              coreapi.Field(
+                                  name="searchTerm",
+                                  location="query",
+                                  schema=coreschema.Integer(),
+                                  description="Search term (no wildcards)"
+                              ),
+                              coreapi.Field(
+                                  name="limit",
+                                  location="query",
+                                  schema=coreschema.Integer(),
+                                  description="Number of results to return per page"
+                              ),
+                              coreapi.Field(
+                                  name="offset",
+                                  location="query",
+                                  schema=coreschema.Integer(),
+                                  description="The initial index from which to return the results"
+                              ),
+                              coreapi.Field(
+                                  name="facets",
+                                  location="query",
+                                  schema=coreschema.Integer(),
+                                  description="Filters for the given query, taking the form 'facets=key1:value1,key2:value2...'\nPossible keys (values) are: organism (taxid) , sequence (identical, small, large), status and chromosomes"
+                              ),
+                          ])
     
     def get_queryset(self):
         results = dict()
