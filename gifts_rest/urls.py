@@ -16,11 +16,18 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.conf.urls import url, include
+
+from rest_framework_swagger.views import get_swagger_view
+
 from . import settings
+
+schema_view = get_swagger_view(title='GIFTs API Documentation')
+
 
 if settings.env.DEV_ENV:
 
     urlpatterns = [
+        url(r'^docs/', schema_view),
         path('admin/', admin.site.urls),
         url(r'^', include('restui.urls')),
     ]
@@ -28,5 +35,6 @@ if settings.env.DEV_ENV:
 else:
 
     urlpatterns = [
+        url(r'^docs/', schema_view),
         url(r'^', include('restui.urls')),
     ]
