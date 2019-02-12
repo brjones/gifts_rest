@@ -9,8 +9,6 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-import pprint
-
 class UniprotEntryFetch(generics.RetrieveAPIView):
     """
     Retrieve a Uniprot entry by db ID
@@ -18,4 +16,3 @@ class UniprotEntryFetch(generics.RetrieveAPIView):
 
     queryset = UniprotEntry.objects.all()
     serializer_class = UniprotEntrySerializer
-

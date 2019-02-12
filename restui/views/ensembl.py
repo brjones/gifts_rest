@@ -9,23 +9,55 @@ from rest_framework import mixins
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.schemas import ManualSchema
 
-import pprint
+import coreapi, coreschema
 
 class EnsemblFeature(mixins.CreateModelMixin,
                      generics.GenericAPIView):
 
     serializer_class = EnsemblGeneSerializer
+    schema = ManualSchema(description="Bulk load/update of genes and their transcript from an Ensembl release",
+                          fields=[
+                              coreapi.Field(
+                                  name="species",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.String(),
+                                  description="Species scientific name"
+                              ),
+                              coreapi.Field(
+                                  name="assembly_accession",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.String(),
+                                  description="Assembly accession"
+                              ),
+                              coreapi.Field(
+                                  name="ensembl_tax_id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="Species taxonomy id"
+                              ),
+                              coreapi.Field(
+                                  name="ensembl_release",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="Ensembl release number"
+                              ),
+                          ])
 
     def get_serializer(self, *args, **kwargs):
         # method should have been passed request.data as 'data' keyword argument
-        assert "data" in kwargs, (
-            "data not present"
-        )
-        # data should come as a list of feature-like items
-        assert isinstance(kwargs["data"], list), (
-            "data is not a list"
-        )
+        # assert "data" in kwargs, (
+        #     "data not present"
+        # )
+        # # data should come as a list of feature-like items
+        # assert isinstance(kwargs["data"], list), (
+        #     "data is not a list"
+        # )
 
         # when a serializer is instantiated and many=True is passed,
         # a ListSerializer instance will be created. The serializer
@@ -60,6 +92,37 @@ class EnspUCigarFetch(generics.RetrieveAPIView):
     """
 
     serializer_class = EnspUCigarSerializer
+    schema = ManualSchema(description="Retrieve a protein alignment for an alignment run by uniprot acc/seq version and transcript id",
+                          fields=[
+                              coreapi.Field(
+                                  name="run",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="Alignmet run id"
+                              ),
+                              coreapi.Field(
+                                  name="acc",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="Uniprot accession"
+                              ),
+                              coreapi.Field(
+                                  name="seq_version",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="Sequence version"
+                              ),
+                              coreapi.Field(
+                                  name="enst_id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="Ensembl transcript ID"
+                              ),
+                          ])
 
     def get_object(self):
         try:
@@ -79,6 +142,17 @@ class LatestEnsemblRelease(APIView):
     """
     Fetch the latest Ensembl release whose load is complete.
     """
+
+    schema = ManualSchema(description="Fetch the latest Ensembl release whose load is complete",
+                          fields=[
+                              coreapi.Field(
+                                  name="assembly_accession",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.String(),
+                                  description="Assembly accession"
+                              ),])
+
 
     def get(self, request, assembly_accession):
         try:
