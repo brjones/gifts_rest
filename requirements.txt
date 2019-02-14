@@ -15,3 +15,4 @@ requests==2.19.1
 -e git+https://github.com/EMBL-EBI-TSI/aap-client-python.git#egg=aap-client-python
 sam-alignment-reconstructor
 django-cors-headers==2.4.0
+django-rest-swagger==2.2.0
