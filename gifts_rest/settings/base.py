@@ -151,10 +151,12 @@ else:
 #             'HOST': secrets.REST_DATABASE_HOST,                      # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
 #             'PORT': secrets.REST_DATABASE_PORT,                      # Set to empty string for default.
         },
+        # all operations on restui models point to 'gifts', see gifts_rest.router
         'gifts': {
             'ENGINE': 'psqlextra.backend',
             'OPTIONS': {
-                'options': '-c search_path=ensembl_gifts,public'
+                # dev server must operate on its own schema, see [EA-40].
+                'options': '-c search_path=ensembl_gifts,public' if not env.DEV_ENV else '-c search_path=ensembl_gifts_dev,public'
             },
             'NAME': secrets.GIFTS_DATABASE,
             'USER': secrets.GIFTS_DATABASE_USER,
