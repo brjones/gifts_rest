@@ -155,8 +155,8 @@ else:
         'gifts': {
             'ENGINE': 'psqlextra.backend',
             'OPTIONS': {
-                # dev server must operate on its own schema, see [EA-40].
-                'options': '-c search_path=ensembl_gifts,public' if not env.DEV_ENV else '-c search_path=ensembl_gifts_dev,public'
+                # dev server must operate on its own schema (assume is named 'dev), see [EA-40].
+                'options': '-c search_path=ensembl_gifts,public' if not env.DEV_ENV else '-c search_path=dev,public'
             },
             'NAME': secrets.GIFTS_DATABASE,
             'USER': secrets.GIFTS_DATABASE_USER,
