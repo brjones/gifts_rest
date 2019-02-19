@@ -287,7 +287,7 @@ class MappingView(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'mapping'
+        db_table = 'mapping_view'
 
 class MappingHistory(models.Model):
     mapping_history_id = models.BigAutoField(primary_key=True)
