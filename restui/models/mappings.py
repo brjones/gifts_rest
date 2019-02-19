@@ -239,6 +239,55 @@ class Mapping(models.Model):
         managed = False
         db_table = 'mapping'
 
+class MappingView(models.Model):
+    """
+    Model of the denormalised table for mappings
+    """
+
+    mapping_id = models.BigIntegerField(blank=True, null=True)
+    uniprot_id = models.BigIntegerField(blank=True, null=True)
+    transcript_id = models.BigIntegerField(blank=True, null=True)
+    alignment_difference = models.IntegerField(blank=True, null=True)
+    status = models.BigIntegerField(blank=True, null=True)
+    first_release_mapping_history_id = models.BigIntegerField(blank=True, null=True)
+    uniprot_acc = models.CharField(max_length=30, blank=True, null=True)
+    uniprot_tax_id = models.BigIntegerField(blank=True, null=True)
+    sequence_version = models.SmallIntegerField(blank=True, null=True)
+    upi = models.CharField(max_length=13, blank=True, null=True)
+    md5 = models.CharField(max_length=32, blank=True, null=True)
+    canonical_uniprot_id = models.IntegerField(blank=True, null=True)
+    ensembl_derived = models.NullBooleanField()
+    alias = models.CharField(max_length=30, blank=True, null=True)
+    entry_type = models.SmallIntegerField(blank=True, null=True)
+    gene_symbol = models.CharField(max_length=30, blank=True, null=True)
+    chromosome_line = models.CharField(max_length=50, blank=True, null=True)
+    length = models.IntegerField(blank=True, null=True)
+    protein_existence_id = models.IntegerField(blank=True, null=True)
+    release_version = models.CharField(max_length=30, blank=True, null=True)
+    gene_id = models.BigIntegerField(blank=True, null=True)
+    enst_id = models.CharField(max_length=30, blank=True, null=True)
+    enst_version = models.SmallIntegerField(blank=True, null=True)
+    ccds_id = models.CharField(max_length=30, blank=True, null=True)
+    uniparc_accession = models.CharField(max_length=30, blank=True, null=True)
+    biotype = models.CharField(max_length=40, blank=True, null=True)
+    deleted = models.NullBooleanField()
+    seq_region_end = models.BigIntegerField(blank=True, null=True)
+    seq_region_start = models.BigIntegerField(blank=True, null=True)
+    supporting_evidence = models.CharField(max_length=45, blank=True, null=True)
+    select = models.NullBooleanField()
+    ensp_id = models.CharField(max_length=30, blank=True, null=True)
+    ensp_len = models.IntegerField(blank=True, null=True)
+    source = models.CharField(max_length=30, blank=True, null=True)
+    mapping_history_id = models.BigIntegerField(blank=True, null=True)
+    release_mapping_history_id = models.BigIntegerField(blank=True, null=True)
+    entry_version = models.IntegerField(blank=True, null=True)
+    sp_ensembl_mapping_type = models.CharField(max_length=50, blank=True, null=True)
+    grouping_id = models.BigIntegerField(blank=True, null=True)
+    ensg_id = models.CharField(max_length=30, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'mapping'
 
 class MappingHistory(models.Model):
     mapping_history_id = models.BigAutoField(primary_key=True)
