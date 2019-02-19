@@ -239,10 +239,122 @@ class Mapping(models.Model):
         managed = False
         db_table = 'mapping'
 
+#######################################################################################
+#
+# Refactored search
+#
+class MappingViewQuerySet(models.query.QuerySet):
+    _counts = None
+
+    def grouped_counts(self):
+        """
+        Retrieve a list of unique grouping_id counts from a queryset.
+        eg
+        [{'grouping_id': 1, 'total': 19}, {'grouping_id': 2, 'total': 6}, {'grouping_id': 3, 'total': 4},...]
+        """
+        if self._counts is None:
+            self._counts = self.values('grouping_id').annotate(total=Count('grouping_id')).order_by('grouping_id')
+
+        return self._counts
+
+    @property
+    def grouped_count(self):
+        """
+        Retrieve the total number of groups based on unique grouping_id from a queryset
+        """
+        counts = self.grouped_counts()
+
+        return len(counts)
+
+    def grouped_slice(self, offset, limit):
+        """
+        Fetch a subset of MappingView records grouped by unique grouping_id.
+        We first find how many records in to the queryset, counting by
+        unique grouping_id intervals. Then find the number of records to extract
+        to scoop up limit number of groups.
+
+        Finally return the groups all nicely packaged up in a dict of lists,
+        where the dict key is the unique grouping_id and the value is a list of
+        MappingView objects associated with that grouping_id
+        """
+        counts = self.grouped_counts()
+
+        if offset == 0:
+            qs_offset = 0
+        else:
+            qs_offset = sum(int(row['total']) for row in counts[:offset])
+
+        qs_limit = sum(int(row['total']) for row in counts[offset:offset+limit])
+
+        sub_qs = self[qs_offset:qs_offset+qs_limit]
+
+        grouped_results = {}
+        grouped_results_added = defaultdict(set) # there are duplicates in each group, don't know yet why
+
+        for result in sub_qs:
+            try:
+                grouped_results[result.grouping_id].append(result)
+            except (KeyError, AttributeError):
+                grouped_results[grouping_id] = [ result ]
+            finally:
+                grouped_results_added[result.grouping_id].add(result.mapping_id)
+
+        return grouped_results
+
+    def statuses(self):
+        """
+        Return a list of all the statuses represented in this queryset
+        """
+        status_set = self.values('status').distinct()
+
+        status_list = []
+        for status in status_set:
+            status_list.append(status['status'])
+
+        return status_list
+
+    def species(self):
+        """
+        Return a list of all the tax_id in this queryset
+        """
+        species_set = self.values('uniprot_tax_id').distinct()
+
+        species_list = []
+        for species in species_set:
+            species_list.append(species['uniprot_tax_id'])
+
+        return species_list
+
+    def divergences(self):
+        """
+        Return a list of all the alignment differences levels represented in the queryset 
+        """
+        identical = self.filter(alignment_difference=0).count()
+        small = self.filter(alignment_difference__gt=0, alignment_difference__lte=5).count()
+        large = self.filter(alignment_difference__gt=5).count()
+
+        return [ identical, small, large ]
+
+    #
+    # TODO
+    # chromosome needs to be added to the schema
+    #
+    # def chromosomes(self):
+    #     """
+    #     Return a list of all chromosomes for the genes represented in the queryset
+    #     """
+    #     return sorted( pair['chromosome'] for pair in self.values('chromosome').distinct() )
+
+class MappingViewManager(models.Manager):
+    def get_queryset(self):
+        return MappingViewQuerySet(self.model, using=self._db)
+
 class MappingView(models.Model):
     """
     Model of the denormalised table for mappings
     """
+
+    objects = MappingManager()
 
     mapping_id = models.BigIntegerField(blank=True, null=True)
     uniprot_id = models.BigIntegerField(blank=True, null=True)
@@ -285,9 +397,80 @@ class MappingView(models.Model):
     grouping_id = models.BigIntegerField(blank=True, null=True)
     ensg_id = models.CharField(max_length=30, blank=True, null=True)
 
+    @property
+    def difference(self):
+        diff_count = None
+
+        try:
+            mapping = Mapping.objects.get(pk=self.mapping_id)
+
+            for alignment in mapping.alignments.all():
+                if alignment.alignment_run.score1_type == 'perfect_match' and alignment.score1 == 1:
+                    return 0;
+
+                elif alignment.alignment_run.score1_type == 'identity':
+                    diff_count = calculate_difference(alignment.pairwise.cigarplus)
+        except:
+            pass # No mapping ID: cannot get difference
+
+        return diff_count
+
+    def statuses(self, usernames=False):
+        """
+        Return a list of all the status history of a mapping
+        """
+
+        statuses = []
+
+        try:
+            mapping = Mapping.objects.get(pk=self.mapping_id)
+            status_set = mapping.status_history.order_by('time_stamp')
+
+            for status in status_set:
+                if usernames and status.user_stamp:
+                    user = status.user_stamp.full_name
+                else:
+                    user = None
+
+                    statuses.append({'status': Mapping.status_type(status.status.id), 'time_stamp': status.time_stamp, 'user': user})
+        except:
+            pass # no mapping ID: cannot get status
+
+        return statuses
+
+    '''
+    The goal of these two functions is to reduce the number of database calls. Rather
+    than a lookup per mapping record, we'll cache these constants for the life of
+    the request in the serializer class.
+    '''
+    _entry_type = None
+    _status_type = None
+
+    @classmethod
+    def entry_type(cls, id):
+        if not cls._entry_type:
+            entries = {}
+            for entry in CvEntryType.objects.all():
+                entries[entry.id] = entry.description
+            cls._entry_type = entries
+
+        return cls._entry_type[id]
+
+    @classmethod
+    def status_type(cls, id):
+        if not cls._status_type:
+            statuses = {}
+            for status in CvUeStatus.objects.all():
+                statuses[status.id] = status.description
+            cls._status_type = statuses
+
+        return cls._status_type[id]
+
     class Meta:
         managed = False
         db_table = 'mapping_view'
+#
+#######################################################################################
 
 class MappingHistory(models.Model):
     mapping_history_id = models.BigAutoField(primary_key=True)
