@@ -289,15 +289,12 @@ class MappingViewQuerySet(models.query.QuerySet):
         sub_qs = self[qs_offset:qs_offset+qs_limit]
 
         grouped_results = {}
-        grouped_results_added = defaultdict(set) # there are duplicates in each group, don't know yet why
 
         for result in sub_qs:
             try:
                 grouped_results[result.grouping_id].append(result)
             except (KeyError, AttributeError):
-                grouped_results[grouping_id] = [ result ]
-            finally:
-                grouped_results_added[result.grouping_id].add(result.mapping_id)
+                grouped_results[result.grouping_id] = [ result ]
 
         return grouped_results
 
