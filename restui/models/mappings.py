@@ -310,15 +310,17 @@ class MappingViewQuerySet(models.query.QuerySet):
 
         return status_list
 
+    # TODO: ask to include species or extract from ensembl_species_history
     def species(self):
         """
-        Return a list of all the tax_id in this queryset
+        Return a list of all the unique (tax_id, species name) tuples in this queryset
         """
         species_set = self.values('uniprot_tax_id').distinct()
 
         species_list = []
         for species in species_set:
-            species_list.append(species['uniprot_tax_id'])
+            # NOTE: return (tax_id, tax_id) at the moment to match the expected interface
+            species_list.append((species['uniprot_tax_id'], species['uniprot_tax_id']))
 
         return species_list
 
