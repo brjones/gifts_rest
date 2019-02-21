@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 
 from restui.serializers.mappings import MappingsSerializer, MappingViewsSerializer, UnmappedEnsemblEntrySerializer
-from restui.models.mappings import Mapping
+from restui.models.mappings import Mapping, MappingView
 from rest_framework import status
 #
 # TODO
@@ -90,7 +90,11 @@ class MappingViewFacetPagination(LimitOffsetPagination):
         for species in species_set:
             organism["items"].append({ "name":species[0], "label":species[1] })
         for status in queryset.statuses():
-            statuses["items"].append({ "name":Mapping.status_type(status), "label":Mapping.status_type(status).replace("_"," ").capitalize() })
+            try:
+                description = MappingView.status_description(status)
+                statuses["items"].append({ "name":description, "label":description.replace("_"," ").capitalize() })
+            except:
+                pass
 
         differences = queryset.divergences()
         if differences[0]:
