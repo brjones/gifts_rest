@@ -633,7 +633,7 @@ class MappingPairwiseAlignment(APIView):
         return Response(serializer.data)
 
 
-class MappingView(APIView):
+class MappingDetailed(APIView):
     """
     Retrieve a single mapping, includes related mappings/unmapped entries and taxonomy information.
     """
@@ -667,7 +667,7 @@ class MappingView(APIView):
 #   or all 'related' mappings?
 #   We're returning only that mapping at the moment, to discuss with Uniprot
 #
-class MappingsView(generics.ListAPIView):
+class MappingsSearch(generics.ListAPIView):
     """
     Search/retrieve all mappings. Mappings are grouped if they share ENST or UniProt accessions.
     'Facets' are used for filtering and returned by the service based on the result set.
@@ -857,8 +857,7 @@ class MappingViewsSearch(generics.ListAPIView):
 
                 queryset = queryset.filter(status=status_id)
 
-            # TODO: add to MappingView model
-            # if 'chromosomes' in facets:
-            #     queryset = queryset.filter(chromosome=facets['chromosomes'])
+            if 'chromosomes' in facets:
+                queryset = queryset.filter(chromosome=facets['chromosomes'])
 
         return queryset

@@ -52,8 +52,8 @@ urlpatterns = [
     path('mapping/<int:pk>/status/', method_router, {'VIEW': mappings.MappingStatusView.as_view()}),             # update mapping status
     path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),    # retrieve pairwise alignments for a mapping
     # path('mapping/<int:pk>/alignment_run/<alignment_run>/difference/')
-    path('mapping/<int:pk>/', mappings.MappingView.as_view()),                          # retrieve single mapping
-    path('mappings/', mappings.MappingsView.as_view()),                                 # search the mappings (limit/offset paginated results)
+    path('mapping/<int:pk>/', mappings.MappingDetailed.as_view()),                      # retrieve single mapping
+    path('mappings/', mappings.MappingViewsSearch.as_view()),                           # search the mappings (limit/offset paginated results)
 
     path('uniprot/entry/<int:pk>/', uniprot.UniprotEntryFetch.as_view()),               # fetch uniprot entry by db ID
 
