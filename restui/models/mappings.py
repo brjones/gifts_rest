@@ -355,6 +355,7 @@ class MappingView(models.Model):
 
     objects = MappingViewManager()
 
+    id = models.BigAutoField(primary_key=True)
     mapping_id = models.BigIntegerField(blank=True, null=True)
     uniprot_id = models.BigIntegerField(blank=True, null=True)
     transcript_id = models.BigIntegerField(blank=True, null=True)
@@ -370,7 +371,7 @@ class MappingView(models.Model):
     ensembl_derived = models.NullBooleanField()
     alias = models.CharField(max_length=30, blank=True, null=True)
     entry_type = models.SmallIntegerField(blank=True, null=True)
-    gene_symbol = models.CharField(max_length=30, blank=True, null=True)
+    gene_symbol_up = models.CharField(max_length=30, blank=True, null=True)
     chromosome_line = models.CharField(max_length=50, blank=True, null=True)
     length = models.IntegerField(blank=True, null=True)
     protein_existence_id = models.IntegerField(blank=True, null=True)
@@ -395,6 +396,15 @@ class MappingView(models.Model):
     sp_ensembl_mapping_type = models.CharField(max_length=50, blank=True, null=True)
     grouping_id = models.BigIntegerField(blank=True, null=True)
     ensg_id = models.CharField(max_length=30, blank=True, null=True)
+    chromosome = models.CharField(max_length=50, blank=True, null=True)
+    region_accession = models.CharField(max_length=50, blank=True, null=True)
+    gene_name = models.CharField(max_length=255, blank=True, null=True)
+    gene_symbol_eg = models.CharField(max_length=30, blank=True, null=True)
+    gene_accession = models.CharField(max_length=30, blank=True, null=True)
+    time_mapped = models.DateTimeField()
+    uniprot_release = models.CharField(max_length=7, blank=True, null=True)
+    ensembl_release = models.BigIntegerField(blank=True, null=True)
+    seq_region_strand = models.BigIntegerField(blank=True, null=True)
 
     @property
     def difference(self):
@@ -446,24 +456,34 @@ class MappingView(models.Model):
     _status_type = None
 
     @classmethod
-    def entry_type(cls, id):
+    def entry_description(cls, id):
         if not cls._entry_type:
             entries = {}
             for entry in CvEntryType.objects.all():
                 entries[entry.id] = entry.description
             cls._entry_type = entries
 
-        return cls._entry_type[id]
+        try:
+            return cls._entry_type[id]
+        except KeyError:
+            pass
+
+        return None
 
     @classmethod
-    def status_type(cls, id):
+    def status_description(cls, id):
         if not cls._status_type:
             statuses = {}
             for status in CvUeStatus.objects.all():
                 statuses[status.id] = status.description
             cls._status_type = statuses
 
-        return cls._status_type[id]
+        try:
+            return cls._status_type[id]
+        except KeyError:
+            pass
+
+        return None
 
     class Meta:
         managed = False
