@@ -334,15 +334,11 @@ class MappingViewQuerySet(models.query.QuerySet):
 
         return [ identical, small, large ]
 
-    #
-    # TODO
-    # chromosome needs to be added to the schema
-    #
-    # def chromosomes(self):
-    #     """
-    #     Return a list of all chromosomes for the genes represented in the queryset
-    #     """
-    #     return sorted( pair['chromosome'] for pair in self.values('chromosome').distinct() )
+    def chromosomes(self):
+        """
+        Return a list of all chromosomes for the genes represented in the queryset
+        """
+        return sorted( pair['chromosome'] for pair in self.values('chromosome').distinct() )
 
 class MappingViewManager(models.Manager):
     def get_queryset(self):
