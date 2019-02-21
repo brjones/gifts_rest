@@ -4,15 +4,15 @@ import requests
 from collections import defaultdict, OrderedDict
 
 from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory, TranscriptHistory
-from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistory, ReleaseStats
+from restui.models.mappings import Mapping, MappingView, MappingHistory, ReleaseMappingHistory, ReleaseStats
 from restui.models.uniprot import UniprotEntry, UniprotEntryHistory
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
-    MappingSerializer, MappingCommentsSerializer, MappingsSerializer,\
+    MappingSerializer, MappingCommentsSerializer, MappingsSerializer, MappingViewsSerializer,\
     MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer,\
     ReleaseStatsSerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer, ReleasePerSpeciesSerializer
 from restui.serializers.annotations import StatusSerializer, CvUeStatusSerializer, CommentSerializer, LabelSerializer
-from restui.pagination import FacetPagination, UnmappedEnsemblEntryPagination
+from restui.pagination import FacetPagination, MappingViewFacetPagination, UnmappedEnsemblEntryPagination
 from restui.lib.external import ensembl_sequence
 from restui.lib.alignments import fetch_pairwise
 
@@ -788,15 +788,14 @@ class MappingsView(generics.ListAPIView):
 
         return queryset
 
-class MappingsViewSearch(generics.ListAPIView):
+class MappingViewsSearch(generics.ListAPIView):
     """
     Search/retrieve all mappings. Mappings are grouped if they share ENST or UniProt accessions.
     'Facets' are used for filtering and returned by the service based on the result set.
     """
 
-    # TODO
-    # serializer_class = MappingViewSerializer
-    # pagination_class = MappingViewFacetPagination
+    serializer_class = MappingViewsSerializer
+    pagination_class = MappingViewFacetPagination
 
     def get_queryset(self):
         # either the ENSG, ENST, UniProt accession, gene symbol or gene name
@@ -824,7 +823,7 @@ class MappingsViewSearch(generics.ListAPIView):
                 queryset = MappingView.objects.filter(query_filter)
         else:
             # no search term: return all mappings
-            queryset = Mapping.objects.all()
+            queryset = MappingView.objects.all()
 
         #
         # Apply filters based on facets parameters
@@ -859,7 +858,7 @@ class MappingsViewSearch(generics.ListAPIView):
                 queryset = queryset.filter(status=status_id)
 
             # TODO: add to MappingView model
-            if 'chromosomes' in facets:
-                queryset = queryset.filter(transcript__gene__chromosome=facets['chromosomes'])
+            # if 'chromosomes' in facets:
+            #     queryset = queryset.filter(chromosome=facets['chromosomes'])
 
         return queryset
