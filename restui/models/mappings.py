@@ -338,7 +338,7 @@ class MappingViewQuerySet(models.query.QuerySet):
         """
         Return a list of all chromosomes for the genes represented in the queryset
         """
-        return sorted( pair['chromosome'] for pair in self.values('chromosome').distinct() )
+        return sorted( pair['chromosome'] for pair in self.values('chromosome').distinct() if pair['chromosome'] )
 
 class MappingViewManager(models.Manager):
     def get_queryset(self):
