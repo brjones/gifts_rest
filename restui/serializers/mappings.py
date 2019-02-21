@@ -3,7 +3,7 @@ from django.http import Http404
 
 from restui.lib.external import ensembl_sequence
 from restui.models.annotations import CvEntryType, CvUeStatus
-from restui.models.mappings import Mapping, ReleaseMappingHistory, MappingHistory, ReleaseStats
+from restui.models.mappings import Mapping, MappingView, ReleaseMappingHistory, MappingHistory, ReleaseStats
 from restui.serializers.ensembl import SpeciesHistorySerializer
 from restui.serializers.annotations import StatusSerializer, StatusHistorySerializer
 
@@ -234,6 +234,108 @@ class MappingsSerializer(serializers.Serializer):
                      'uniprotTaxId':uniprot_tax_id }
         except:
             raise Http404("Couldn't find uniprot tax id as I couldn't find a uniprot entry associated to the mapping")
+
+class MappingViewsSerializer(serializers.Serializer):
+    """
+    Serialize data in call to mappings/ endpoint
+    """
+
+    taxonomy = TaxonomySerializer()
+    entryMappings = EnsemblUniprotMappingSerializer(many=True)
+
+    @classmethod
+    def build_mapping(cls, mapping_view, fetch_sequence=False, authenticated=False):
+        import pprint
+        pprint.pprint(mapping_view)
+        status = mapping_view.status
+
+        sequence = None
+        if fetch_sequence:
+            try:
+                sequence = ensembl_sequence(mapping_view.enst_id, mapping_view.ensembl_release)
+            except Exception as e:
+                print(e) # TODO: log
+                sequence = None
+
+        mapping_obj = { 'mappingId':mapping_view.mapping_id,
+                        'timeMapped':mapping_view.time_mapped,
+                        'ensemblRelease':mapping_view.ensembl_release,
+                        'uniprotRelease':mapping_view.uniprot_release,
+                        'uniprotEntry': {
+                            'uniprotAccession':mapping_view.uniprot_acc,
+                            'entryType':MappingView.entry_description(mapping_view.entry_type),
+                            'sequenceVersion':mapping_view.sequence_version,
+                            'upi':mapping_view.upi,
+                            'md5':mapping_view.md5,
+                            'isCanonical': False if mapping_view.canonical_uniprot_id else True,
+                            'alias': mapping_view.alias,
+                            'ensemblDerived':mapping_view.ensembl_derived,
+                            'gene_symbol':mapping_view.gene_symbol_up,
+                            'gene_accession':mapping_view.chromosome_line,
+                            'length':mapping_view.length,
+                            'protein_existence_id':mapping_view.protein_existence_id
+                            },
+                        'ensemblTranscript': {
+                            'enstId':mapping_view.enst_id,
+                            'enstVersion':mapping_view.enst_version,
+                            'upi':mapping_view.uniparc_accession,
+                            'biotype':mapping_view.biotype,
+                            'deleted':mapping_view.deleted,
+                            'chromosome':mapping_view.chromosome,
+                            'regionAccession':mapping_view.region_accession,
+                            'seqRegionStart':mapping_view.seq_region_start,
+                            'seqRegionEnd':mapping_view.seq_region_end,
+                            'seqRegionStrand':mapping_view.seq_region_strand,
+                            'ensgId':mapping_view.ensg_id,
+                            'ensgName':mapping_view.gene_name,
+                            'ensgSymbol':mapping_view.gene_symbol_eg,
+                            'ensgAccession':mapping_view.gene_accession,
+                            'ensgRegionAccession':mapping_view.region_accession,
+                            'sequence':sequence,
+                            'enspId':mapping_view.ensp_id,
+                            'enspLen':mapping_view.ensp_len,
+                            'source':mapping_view.source,
+                            'select':mapping_view.select
+                            },
+                       'alignment_difference': mapping_view.alignment_difference,
+                       'status': MappingView.status_description(status),
+                       'status_history': mapping_view.statuses(usernames=authenticated)
+                       }
+
+        return mapping_obj
+
+    @classmethod
+    def build_mapping_group(cls, group, fetch_sequence=False):
+        mapping_set = { 'taxonomy':cls.build_taxonomy_data(group),
+                        'entryMappings':[] }
+
+        for mapping_view in group:
+            mapping_set['entryMappings'].append(cls.build_mapping(mapping_view, fetch_sequence=fetch_sequence))
+
+        return mapping_set
+
+    @classmethod
+    def build_taxonomy_data(cls, group):
+        # Find the ensembl tax id via one ensembl species history associated to transcript
+        # associated to the given mapping.
+        # Relationship between transcript and history is many to many but we just fetch one history
+        # as the tax id remains the same across all of them
+
+        for mapping_view in group:
+            try:
+                mapping = Mapping.objects.get(pk=mapping_view.mapping_id)
+            except Mapping.DoesNotExist:
+                continue
+
+            ensembl_history = mapping.mapping_history.select_related('release_mapping_history').select_related('release_mapping_history__ensembl_species_history').latest('mapping_history_id').release_mapping_history.ensembl_species_history
+
+            return { 'species':ensembl_history.species,
+                     'ensemblTaxId':ensembl_history.ensembl_tax_id,
+                     'uniprotTaxId':mapping_view.uniprot_tax_id }
+
+        return { 'species':None,
+                 'ensemblTaxId':None,
+                 'uniprotTaxId':mapping_view.uniprot_tax_id }
 
 class LabelSerializer(serializers.Serializer):
     """

@@ -4,15 +4,15 @@ import requests
 from collections import defaultdict, OrderedDict
 
 from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory, TranscriptHistory
-from restui.models.mappings import Mapping, MappingHistory, ReleaseMappingHistory, ReleaseStats
+from restui.models.mappings import Mapping, MappingView, MappingHistory, ReleaseMappingHistory, ReleaseStats
 from restui.models.uniprot import UniprotEntry, UniprotEntryHistory
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
-    MappingSerializer, MappingCommentsSerializer, MappingsSerializer,\
+    MappingSerializer, MappingCommentsSerializer, MappingsSerializer, MappingViewsSerializer,\
     MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer,\
     ReleaseStatsSerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer, ReleasePerSpeciesSerializer
 from restui.serializers.annotations import StatusSerializer, CvUeStatusSerializer, CommentSerializer, LabelSerializer
-from restui.pagination import FacetPagination, UnmappedEnsemblEntryPagination
+from restui.pagination import FacetPagination, MappingViewFacetPagination, UnmappedEnsemblEntryPagination
 from restui.lib.external import ensembl_sequence
 from restui.lib.alignments import fetch_pairwise
 
@@ -633,7 +633,7 @@ class MappingPairwiseAlignment(APIView):
         return Response(serializer.data)
 
 
-class MappingView(APIView):
+class MappingDetailed(APIView):
     """
     Retrieve a single mapping, includes related mappings/unmapped entries and taxonomy information.
     """
@@ -667,7 +667,7 @@ class MappingView(APIView):
 #   or all 'related' mappings?
 #   We're returning only that mapping at the moment, to discuss with Uniprot
 #
-class MappingsView(generics.ListAPIView):
+class MappingsSearch(generics.ListAPIView):
     """
     Search/retrieve all mappings. Mappings are grouped if they share ENST or UniProt accessions.
     'Facets' are used for filtering and returned by the service based on the result set.
@@ -785,5 +785,79 @@ class MappingsView(generics.ListAPIView):
 
             if 'chromosomes' in facets:
                 queryset = queryset.filter(transcript__gene__chromosome=facets['chromosomes'])
+
+        return queryset
+
+class MappingViewsSearch(generics.ListAPIView):
+    """
+    Search/retrieve all mappings. Mappings are grouped if they share ENST or UniProt accessions.
+    'Facets' are used for filtering and returned by the service based on the result set.
+    """
+
+    serializer_class = MappingViewsSerializer
+    pagination_class = MappingViewFacetPagination
+
+    def get_queryset(self):
+        # either the ENSG, ENST, UniProt accession, gene symbol or gene name
+        # if none are provided all mappings are returned
+        search_term = self.request.query_params.get('searchTerm', None)
+
+        # filters for the given query, taking the form facets=organism:9606,status:unreviewed
+        facets_params = self.request.query_params.get('facets', None)
+
+        # search the mappings according to the search term 'type'
+        queryset = None
+        if search_term:
+            if re.match(r"^ENS[A-Z]*?G[0-9]+?$", search_term, re.I):
+                queryset = MappingView.objects.filter(ensg_id__iexact=search_term)
+            elif re.match(r"^ENS[A-Z]*?T[0-9]+?$", search_term, re.I):
+                queryset = MappingView.objects.filter(enst_id__iexact=search_term)
+            elif re.match(r"^([O,P,Q][0-9][A-Z, 0-9]{3}[0-9]|[A-N,R-Z]([0-9][A-Z][A-Z, 0-9]{2}){1,2}[0-9])(-\d+)*$",
+                          search_term, re.I): # looks like a Uniprot accession
+                # filter in order to get the isoforms as well
+                queryset = MappingView.objects.filter(uniprot_acc__iregex=r"^"+search_term)
+            else:
+                # should be a search request with a gene symbol and possibly name
+                query_filter = Q(gene_symbol__iregex=r"^"+search_term)
+                query_filter |= Q(gene_name__iregex=r"^"+search_term) # TODO: add to MappingView model
+                queryset = MappingView.objects.filter(query_filter)
+        else:
+            # no search term: return all mappings
+            queryset = MappingView.objects.all()
+
+        #
+        # Apply filters based on facets parameters
+        #
+        if facets_params:
+            queryset = queryset.all()
+            # create facets dict from e.g. 'organism:9606,status:unreviewed'
+            facets = dict( tuple(param.split(':')) for param in facets_params.split(',') )
+
+            # TODO: allow multiple organisms
+            if 'organism' in facets:
+                queryset = queryset.filter(uniprot_tax_id=facets['organism'])
+
+            # Filter on how large a difference between the pairwise aligned protein sequences, if there is an alignment
+            if 'sequence' in facets:
+                if facets['sequence'] == 'identical':
+                    queryset = queryset.filter(alignment_difference=0)
+                elif facets['sequence'] == 'small':
+                    queryset = queryset.filter(alignment_difference__gt=0, alignment_difference__lte=5)
+                elif facets['sequence'] == 'large':
+                    queryset = queryset.filter(alignment_difference__gt=5)
+
+            # filter queryset based on status
+            if 'status' in facets:
+                try:
+                    status_id = CvUeStatus.objects.get(description=facets['status'].upper()).id
+                except:
+                    raise Http404("Invalid status type")
+                    # TODO Should be a 400, how do we make this work with pagination?
+                    #return Response(status=status.HTTP_400_BAD_REQUEST)
+
+                queryset = queryset.filter(status=status_id)
+
+            if 'chromosomes' in facets:
+                queryset = queryset.filter(chromosome=facets['chromosomes'])
 
         return queryset
