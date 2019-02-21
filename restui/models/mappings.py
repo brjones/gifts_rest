@@ -353,7 +353,7 @@ class MappingView(models.Model):
     Model of the denormalised table for mappings
     """
 
-    objects = MappingManager()
+    objects = MappingViewManager()
 
     mapping_id = models.BigIntegerField(blank=True, null=True)
     uniprot_id = models.BigIntegerField(blank=True, null=True)
@@ -431,7 +431,7 @@ class MappingView(models.Model):
                 else:
                     user = None
 
-                    statuses.append({'status': Mapping.status_type(status.status.id), 'time_stamp': status.time_stamp, 'user': user})
+                    statuses.append({'status': MappingView.status_type(status.status.id), 'time_stamp': status.time_stamp, 'user': user})
         except:
             pass # no mapping ID: cannot get status
 
