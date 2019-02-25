@@ -15,7 +15,7 @@ class FacetPagination(LimitOffsetPagination):
     def create_facets(self, queryset):
         statuses = OrderedDict([('name','status'),('label','Status'),('items',[])])
         organism = OrderedDict([('name','organism'),('label','Organism'),('items',[])])
-        sequence = OrderedDict([('name','sequence'),('label','Sequence'),('items',[])])
+        sequence = OrderedDict([('name','divergence'),('label','Divergence'),('items',[])])
         # TODO
         # mappings = OrderedDict([('name','mappings'),('label','Type'),('items',[])])
 
@@ -84,7 +84,7 @@ class MappingViewFacetPagination(LimitOffsetPagination):
     def create_facets(self, queryset):
         statuses = OrderedDict([('name','status'),('label','Status'),('items',[])])
         organism = OrderedDict([('name','organism'),('label','Organism'),('items',[])])
-        sequence = OrderedDict([('name','sequence'),('label','Sequence'),('items',[])])
+        sequence = OrderedDict([('name','divergence'),('label','Divergence'),('items',[])])
 
         species_set = queryset.species()
         for species in species_set:
