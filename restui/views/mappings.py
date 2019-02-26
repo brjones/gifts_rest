@@ -817,9 +817,10 @@ class MappingViewsSearch(generics.ListAPIView):
                 # filter in order to get the isoforms as well
                 queryset = MappingView.objects.filter(uniprot_acc__iregex=r"^"+search_term)
             else:
-                # should be a search request with a gene symbol and possibly name
-                query_filter = Q(gene_symbol__iregex=r"^"+search_term)
-                query_filter |= Q(gene_name__iregex=r"^"+search_term) # TODO: add to MappingView model
+                # should be a search request with a gene symbol (both Uniprot and Ensembl) and possibly name
+                query_filter = Q(gene_symbol_up__iregex=r"^"+search_term)
+                query_filter |= Q(gene_symbol_eg__iregex=r"^"+search_term)
+                query_filter |= Q(gene_name__iregex=r"^"+search_term)
                 queryset = MappingView.objects.filter(query_filter)
         else:
             # no search term: return all mappings
