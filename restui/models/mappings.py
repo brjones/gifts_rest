@@ -6,6 +6,7 @@ from django.db.models import Count
 from restui.lib.alignments import calculate_difference
 from django.template.defaultfilters import default
 from restui.models.annotations import CvEntryType, CvUeStatus
+from restui.models.ensembl import EnsemblSpeciesHistory
 
 class Alignment(models.Model):
     alignment_id = models.BigAutoField(primary_key=True)
@@ -320,7 +321,8 @@ class MappingViewQuerySet(models.query.QuerySet):
         species_list = []
         for species in species_set:
             # NOTE: return (tax_id, tax_id) at the moment to match the expected interface
-            species_list.append((species['uniprot_tax_id'], species['uniprot_tax_id']))
+            species_name = EnsemblSpeciesHistory.objects.filter(ensembl_tax_id=species['uniprot_tax_id']).latest('time_loaded').species
+            species_list.append((species['uniprot_tax_id'], species_name))
 
         return species_list
 
