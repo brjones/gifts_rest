@@ -403,6 +403,7 @@ class MappingView(models.Model):
     uniprot_release = models.CharField(max_length=7, blank=True, null=True)
     ensembl_release = models.BigIntegerField(blank=True, null=True)
     seq_region_strand = models.BigIntegerField(blank=True, null=True)
+    uniprot_mapping_status = models.CharField(max_length=30, blank=True, null=True)
 
     @property
     def difference(self):
