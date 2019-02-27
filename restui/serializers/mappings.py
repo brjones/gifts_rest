@@ -245,8 +245,6 @@ class MappingViewsSerializer(serializers.Serializer):
 
     @classmethod
     def build_mapping(cls, mapping_view, fetch_sequence=False, authenticated=False):
-        import pprint
-        pprint.pprint(mapping_view)
         status = mapping_view.status
 
         sequence = None
