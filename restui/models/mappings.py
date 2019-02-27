@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Case, When
 
 from restui.lib.alignments import calculate_difference
 from django.template.defaultfilters import default
@@ -254,7 +254,7 @@ class MappingViewQuerySet(models.query.QuerySet):
         [{'grouping_id': 1, 'total': 19}, {'grouping_id': 2, 'total': 6}, {'grouping_id': 3, 'total': 4},...]
         """
         if self._counts is None:
-            self._counts = self.values('grouping_id').annotate(total=Count('grouping_id')).order_by('grouping_id')
+            self._counts = self.values('grouping_id').annotate(total=Count(Case(When(grouping_id__isnull=True, then=1), default=1))).order_by('grouping_id')
 
         return self._counts
 
@@ -320,7 +320,6 @@ class MappingViewQuerySet(models.query.QuerySet):
 
         species_list = []
         for species in species_set:
-            # NOTE: return (tax_id, tax_id) at the moment to match the expected interface
             species_name = EnsemblSpeciesHistory.objects.filter(ensembl_tax_id=species['uniprot_tax_id']).latest('time_loaded').species
             species_list.append((species['uniprot_tax_id'], species_name))
 
@@ -341,6 +340,13 @@ class MappingViewQuerySet(models.query.QuerySet):
         Return a list of all chromosomes for the genes represented in the queryset
         """
         return sorted( pair['chromosome'] for pair in self.values('chromosome').distinct() if pair['chromosome'] )
+
+    def types(self):
+        """
+        Return a list of all mapping types
+        """
+
+        return ( pair['uniprot_mapping_status'] for pair in self.values('uniprot_mapping_status').distinct() )
 
 class MappingViewManager(models.Manager):
     def get_queryset(self):
@@ -403,6 +409,7 @@ class MappingView(models.Model):
     uniprot_release = models.CharField(max_length=7, blank=True, null=True)
     ensembl_release = models.BigIntegerField(blank=True, null=True)
     seq_region_strand = models.BigIntegerField(blank=True, null=True)
+    uniprot_mapping_status = models.CharField(max_length=30, blank=True, null=True)
 
     @property
     def difference(self):
