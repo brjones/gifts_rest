@@ -83,7 +83,7 @@ class MappingViewFacetPagination(LimitOffsetPagination):
     def create_facets(self, queryset):
         statuses = OrderedDict([('name','status'),('label','Status'),('items',[])])
         organism = OrderedDict([('name','organism'),('label','Organism'),('items',[])])
-        sequence = OrderedDict([('name','divergence'),('label','Divergence'),('items',[])])
+        sequence = OrderedDict([('name','alignment'),('label','Alignment'),('items',[])])
         types = OrderedDict([('name','type'),('label','Type'),('items',[])])
 
         species_set = queryset.species()
@@ -99,11 +99,11 @@ class MappingViewFacetPagination(LimitOffsetPagination):
 
         differences = queryset.divergences()
         if differences[0]:
-            sequence["items"].append({ "label": "identical", "name": "identical", "count": differences[0] })
+            sequence["items"].append({ "label": "Identical", "name": "identical", "count": differences[0] })
         if differences[1]:
-            sequence["items"].append({ "label": "small", "name": "small", "count": differences[1] })
+            sequence["items"].append({ "label": "Small diff", "name": "small", "count": differences[1] })
         if differences[2]:
-            sequence["items"].append({ "label": "large", "name": "large", "count": differences[2] })
+            sequence["items"].append({ "label": "Large diff", "name": "large", "count": differences[2] })
 
         for mapping_type in queryset.types():
             types["items"].append({ 'name':mapping_type, 'label':mapping_type.replace("_"," ").capitalize() })
