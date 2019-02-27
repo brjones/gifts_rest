@@ -790,7 +790,7 @@ class MappingsSearch(generics.ListAPIView):
 
 class MappingViewsSearch(generics.ListAPIView):
     """
-    Search/retrieve all mappings. Mappings are grouped if they share ENST or UniProt accessions.
+    Search/retrieve all mappings views.
     'Facets' are used for filtering and returned by the service based on the result set.
     """
 
@@ -830,15 +830,18 @@ class MappingViewsSearch(generics.ListAPIView):
         # Apply filters based on facets parameters
         #
         if facets_params:
-            queryset = queryset.all()
             # create facets dict from e.g. 'organism:9606,status:unreviewed'
             facets = dict( tuple(param.split(':')) for param in facets_params.split(',') )
 
+            queryset = queryset.all()
+
+            # filter based on species
             # TODO: allow multiple organisms
             if 'organism' in facets:
                 queryset = queryset.filter(uniprot_tax_id=facets['organism'])
 
-            # Filter on how large a difference between the pairwise aligned protein sequences, if there is an alignment
+            # filter on how large a difference between the pairwise
+            # aligned protein sequences is, if there is an alignment
             if 'alignment' in facets:
                 if facets['alignment'] == 'identical':
                     queryset = queryset.filter(alignment_difference=0)
@@ -847,7 +850,7 @@ class MappingViewsSearch(generics.ListAPIView):
                 elif facets['alignment'] == 'large':
                     queryset = queryset.filter(alignment_difference__gt=5)
 
-            # filter queryset based on status
+            # filter based on status
             if 'status' in facets:
                 try:
                     status_id = CvUeStatus.objects.get(description=facets['status'].upper()).id
@@ -858,7 +861,16 @@ class MappingViewsSearch(generics.ListAPIView):
 
                 queryset = queryset.filter(status=status_id)
 
+            # filter based on chromosomes
             if 'chromosomes' in facets:
                 queryset = queryset.filter(chromosome=facets['chromosomes'])
+
+            # filter based on entry type
+            if 'type' in facets:
+                queryset = queryset.filter(uniprot_mapping_status=facets['type'])
+
+            # filter out entries on patches
+            if 'patches' in facets and int(facets["patches"]) == 0:
+                queryset = queryset.exclude(region_accession__iregex=r"^CHR")
 
         return queryset

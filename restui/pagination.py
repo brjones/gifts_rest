@@ -85,6 +85,7 @@ class MappingViewFacetPagination(LimitOffsetPagination):
         organism = OrderedDict([('name','organism'),('label','Organism'),('items',[])])
         sequence = OrderedDict([('name','alignment'),('label','Alignment'),('items',[])])
         types = OrderedDict([('name','type'),('label','Type'),('items',[])])
+        patches = OrderedDict([('name','patches'),('label','Patches'),('status',False)])
 
         species_set = queryset.species()
         for species in species_set:
@@ -108,15 +109,18 @@ class MappingViewFacetPagination(LimitOffsetPagination):
         for mapping_type in queryset.types():
             types["items"].append({ 'name':mapping_type, 'label':mapping_type.replace("_"," ").capitalize() })
 
+        if queryset.has_patches():
+            patches["status"] = True
+
         if len(species_set) == 1:
             chromosomes = OrderedDict([('name','chromosomes'),('label','Chromosomes'),('items',[])])
 
             for chromosome in queryset.chromosomes():
                 chromosomes["items"].append({ 'name':chromosome.lower(), 'label':chromosome.upper() })
 
-            return [ statuses, organism, sequence, chromosomes, types ]
+            return [ statuses, organism, sequence, chromosomes, types, patches ]
 
-        return [ statuses, organism, sequence, types ]
+        return [ statuses, organism, sequence, types, patches ]
 
 
     def paginate_queryset(self, queryset, request, view=None):
