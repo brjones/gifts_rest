@@ -16,12 +16,11 @@ class FacetPagination(LimitOffsetPagination):
         statuses = OrderedDict([('name','status'),('label','Status'),('items',[])])
         organism = OrderedDict([('name','organism'),('label','Organism'),('items',[])])
         sequence = OrderedDict([('name','divergence'),('label','Divergence'),('items',[])])
-        # TODO
-        # mappings = OrderedDict([('name','mappings'),('label','Type'),('items',[])])
 
         species_set = queryset.species()
         for species in species_set:
             organism["items"].append({ "name":species[0], "label":species[1] })
+
         for status in queryset.statuses():
             statuses["items"].append({ "name":Mapping.status_type(status), "label":Mapping.status_type(status).replace("_"," ").capitalize() })
 
@@ -85,10 +84,12 @@ class MappingViewFacetPagination(LimitOffsetPagination):
         statuses = OrderedDict([('name','status'),('label','Status'),('items',[])])
         organism = OrderedDict([('name','organism'),('label','Organism'),('items',[])])
         sequence = OrderedDict([('name','divergence'),('label','Divergence'),('items',[])])
+        types = OrderedDict([('name','type'),('label','Type'),('items',[])])
 
         species_set = queryset.species()
         for species in species_set:
             organism["items"].append({ "name":species[0], "label":species[1] })
+
         for status in queryset.statuses():
             try:
                 description = MappingView.status_description(status)
@@ -104,15 +105,18 @@ class MappingViewFacetPagination(LimitOffsetPagination):
         if differences[2]:
             sequence["items"].append({ "label": "large", "name": "large", "count": differences[2] })
 
+        for mapping_type in queryset.types():
+            types["items"].append({ 'name':mapping_type, 'label':mapping_type.replace("_"," ").capitalize() })
+
         if len(species_set) == 1:
             chromosomes = OrderedDict([('name','chromosomes'),('label','Chromosomes'),('items',[])])
 
             for chromosome in queryset.chromosomes():
                 chromosomes["items"].append({ 'name':chromosome.lower(), 'label':chromosome.upper() })
 
-            return [ statuses, organism, sequence, chromosomes ]
+            return [ statuses, organism, sequence, chromosomes, types ]
 
-        return [ statuses, organism, sequence ]
+        return [ statuses, organism, sequence, types ]
 
 
     def paginate_queryset(self, queryset, request, view=None):
