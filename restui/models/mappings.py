@@ -341,6 +341,13 @@ class MappingViewQuerySet(models.query.QuerySet):
         """
         return sorted( pair['chromosome'] for pair in self.values('chromosome').distinct() if pair['chromosome'] )
 
+    def types(self):
+        """
+        Return a list of all mapping types
+        """
+
+        return ( pair['uniprot_mapping_status'] for pair in self.values('uniprot_mapping_status').distinct() )
+
 class MappingViewManager(models.Manager):
     def get_queryset(self):
         return MappingViewQuerySet(self.model, using=self._db)
