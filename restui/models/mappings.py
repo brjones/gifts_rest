@@ -348,6 +348,13 @@ class MappingViewQuerySet(models.query.QuerySet):
 
         return ( pair['uniprot_mapping_status'] for pair in self.values('uniprot_mapping_status').distinct() )
 
+    def has_patches(self):
+        """
+        Return whether the queryset has entries defined on patches
+        """
+
+        return self.filter(region_accession__iregex=r"^CHR").count() > 0
+
 class MappingViewManager(models.Manager):
     def get_queryset(self):
         return MappingViewQuerySet(self.model, using=self._db)
