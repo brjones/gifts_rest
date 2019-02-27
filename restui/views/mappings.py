@@ -790,7 +790,7 @@ class MappingsSearch(generics.ListAPIView):
 
 class MappingViewsSearch(generics.ListAPIView):
     """
-    Search/retrieve all mappings. Mappings are grouped if they share ENST or UniProt accessions.
+    Search/retrieve all mappings views.
     'Facets' are used for filtering and returned by the service based on the result set.
     """
 
@@ -860,5 +860,8 @@ class MappingViewsSearch(generics.ListAPIView):
 
             if 'chromosomes' in facets:
                 queryset = queryset.filter(chromosome=facets['chromosomes'])
+
+            if 'type' in facets:
+                queryset = queryset.filter(uniprot_mapping_status=facets['type'])
 
         return queryset
