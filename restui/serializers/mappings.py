@@ -4,6 +4,7 @@ from django.http import Http404
 from restui.lib.external import ensembl_sequence
 from restui.models.annotations import CvEntryType, CvUeStatus
 from restui.models.mappings import Mapping, MappingView, ReleaseMappingHistory, MappingHistory, ReleaseStats
+from restui.models.ensembl import EnsemblSpeciesHistory
 from restui.serializers.ensembl import SpeciesHistorySerializer
 from restui.serializers.annotations import StatusSerializer, StatusHistorySerializer
 
@@ -314,11 +315,13 @@ class MappingViewsSerializer(serializers.Serializer):
 
     @classmethod
     def build_taxonomy_data(cls, group):
-        # Find the ensembl tax id via one ensembl species history associated to transcript
-        # associated to the given mapping.
-        # Relationship between transcript and history is many to many but we just fetch one history
-        # as the tax id remains the same across all of them
+        """
+        Find taxonomy information, i.e. ensembl/uniprot tax id/species for the group
+        """
 
+        # if the group contains mapped and potentially unmapped data
+        # return information from the first mapping with could find
+        # taxonomy data from
         for mapping_view in group:
             try:
                 mapping = Mapping.objects.get(pk=mapping_view.mapping_id)
@@ -331,9 +334,21 @@ class MappingViewsSerializer(serializers.Serializer):
                      'ensemblTaxId':ensembl_history.ensembl_tax_id,
                      'uniprotTaxId':mapping_view.uniprot_tax_id }
 
+        # the group just contains unmapped data, but the entries can belong
+        # to multiple species
+        # return information only if the group refers to the same tax id
+        tax_ids = [ mapping_view.uniprot_tax_id for mapping_view in group ]
+        if len(tax_ids) == 1:
+            species_history = EnsemblSpeciesHistory.objects.filter(ensembl_tax_id=tax_ids[0]).latest('time_loaded')
+            return {
+                'species':species_history.species,
+                'ensemblTaxId': species_history.ensembl_tax_id,
+                'uniprotTaxId':group[0].uniprot_tax_id
+                }
+
         return { 'species':None,
                  'ensemblTaxId':None,
-                 'uniprotTaxId':mapping_view.uniprot_tax_id }
+                 'uniprotTaxId':None }
 
 class LabelSerializer(serializers.Serializer):
     """
