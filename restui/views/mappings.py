@@ -839,12 +839,12 @@ class MappingViewsSearch(generics.ListAPIView):
                 queryset = queryset.filter(uniprot_tax_id=facets['organism'])
 
             # Filter on how large a difference between the pairwise aligned protein sequences, if there is an alignment
-            if 'sequence' in facets:
-                if facets['sequence'] == 'identical':
+            if 'alignment' in facets:
+                if facets['alignment'] == 'identical':
                     queryset = queryset.filter(alignment_difference=0)
-                elif facets['sequence'] == 'small':
+                elif facets['alignment'] == 'small':
                     queryset = queryset.filter(alignment_difference__gt=0, alignment_difference__lte=5)
-                elif facets['sequence'] == 'large':
+                elif facets['alignment'] == 'large':
                     queryset = queryset.filter(alignment_difference__gt=5)
 
             # filter queryset based on status
