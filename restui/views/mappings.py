@@ -875,9 +875,9 @@ class MappingViewsSearch(generics.ListAPIView):
                 # - 1: include patches
                 # - 2: exclude patches
                 # - 3: include only patches
-                if int(facets["patches"]) == 2:
+                if facets["patches"] == 'exclude':
                     queryset = queryset.exclude(region_accession__iregex=r"^CHR")
-                elif int(facets["patches"]) == 3:
+                elif facets["patches"] == 'only':
                     queryset = queryset.filter(region_accession__iregex=r"^CHR")
 
         return queryset
