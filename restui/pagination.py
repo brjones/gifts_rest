@@ -85,8 +85,13 @@ class MappingViewFacetPagination(LimitOffsetPagination):
         organism = OrderedDict([('name','organism'),('label','Organism'),('items',[])])
         sequence = OrderedDict([('name','alignment'),('label','Alignment'),('items',[])])
         types = OrderedDict([('name','type'),('label','Type'),('items',[])])
-        patches = OrderedDict([('name','patches'),('label','Patches'),('status',False)])
+        patches = OrderedDict([('name','patches'),('label','Patches'),('items',[])])
 
+        if queryset.has_patches():
+            patches["items"].append({'name':'include', 'label':'Include'})
+            patches["items"].append({'name':'exclude', 'label':'Exclude'})
+            patches["items"].append({'name':'only', 'label':'Only patches'})
+            
         species_set = queryset.species()
         for species in species_set:
             organism["items"].append({ "name":species[0], "label":species[1] })
@@ -108,9 +113,6 @@ class MappingViewFacetPagination(LimitOffsetPagination):
 
         for mapping_type in queryset.types():
             types["items"].append({ 'name':mapping_type, 'label':mapping_type.replace("_"," ").capitalize() })
-
-        if queryset.has_patches():
-            patches["status"] = True
 
         if len(species_set) == 1:
             chromosomes = OrderedDict([('name','chromosomes'),('label','Chromosomes'),('items',[])])
