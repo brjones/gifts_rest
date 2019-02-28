@@ -870,7 +870,14 @@ class MappingViewsSearch(generics.ListAPIView):
                 queryset = queryset.filter(uniprot_mapping_status=facets['type'])
 
             # filter out entries on patches
-            if 'patches' in facets and int(facets["patches"]) == 0:
-                queryset = queryset.exclude(region_accession__iregex=r"^CHR")
+            if 'patches' in facets:
+                # options:
+                # - 1: include patches
+                # - 2: exclude patches
+                # - 3: include only patches
+                if int(facets["patches"]) == 2:
+                    queryset = queryset.exclude(region_accession__iregex=r"^CHR")
+                elif int(facets["patches"]) == 3:
+                    queryset = queryset.filter(region_accession__iregex=r"^CHR")
 
         return queryset
