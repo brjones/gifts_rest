@@ -10,18 +10,26 @@ from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpecies
 
 
 #
-# NOTES
+# NOTE: cannot use ModelSerializer, doesn't work with bulk_insert
 #
-# Can we use ModelSerializer? Doesn't seem to work with bulk_insert
-#
-
 class EnsemblTranscriptSerializer(serializers.Serializer):
     transcript_id = serializers.IntegerField(required=False)
+    gene = serializers.PrimaryKeyRelatedField(read_only=True)
     enst_id = serializers.CharField(max_length=30)
-
-    # class Meta:
-    #     model = EnsemblTranscript
-    #     fields = '__all__'
+    enst_version = serializers.IntegerField(required=False)
+    ccds_id = serializers.CharField(max_length=30, required=False)
+    uniparc_accession = serializers.CharField(max_length=30, required=False)
+    biotype = serializers.CharField(max_length=40, required=False)
+    deleted = serializers.NullBooleanField(required=False)
+    seq_region_start = serializers.IntegerField(required=False)
+    seq_region_end = serializers.IntegerField(required=False)
+    supporting_evidence = serializers.CharField(max_length=45, required=False)
+    userstamp = serializers.CharField(max_length=30, required=False)
+    time_loaded = serializers.DateTimeField(required=False)
+    select = serializers.NullBooleanField(required=False)
+    ensp_id = serializers.CharField(max_length=30, required=False)
+    ensp_len = serializers.IntegerField(required=False)
+    source = serializers.CharField(max_length=30, required=False)
 
 #
 # Customizing ListSerializer behavior
@@ -57,9 +65,17 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
         # assign the gene to each transcript for the transcripts bulk insert
         gdata = []
         tdata = {}
+        timestamp = timezone.now()
+
         for item in validated_data:
+            item['time_loaded'] = timestamp # add timestamp to gene
+
             # need to remove (i.e. pop) 'transcripts' from data as this is not part of the gene model
             tdata[item.get('ensg_id')] = item.pop('transcripts')
+
+            for t in tdata[item.get('ensg_id')]: # add timestamp to gene's transcripts
+                t['time_loaded'] = timestamp
+
             gdata.append(dict(**item))
 
         #
@@ -120,15 +136,15 @@ class EnsemblGeneSerializer(serializers.Serializer):
     seq_region_strand = serializers.IntegerField(required=False)
     biotype = serializers.CharField(max_length=40, required=False)
     time_loaded = serializers.DateTimeField(required=False)
-    # history = PrimaryKeyRelatedField(many=True, read_only=True)
+    gene_symbol = serializers.CharField(max_length=30, required=False)
+    gene_accession = serializers.CharField(max_length=30, required=False)
+    source = serializers.CharField(max_length=30, required=False)
 
     # this is necessary to allow incoming genes data to have a nested list of transcripts
     transcripts = EnsemblTranscriptSerializer(many=True, required=False)
 
     #
-    # TODO?
-    #
-    # object-level validation
+    # TODO? object-level validation
     # http://www.django-rest-framework.org/api-guide/serializers/#validation
     #
     def validate(self, data):
@@ -138,8 +154,6 @@ class EnsemblGeneSerializer(serializers.Serializer):
         return data
 
     class Meta:
-        # model = EnsemblGene
-        # fields = '__all__'
         list_serializer_class = EnsemblGeneListSerializer
 
 class EnspUCigarSerializer(serializers.ModelSerializer):
