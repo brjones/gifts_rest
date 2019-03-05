@@ -53,7 +53,7 @@ class EnsemblGene(PostgresModel):
         managed = False
         db_table = 'ensembl_gene'
 
-class EnsemblTranscriptQuerySet(models.query.QuerySet): #(PostgresQuerySet):
+class EnsemblTranscriptQuerySet(PostgresQuerySet): # models.query.QuerySet
     """
     A specialised query set to be able to deal with groupings
     of transcripts based on their corresponding gene.

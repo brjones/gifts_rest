@@ -9,19 +9,38 @@ from psqlextra.query import ConflictAction
 from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory, GeneHistory, TranscriptHistory, EnspUCigar
 
 
-#
-# NOTES
-#
-# Can we use ModelSerializer? Doesn't seem to work with bulk_insert
-#
-
 class EnsemblTranscriptSerializer(serializers.Serializer):
-    transcript_id = serializers.IntegerField(required=False)
-    enst_id = serializers.CharField(max_length=30)
+    """
+    Deserialise transcripts specified in genes
+    ensembl/load/<species>/<assembly_accession>/<ensembl_tax_id>/<ensembl_release> endpoint
+    """
 
-    # class Meta:
-    #     model = EnsemblTranscript
-    #     fields = '__all__'
+    #
+    # NOTE
+    #
+    # - cannot use ModelSerializer, doesn't work with bulk_insert
+    #   must explicity specify serialization fields
+    # - use null default values so if the client doesn't provide some values
+    #   the defaults override the existing field (otherwise the existing
+    #   value won't be replaced)
+    #
+    transcript_id = serializers.IntegerField(required=False)
+    gene = serializers.PrimaryKeyRelatedField(read_only=True)
+    enst_id = serializers.CharField(max_length=30)
+    enst_version = serializers.IntegerField(required=False, default=None)
+    ccds_id = serializers.CharField(max_length=30, required=False, default=None)
+    uniparc_accession = serializers.CharField(max_length=30, required=False, default=None)
+    biotype = serializers.CharField(max_length=40, required=False, default=None)
+    deleted = serializers.NullBooleanField(required=False, default=None)
+    seq_region_start = serializers.IntegerField(required=False, default=None)
+    seq_region_end = serializers.IntegerField(required=False, default=None)
+    supporting_evidence = serializers.CharField(max_length=45, required=False, default=None)
+    userstamp = serializers.CharField(max_length=30, required=False, default=None)
+    time_loaded = serializers.DateTimeField(required=False)
+    select = serializers.NullBooleanField(required=False, default=None)
+    ensp_id = serializers.CharField(max_length=30, required=False, default=None)
+    ensp_len = serializers.IntegerField(required=False, default=None)
+    source = serializers.CharField(max_length=30, required=False, default=None)
 
 #
 # Customizing ListSerializer behavior
@@ -57,9 +76,23 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
         # assign the gene to each transcript for the transcripts bulk insert
         gdata = []
         tdata = {}
+        timestamp = timezone.now()
+
         for item in validated_data:
-            # need to remove (i.e. pop) 'transcripts' from data as this is not part of the gene model
-            tdata[item.get('ensg_id')] = item.pop('transcripts')
+            item['time_loaded'] = timestamp # add timestamp to gene
+
+            ensg_id = item.get('ensg_id')
+
+            # need to remove 'transcripts' from data as this is not part of the gene model
+            #
+            # NOTE: assume payload always contains non-empty transcripts data for each gene
+            #
+            tdata[ensg_id] = item.pop('transcripts')
+
+            # add timestamp to gene's transcripts too
+            for t in tdata[ensg_id]:
+                t['time_loaded'] = timestamp
+
             gdata.append(dict(**item))
 
         #
@@ -76,8 +109,8 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
         # map each transcript data to its corresponding gene object,
         # effectively establishing the gene-transcript one-to-many relationship
         # use generator expression to reduce memory footprint
-        for t, g in ((transcript_data, gene) for gene in genes for transcript_data in tdata[gene.ensg_id]):
-             t["gene"] = g
+        for t, g in ( (transcript_data, gene) for gene in genes for transcript_data in tdata[gene.ensg_id] ):
+            t["gene"] = g
         
         # bulk insert the transcripts mapped to their genes
         transcripts = EnsemblTranscript.objects.on_conflict(['enst_id'],
@@ -110,25 +143,26 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
 class EnsemblGeneSerializer(serializers.Serializer):
     gene_id = serializers.IntegerField(required=False)
     ensg_id = serializers.CharField(max_length=30)
-    gene_name = serializers.CharField(max_length=30)
-    chromosome = serializers.CharField(max_length=50, required=False)
-    region_accession = serializers.CharField(max_length=50, required=False)
-    mod_id = serializers.CharField(max_length=30, required=False)
-    deleted = serializers.NullBooleanField(required=False)
-    seq_region_start = serializers.IntegerField(required=False)
-    seq_region_end = serializers.IntegerField(required=False)
-    seq_region_strand = serializers.IntegerField(required=False)
-    biotype = serializers.CharField(max_length=40, required=False)
-    time_loaded = serializers.DateTimeField(required=False)
-    # history = PrimaryKeyRelatedField(many=True, read_only=True)
+    gene_name = serializers.CharField(max_length=255, required=False, default=None)
+    chromosome = serializers.CharField(max_length=50, required=False, default=None)
+    region_accession = serializers.CharField(max_length=50, required=False, default=None)
+    mod_id = serializers.CharField(max_length=30, required=False, default=None)
+    deleted = serializers.NullBooleanField(required=False, default=None)
+    seq_region_start = serializers.IntegerField(required=False, default=None)
+    seq_region_end = serializers.IntegerField(required=False, default=None)
+    seq_region_strand = serializers.IntegerField(required=False, default=None)
+    biotype = serializers.CharField(max_length=40, required=False, default=None)
+    time_loaded = serializers.DateTimeField(required=False, default=None)
+    gene_symbol = serializers.CharField(max_length=30, required=False, default=None)
+    gene_accession = serializers.CharField(max_length=30, required=False, default=None)
+    source = serializers.CharField(max_length=30, required=False, default=None)
 
     # this is necessary to allow incoming genes data to have a nested list of transcripts
+    # assume payload always contains non-empty transcripts data for each gene (no default value)
     transcripts = EnsemblTranscriptSerializer(many=True, required=False)
 
     #
-    # TODO?
-    #
-    # object-level validation
+    # TODO? object-level validation
     # http://www.django-rest-framework.org/api-guide/serializers/#validation
     #
     def validate(self, data):
@@ -138,8 +172,6 @@ class EnsemblGeneSerializer(serializers.Serializer):
         return data
 
     class Meta:
-        # model = EnsemblGene
-        # fields = '__all__'
         list_serializer_class = EnsemblGeneListSerializer
 
 class EnspUCigarSerializer(serializers.ModelSerializer):
