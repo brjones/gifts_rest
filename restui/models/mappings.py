@@ -287,7 +287,7 @@ class MappingViewQuerySet(models.query.QuerySet):
 
         qs_limit = sum(int(row['total']) for row in counts[offset:offset+limit])
 
-        sub_qs = self[qs_offset:qs_offset+qs_limit]
+        sub_qs = self.order_by('grouping_id')[qs_offset:qs_offset+qs_limit]
 
         grouped_results = {}
 
