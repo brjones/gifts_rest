@@ -254,7 +254,7 @@ class MappingViewQuerySet(models.query.QuerySet):
         [{'grouping_id': 1, 'total': 19}, {'grouping_id': 2, 'total': 6}, {'grouping_id': 3, 'total': 4},...]
         """
         if self._counts is None:
-            self._counts = self.values('grouping_id').annotate(total=Count(Case(When(grouping_id__isnull=True, then=1), default=1))).order_by('grouping_id')
+            self._counts = self.values('grouping_id').annotate(total=Count(Case(When(grouping_id__isnull=True, then=1), default=1))).order_by('-grouping_id')
 
         return self._counts
 
@@ -287,7 +287,7 @@ class MappingViewQuerySet(models.query.QuerySet):
 
         qs_limit = sum(int(row['total']) for row in counts[offset:offset+limit])
 
-        sub_qs = self[qs_offset:qs_offset+qs_limit]
+        sub_qs = self.order_by('-grouping_id')[qs_offset:qs_offset+qs_limit]
 
         grouped_results = {}
 
