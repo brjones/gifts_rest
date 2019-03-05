@@ -59,6 +59,7 @@ class EnsemblUniprotMappingSerializer(serializers.Serializer):
     """
 
     mappingId = serializers.IntegerField()
+    groupingId = serializers.IntegerField(required=False)
     timeMapped = serializers.DateTimeField()
     uniprotRelease = serializers.CharField()
     ensemblRelease = serializers.CharField()
@@ -257,6 +258,7 @@ class MappingViewsSerializer(serializers.Serializer):
                 sequence = None
 
         mapping_obj = { 'mappingId':mapping_view.mapping_id,
+                        'groupingId':mapping_view.grouping_id,
                         'timeMapped':mapping_view.time_mapped,
                         'ensemblRelease':mapping_view.ensembl_release,
                         'uniprotRelease':mapping_view.uniprot_release,
