@@ -362,15 +362,16 @@ class LabelSerializer(serializers.Serializer):
 
 class MappingLabelsSerializer(serializers.Serializer):
     """
-    For nested serialization of user label for a mapping in call to labels/<mapping_id> endpoint.
+    For nested serialization of user label for a mapping in call to mapping/<id>/labels endpoint.
     """
     labels = LabelSerializer(many=True)
     
 class CommentLabelSerializer(serializers.Serializer):
     """
-    For nested serialization of user comment for a mapping in call to comments/<mapping_id> endpoint.
+    For nested serialization of user comment for a mapping in call to mapping/<id>/comments/ endpoint.
     """
 
+    commentId = serializers.IntegerField()
     text = serializers.CharField()
     timeAdded = serializers.DateTimeField()
     user = serializers.CharField()

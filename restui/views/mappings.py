@@ -515,7 +515,7 @@ class MappingCommentsView(APIView):
 
         # fetch mapping comment history
         mapping_comments = mapping.comments.order_by('-time_stamp')
-        comments = map(lambda c: { 'text':c.comment, 'timeAdded':c.time_stamp, 'user':c.user_stamp.full_name }, mapping_comments)
+        comments = map(lambda c: { 'commentId':c.id, 'text':c.comment, 'timeAdded':c.time_stamp, 'user':c.user_stamp.full_name }, mapping_comments)
 
         data = {  'mappingId': pk,
                   'comments':list(comments)
