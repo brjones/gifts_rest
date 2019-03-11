@@ -659,6 +659,16 @@ class MappingStatusView(APIView):
         mapping.status = s
         mapping.save()
 
+        # update status on mapping_view corresponding entry,
+        # otherwise search won't reflect the status change
+        try:
+            mv = MappingView.objects.get(mapping_id=pk)
+        except MappingView.DoesNotExist:
+            return Response({ "error": "Could not find mapping {} in search table.".format(pk) }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            mv.status = s.id
+            mv.save()
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
