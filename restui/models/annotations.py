@@ -33,6 +33,7 @@ class UeMappingComment(models.Model):
     user_stamp = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='user_stamp')
     comment = models.TextField()
     mapping = models.ForeignKey('Mapping', models.DO_NOTHING, related_name='comments', blank=True, null=True)
+    deleted = models.BooleanField()
 
     class Meta:
         managed = False
