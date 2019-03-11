@@ -375,6 +375,7 @@ class CommentLabelSerializer(serializers.Serializer):
     text = serializers.CharField()
     timeAdded = serializers.DateTimeField()
     user = serializers.CharField()
+    deleted = serializers.BooleanField()
     
 class MappingCommentsSerializer(serializers.Serializer):
     """

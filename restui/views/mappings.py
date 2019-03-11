@@ -492,8 +492,7 @@ class MappingLabelsView(APIView):
 
         serializer = MappingLabelsSerializer(data)
         return Response(serializer.data)
-
-
+    
 class MappingCommentsView(APIView):
     """
     Add a comment/Retrieve all comments relative to a given mapping, includes mapping labels.
@@ -515,7 +514,7 @@ class MappingCommentsView(APIView):
 
         # fetch mapping comment history
         mapping_comments = mapping.comments.order_by('-time_stamp')
-        comments = map(lambda c: { 'commentId':c.id, 'text':c.comment, 'timeAdded':c.time_stamp, 'user':c.user_stamp.full_name }, mapping_comments)
+        comments = map(lambda c: { 'commentId':c.id, 'text':c.comment, 'timeAdded':c.time_stamp, 'user':c.user_stamp.full_name, 'deleted':c.deleted }, mapping_comments)
 
         data = {  'mappingId': pk,
                   'comments':list(comments)
@@ -523,13 +522,13 @@ class MappingCommentsView(APIView):
 
         serializer = MappingCommentsSerializer(data)
         return Response(serializer.data)
-
+    
     def post(self, request, pk):
         mapping = get_mapping(pk)
 
         try:
             serializer = CommentSerializer(data={ 'time_stamp':timezone.now(),
-                                                  'user_stamp':request.user,
+                                                  'user_stamp':'usr-4559f231-850b-4d83-be70-bcf785243b81', #request.user,
                                                   'comment':request.data['text'],
                                                   'mapping':mapping.mapping_id })
         except KeyError:
@@ -540,7 +539,6 @@ class MappingCommentsView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class MappingStatusView(APIView):
     """
