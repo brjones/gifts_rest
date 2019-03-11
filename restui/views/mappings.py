@@ -492,6 +492,66 @@ class MappingLabelsView(APIView):
 
         serializer = MappingLabelsSerializer(data)
         return Response(serializer.data)
+
+class EditDeleteCommentView(APIView):
+    """
+    Edit (PUT) and delete (DELETE) a comment for a given mapping.
+    """
+
+    permission_class = (IsAuthenticated,)
+    schema = ManualSchema(description="Edit or delete a comment for a given mapping.",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the mapping"
+                              ),
+                              coreapi.Field(
+                                  name="comment_id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the comment"
+                              ),])
+
+    def put(self, request, pk, comment_id):
+        mapping = get_mapping(pk)
+
+        try:
+            comment = mapping.comments.get(id=comment_id)
+        except KeyError:
+            return Response({ "error": "Text not specified" }, status=status.HTTP_400_BAD_REQUEST)
+        except UeMappingComment.DoesNotExist:
+            return Response({ "error": "Invalid comment ID: {}".format(comment_id) }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            if comment.deleted:
+                return Response({ "error":"Cannot edit deleted comment" }, status=status.HTTP_400_BAD_REQUEST)
+
+            comment.comment = request.data['text']
+            comment.time_stamp = timezone.now()
+            comment.save()
+
+        serializer = CommentLabelSerializer({ 'commentId': comment.id,
+                                              'text': comment.comment,
+                                              'timeAdded': comment.time_stamp,
+                                              'user': comment.user_stamp.full_name,
+                                              'deleted': comment.deleted })
+        return Response(serializer.data)
+
+    def delete(self, request, pk, comment_id):
+        mapping = get_mapping(pk)
+
+        try:
+            comment = mapping.comments.get(id=comment_id)
+        except:
+            return Response("Invalid comment ID: {}".format(comment_id), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            comment.deleted = True
+            comment.save()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
     
 class MappingCommentsView(APIView):
     """
@@ -528,7 +588,7 @@ class MappingCommentsView(APIView):
 
         try:
             serializer = CommentSerializer(data={ 'time_stamp':timezone.now(),
-                                                  'user_stamp':'usr-4559f231-850b-4d83-be70-bcf785243b81', #request.user,
+                                                  'user_stamp':request.user,
                                                   'comment':request.data['text'],
                                                   'mapping':mapping.mapping_id })
         except KeyError:
