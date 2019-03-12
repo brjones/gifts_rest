@@ -69,7 +69,8 @@ class EnsemblFeature(mixins.CreateModelMixin,
     def post(self, request, *args, **kwargs):
         # this calls self.perform_create(self.get_serializer)
         objs = self.create(request, *args, **kwargs)
-        return objs
+
+        return Response({'success':1}, status=status.HTTP_201_CREATED)
 
 class EnspUCigarAlignmnent(APIView):
     """
