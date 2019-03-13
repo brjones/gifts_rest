@@ -8,7 +8,7 @@ from restui.models.mappings import Mapping, MappingView, MappingHistory, Release
 from restui.models.uniprot import UniprotEntry, UniprotEntryHistory
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
-    MappingSerializer, MappingCommentsSerializer, MappingsSerializer, MappingViewsSerializer,\
+    MappingSerializer, MappingCommentsSerializer, MappingsSerializer, UnmappedEntrySerializer, MappingViewsSerializer,\
     MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer,\
     ReleaseStatsSerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer, ReleasePerSpeciesSerializer
 from restui.serializers.annotations import StatusSerializer, CvUeStatusSerializer, CommentSerializer, LabelSerializer
@@ -729,13 +729,38 @@ class MappingDetailed(APIView):
 
         return Response(serializer.data)
 
-#
-# NOTES
-#
-# - What does it mean to search with a given mapping ID, return just that mapping
-#   or all 'related' mappings?
-#   We're returning only that mapping at the moment, to discuss with Uniprot
-#
+class UnmappedDetailed(APIView):
+    """
+    Retrieve a single "unmapped" entry, includes related entries.
+    """
+
+    schema = ManualSchema(description="Retrieve a single unmapped entry, includes related entries.",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the mapping view id"
+                              ),])
+
+    def get(self, request, mapping_view_id):
+        try:
+            mapping_view = MappingView.objects.get(pk=mapping_view_id)
+        except MappingView.DoesNotExist:
+            raise Http404
+
+        # this is supposed to be called for an unmapped entry
+        if mapping_view.uniprot_mapping_status == 'mapped' and mapping_view.mapping_id is not None:
+            return Response({ "error":"Entry is mapped with id {}".format(mapping_view.mapping_id) }, status=status.HTTP_400_BAD_REQUEST)
+
+        data = { 'entry': mapping_view,
+                 'relatedEntries': list(MappingView.objects.filter(grouping_id=mapping_view.grouping_id).exclude(pk=mapping_view_id)) }
+
+        serializer = UnmappedEntrySerializer(data)
+
+        return Response(serializer.data)
+
 class MappingsSearch(generics.ListAPIView):
     """
     Search/retrieve all mappings. Mappings are grouped if they share ENST or UniProt accessions.
