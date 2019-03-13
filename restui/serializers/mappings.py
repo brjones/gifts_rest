@@ -58,6 +58,7 @@ class EnsemblUniprotMappingSerializer(serializers.Serializer):
     For nested serialization of Ensembl-Uniprot mapping in call to mapping/<id> endpoint.
     """
 
+    id = serializers.IntegerField(required=False) # mapping_view id to get unmapped entry details
     mappingId = serializers.IntegerField()
     groupingId = serializers.IntegerField(required=False)
     timeMapped = serializers.DateTimeField()
@@ -237,6 +238,15 @@ class MappingsSerializer(serializers.Serializer):
         except:
             raise Http404("Couldn't find uniprot tax id as I couldn't find a uniprot entry associated to the mapping")
 
+class MappingViewSerializer(serializers.ModelSerializer):
+    """
+    Serializer for MappingView instances
+    """
+
+    class Meta:
+        model = MappingView
+        fields = '__all__'
+
 class MappingViewsSerializer(serializers.Serializer):
     """
     Serialize data in call to mappings/ endpoint
@@ -257,7 +267,8 @@ class MappingViewsSerializer(serializers.Serializer):
                 print(e) # TODO: log
                 sequence = None
 
-        mapping_obj = { 'mappingId':mapping_view.mapping_id,
+        mapping_obj = { 'id':mapping_view.id,
+                        'mappingId':mapping_view.mapping_id,
                         'groupingId':mapping_view.grouping_id,
                         'timeMapped':mapping_view.time_mapped,
                         'ensemblRelease':mapping_view.ensembl_release,
@@ -351,6 +362,11 @@ class MappingViewsSerializer(serializers.Serializer):
         return { 'species':None,
                  'ensemblTaxId':None,
                  'uniprotTaxId':None }
+
+
+class UnmappedEntrySerializer(serializers.Serializer):
+    entry = MappingViewSerializer()
+    relatedEntries = MappingViewSerializer(many=True)
 
 class LabelSerializer(serializers.Serializer):
     """
