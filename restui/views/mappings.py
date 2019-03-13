@@ -731,10 +731,18 @@ class MappingDetailed(APIView):
 
 class UnmappedDetailed(APIView):
     """
-    Retrieve a single "unmapped" entry, incldes related entries.
+    Retrieve a single "unmapped" entry, includes related entries.
     """
 
-    serializer_class = UnmappedEntrySerializer
+    schema = ManualSchema(description="Retrieve a single unmapped entry, includes related entries.",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the mapping view id"
+                              ),])
 
     def get(self, request, mapping_view_id):
         try:
