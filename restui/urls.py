@@ -53,10 +53,12 @@ urlpatterns = [
     path('mapping/<int:pk>/status/', method_router, {'VIEW': mappings.MappingStatusView.as_view()}),             # update mapping status
     path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),    # retrieve pairwise alignments for a mapping
     # path('mapping/<int:pk>/alignment_run/<alignment_run>/difference/')
-    path('mapping/<int:pk>/', mappings.MappingDetailed.as_view()),                      # retrieve single mapping
+    path('mapping/<int:pk>/', mappings.MappingDetailed.as_view()),                      # retrieve mapping and related entries
     path('mappings/', mappings.MappingViewsSearch.as_view()),                           # search the mappings (limit/offset paginated results)
 
     path('uniprot/entry/<int:pk>/', uniprot.UniprotEntryFetch.as_view()),               # fetch uniprot entry by db ID
+
+    path('unmapped/<int:mapping_view_id>', mappings.UnmappedDetailed.as_view()),        # retrieve unmapped and related entries
 
     path('service/ping/', service.PingService.as_view())                                # return service status
 ]
