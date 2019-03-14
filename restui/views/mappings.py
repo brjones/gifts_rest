@@ -924,48 +924,62 @@ class MappingViewsSearch(generics.ListAPIView):
         # Apply filters based on facets parameters
         #
         if facets_params:
-            # create facets dict from e.g. 'organism:9606,status:unreviewed'
-            facets = dict( tuple(param.split(':')) for param in facets_params.split(',') )
+            # create facets dict from e.g. 'organism:9606,10090;status:unreviewed;chromosome:10,11,X'
+            facets = dict( tuple(param.split(':')) for param in facets_params.split(';') )
 
             queryset = queryset.all()
 
             # filter based on species
-            # TODO: allow multiple organisms
             if 'organism' in facets:
-                queryset = queryset.filter(uniprot_tax_id=facets['organism'])
+                # consider query may request for multiple organisms
+                queryset = queryset.filter(uniprot_tax_id__in=facets['organism'].split(','))
 
             # filter on how large a difference between the pairwise
             # aligned protein sequences is, if there is an alignment
             if 'alignment' in facets:
-                if facets['alignment'] == 'identical':
-                    queryset = queryset.filter(alignment_difference=0)
-                elif facets['alignment'] == 'small':
-                    queryset = queryset.filter(alignment_difference__gt=0, alignment_difference__lte=5)
-                elif facets['alignment'] == 'large':
-                    queryset = queryset.filter(alignment_difference__gt=5)
+                # consider query may request for multiple alignment differences
+                alignment__diff_filter = Q()
+
+                for diff in facets['alignment'].split(','):
+                    if diff == 'identical':
+                        alignment_diff_filter |= Q(alignment_difference=0)
+                    elif diff == 'small':
+                        alignment_diff_filter |= Q(alignment_difference__gt=0, alignment_difference__lte=5)
+                    elif diff == 'large':
+                        alignment_diff_filter |= Q(alignment_difference__gt=5)
+
+                queryset = queryset.filter(alignment_diff_filter)
 
             # filter based on status
             if 'status' in facets:
-                try:
-                    status_id = CvUeStatus.objects.get(description=facets['status'].upper()).id
-                except:
-                    raise Http404("Invalid status type")
-                    # TODO Should be a 400, how do we make this work with pagination?
-                    #return Response(status=status.HTTP_400_BAD_REQUEST)
+                # possible multiple statuses
+                status_filter = Q()
 
-                queryset = queryset.filter(status=status_id)
+                for status_description in facets['status'].split(','):
+                    try:
+                        status_id = CvUeStatus.objects.get(description=status_description.upper()).id
+                    except:
+                        # TODO Should be a 400, how do we make this work with pagination?
+                        # return Response(status=status.HTTP_400_BAD_REQUEST)
+                        raise Http404("Invalid status type")
+                    else:
+                        status_filter |= Q(status=status_id)
+
+                queryset = queryset.filter(status_filter)
 
             # filter based on chromosomes
             if 'chromosomes' in facets:
-                queryset = queryset.filter(chromosome=facets['chromosomes'])
+                # possible multiple chromosomes
+                queryset = queryset.filter(chromosome__in=facets['chromosomes'].split(','))
 
             # filter based on entry type
             if 'type' in facets:
-                queryset = queryset.filter(uniprot_mapping_status=facets['type'])
+                # possible multiple types
+                queryset = queryset.filter(uniprot_mapping_status__in=facets['type'].split(','))
 
             # filter out entries on patches
             if 'patches' in facets:
-                # options:
+                # options, should be mutually exclusive
                 # - 1: include patches
                 # - 2: exclude patches
                 # - 3: include only patches
