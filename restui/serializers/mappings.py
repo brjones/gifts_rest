@@ -390,9 +390,8 @@ class CommentLabelSerializer(serializers.Serializer):
     commentId = serializers.IntegerField()
     text = serializers.CharField()
     timeAdded = serializers.DateTimeField()
-    user = serializers.CharField()
-    deleted = serializers.BooleanField()
-    
+    editable = serializers.BooleanField()
+
 class MappingCommentsSerializer(serializers.Serializer):
     """
     Serialize data in call to comments/<mapping_id> endpoint.
