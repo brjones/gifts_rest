@@ -519,10 +519,11 @@ class EditDeleteCommentView(APIView):
     def put(self, request, pk, comment_id):
         mapping = get_mapping(pk)
 
+        if 'text' not in request.data:
+            return Response({ "error": "Text not specified" }, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             comment = mapping.comments.get(id=comment_id)
-        except KeyError:
-            return Response({ "error": "Text not specified" }, status=status.HTTP_400_BAD_REQUEST)
         except UeMappingComment.DoesNotExist:
             return Response({ "error": "Invalid comment ID: {}".format(comment_id) }, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -536,8 +537,7 @@ class EditDeleteCommentView(APIView):
         serializer = CommentLabelSerializer({ 'commentId': comment.id,
                                               'text': comment.comment,
                                               'timeAdded': comment.time_stamp,
-                                              'user': comment.user_stamp.full_name,
-                                              'deleted': comment.deleted })
+                                              'editable': True if request.user and request.user == comment.user_stamp else False })
         return Response(serializer.data)
 
     def delete(self, request, pk, comment_id):
@@ -572,9 +572,11 @@ class MappingCommentsView(APIView):
     def get(self, request, pk):
         mapping = get_mapping(pk)
 
-        # fetch mapping comment history
-        mapping_comments = mapping.comments.order_by('-time_stamp')
-        comments = map(lambda c: { 'commentId':c.id, 'text':c.comment, 'timeAdded':c.time_stamp, 'user':c.user_stamp.full_name, 'deleted':c.deleted }, mapping_comments)
+        # fetch mapping comment history, exclude deleted comments
+        mapping_comments = mapping.comments.filter(deleted=False).order_by('-time_stamp')
+
+        # comments are editable if they belong to the requesting user
+        comments = map(lambda c: { 'commentId':c.id, 'text':c.comment, 'timeAdded':c.time_stamp, 'editable':True if request.user and request.user == c.user_stamp else False }, mapping_comments)
 
         data = {  'mappingId': pk,
                   'comments':list(comments)
