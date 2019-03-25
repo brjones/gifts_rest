@@ -93,3 +93,19 @@ class UnmappedEntryLabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = UeUnmappedEntryLabel
         fields = '__all__'
+
+
+class LabelSerializer(serializers.Serializer):
+    """
+    Serializer for an individual label
+    """
+    label = serializers.CharField()
+    id = serializers.IntegerField()
+    status = serializers.BooleanField()
+
+
+class LabelsSerializer(serializers.Serializer):
+    """
+    For nested serialization of user label for a mapping in call to (mapping|unmapped)/<id>/labels endpoint.
+    """
+    labels = LabelSerializer(many=True)
