@@ -390,6 +390,7 @@ class CommentLabelSerializer(serializers.Serializer):
     commentId = serializers.IntegerField()
     text = serializers.CharField()
     timeAdded = serializers.DateTimeField()
+    user = serializers.CharField()
     editable = serializers.BooleanField()
 
 class MappingCommentsSerializer(serializers.Serializer):

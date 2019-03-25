@@ -537,6 +537,7 @@ class EditDeleteCommentView(APIView):
         serializer = CommentLabelSerializer({ 'commentId': comment.id,
                                               'text': comment.comment,
                                               'timeAdded': comment.time_stamp,
+                                              'user': c.user_stamp.full_name,
                                               'editable': True if request.user and request.user == comment.user_stamp else False })
         return Response(serializer.data)
 
@@ -576,7 +577,7 @@ class MappingCommentsView(APIView):
         mapping_comments = mapping.comments.filter(deleted=False).order_by('-time_stamp')
 
         # comments are editable if they belong to the requesting user
-        comments = map(lambda c: { 'commentId':c.id, 'text':c.comment, 'timeAdded':c.time_stamp, 'editable':True if request.user and request.user == c.user_stamp else False }, mapping_comments)
+        comments = map(lambda c: { 'commentId':c.id, 'text':c.comment, 'timeAdded':c.time_stamp, 'user':c.user_stamp.full_name, 'editable':True if request.user and request.user == c.user_stamp else False }, mapping_comments)
 
         data = {  'mappingId': pk,
                   'comments':list(comments)
