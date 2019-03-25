@@ -364,10 +364,6 @@ class MappingViewsSerializer(serializers.Serializer):
                  'uniprotTaxId':None }
 
 
-class UnmappedEntrySerializer(serializers.Serializer):
-    entry = MappingViewSerializer()
-    relatedEntries = MappingViewSerializer(many=True)
-
 class LabelSerializer(serializers.Serializer):
     """
     Serializer for an individual label
@@ -390,6 +386,7 @@ class CommentLabelSerializer(serializers.Serializer):
     commentId = serializers.IntegerField()
     text = serializers.CharField()
     timeAdded = serializers.DateTimeField()
+    user = serializers.CharField()
     editable = serializers.BooleanField()
 
 class MappingCommentsSerializer(serializers.Serializer):
@@ -470,58 +467,6 @@ class ReleaseStatsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReleaseStats
         fields = '__all__'
-
-class UnmappedSwissprotEntrySerializer(serializers.Serializer):
-    """
-    Serializer for unmapped Swissprot entries /mappings/unmapped/<taxid>/swissprot endpoint.
-    """
-
-    uniprotAccession = serializers.CharField()
-    entryType = serializers.CharField()
-    isCanonical = serializers.NullBooleanField()
-    alias = serializers.CharField()
-    gene_symbol = serializers.CharField()
-    gene_accession = serializers.CharField()
-    length = serializers.IntegerField()
-    protein_existence_id = serializers.IntegerField()
-
-
-class UnmappedEnsemblGeneSerializer(serializers.Serializer):
-    ensgId = serializers.CharField()
-    ensgName = serializers.CharField()
-    chromosome = serializers.CharField()
-    regionAccession = serializers.CharField()
-    seqRegionStart = serializers.IntegerField()
-    seqRegionEnd = serializers.IntegerField()
-    seqRegionStrand = serializers.IntegerField()
-    source = serializers.CharField()
-
-class UnmappedEnsemblTranscriptSerializer(serializers.Serializer):
-    enstId = serializers.CharField()
-    biotype = serializers.CharField()
-    source = serializers.CharField()
-
-class UnmappedEnsemblEntrySerializer(serializers.Serializer):
-    """
-    Serializer for unmapped ensembl entries /mappings/unmapped/<taxid>/ensembl endpoint.
-    """
-
-    gene = UnmappedEnsemblGeneSerializer()
-    transcripts = UnmappedEnsemblTranscriptSerializer(many=True) # serializers.ListField(child=serializers.CharField())
-
-    @classmethod
-    def build_group(cls, ensg_id, group):
-        gene = group[0].gene
-
-        return { 'gene':{ 'ensgId':gene.ensg_id,
-	                  'ensgName':gene.gene_name,
-	                  'chromosome':gene.chromosome,
-                          'regionAccession':gene.region_accession,
-	                  'seqRegionStart':gene.seq_region_start,
-	                  'seqRegionEnd':gene.seq_region_end,
-	                  'seqRegionStrand':gene.seq_region_strand,
-                          'source':gene.source },
-                 'transcripts':[ { 'enstId':t.enst_id, 'biotype':t.biotype, 'source':t.source }  for t in group ] }
 
 class ReleasePerSpeciesSerializer(serializers.Serializer):
     """
