@@ -44,12 +44,15 @@ urlpatterns = [
     path('mappings/release/<int:taxid>/', mappings.ReleasePerSpecies.as_view()),        # fetch ensembl/uniprot release per species
     path('mappings/stats/<int:taxid>/', mappings.ReleaseMappingStats.as_view()),        # species mapped/unmapped release stats
     path('mappings/statuses/', mappings.AvailableStatuses.as_view()),                   # retrieve available mapping statuses
-    path('mapping/<int:pk>/labels/<label_id>/', method_router, {'VIEW': mappings.MappingLabelView.as_view()}),   # add/delete a label to a mapping
-    path('mapping/<int:pk>/labels/<label_id>/', mappings.MappingLabelView.as_view()),   # add/delete a label to a mapping
+    path('mapping/<int:pk>/labels/<label_id>/', method_router,                          # add/delete a label to a mapping
+         {'VIEW': mappings.MappingLabelView.as_view()}),
     path('mapping/<int:pk>/labels/', mappings.MappingLabelsView.as_view()),             # retrieve all labels of a mapping
-    path('mapping/<int:pk>/comments/<comment_id>/', method_router, {'VIEW': mappings.EditDeleteCommentView.as_view()}), # edit/delete comment
-    path('mapping/<int:pk>/comments/', method_router, {'VIEW': mappings.MappingCommentsView.as_view()}),           # add comment/retrieve all comments
-    path('mapping/<int:pk>/status/', method_router, {'VIEW': mappings.MappingStatusView.as_view()}),             # update mapping status
+    path('mapping/<int:pk>/comments/<comment_id>/', method_router,                      # edit/delete comment
+         {'VIEW': mappings.EditDeleteCommentView.as_view()}),
+    path('mapping/<int:pk>/comments/', method_router,                                   # add comment/retrieve all comments
+         {'VIEW': mappings.MappingCommentsView.as_view()}),
+    path('mapping/<int:pk>/status/', method_router,                                     # update mapping status
+         {'VIEW': mappings.MappingStatusView.as_view()}),
     path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),    # retrieve pairwise alignments for a mapping
     # path('mapping/<int:pk>/alignment_run/<alignment_run>/difference/')
     path('mapping/<int:pk>/', mappings.MappingDetailed.as_view()),                      # retrieve mapping and related entries
@@ -59,6 +62,9 @@ urlpatterns = [
 
     path('unmapped/<int:mapping_view_id>', unmapped.UnmappedDetailed.as_view()),        # retrieve unmapped and related entries
     path('unmapped/<int:taxid>/<source>/', unmapped.UnmappedEntries.as_view()),         # fetch unmapped entries (Swissprot, Ensembl)
+    path('unmapped/<int:pk>/labels/<label_id>/', method_router,                         # add/delete a label to unmapped entry
+         {'VIEW': unmapped.AddDeleteLabel.as_view()}),
+    path('unmapped/<int:pk>/labels/', unmapped.GetLabels.as_view()),                    # retrieve all labels of an unmapped entry
 
     path('service/ping/', service.PingService.as_view())                                # return service status
 ]

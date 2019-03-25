@@ -3,7 +3,7 @@ from restui.models.uniprot import UniprotEntry
 from restui.models.mappings import MappingView, ReleaseMappingHistory
 
 from restui.serializers.unmapped import UnmappedEntrySerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer
-from restui.serializers.annotations import UnmappedEntryLabelSerializer
+from restui.serializers.annotations import UnmappedEntryLabelSerializer, LabelsSerializer
 from restui.pagination import UnmappedEnsemblEntryPagination
 
 from django.http import Http404
@@ -16,6 +16,18 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.schemas import ManualSchema
 
 import coreapi, coreschema
+
+
+def get_uniprot_entry(self, mapping_view_id):
+        try:
+            mapping_view = MappingView.objects.get(pk=pk)
+            uniprot_entry = UniprotEntry.get(pk=mapping_view.uniprot_id)
+
+        except (MappingView.DoesNotExist, UniprotEntry.DoesNotExist):
+            raise Http404
+
+        return uniprot_entry
+
 
 class UnmappedDetailed(APIView):
     """
@@ -188,18 +200,8 @@ class AddDeleteLabel(APIView):
                                   description="A unique integer value identifying the label"
                               ),])
 
-    def get_uniprot_entry(self, mapping_view_id):
-        try:
-            mapping_view = MappingView.objects.get(pk=pk)
-            uniprot_entry = UniprotEntry.get(pk=mapping_view.uniprot_id)
-
-        except (MappingView.DoesNotExist, UniprotEntry.DoesNotExist):
-            raise Http404
-
-        return uniprot_entry
-
     def post(self, request, pk, label_id):
-        uniprot_entry = self.get_uniprot_entry(pk)
+        uniprot_entry = get_uniprot_entry(pk)
 
         entry_labels = UeUnmappedEntryLabel.objects.filter(uniprot=uniprot_entry,label=label_id)
         if entry_labels:
@@ -222,7 +224,7 @@ class AddDeleteLabel(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, label_id):
-        uniprot_entry = self.get_uniprot_entry(pk)
+        uniprot_entry = get_uniprot_entry(pk)
 
         # delete all labels with the given description attached to the mapping
         # TODO: only those associated to the given user
@@ -233,3 +235,33 @@ class AddDeleteLabel(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         raise Http404
+
+class GetLabels(APIView):
+    """
+    Retrieve all labels for a given unmapped entry
+    """
+
+    schema = ManualSchema(description="Retrieve all labels for a given unmapped entry",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="The mapping view id associated to the given unmapped entry"
+                              ),])
+
+    def get(self, request, pk):
+        uniprot_entry = get_uniprot_entry(pk)
+
+        all_labels = CvUeLabel.objects.all()
+        entry_labels = uniprot_entry.labels.values_list('label', flat=True)
+
+        label_map = []
+        for label in all_labels:
+            label_map.append({ 'label': label.description, 'id': label.id, 'status': True if label.id in entry_labels else False })
+
+        data = { 'labels': label_map }
+        serializer = LabelsSerializer(data)
+
+        return Response(serializer.data)
