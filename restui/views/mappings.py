@@ -73,7 +73,7 @@ def build_taxonomy_data(mapping):
     # Relationship between transcript and history is many to many but we just fetch one history
     # as the tax id remains the same across all of them
     try:
-        ensembl_species_history = EnsemblSpeciesHistory.objects.get(transcripthistory__transcript=mapping.transcript)
+        ensembl_species_history = EnsemblSpeciesHistory.objects.filter(transcripthistory__transcript=mapping.transcript).latest('time_loaded')
     except EnsemblSpeciesHistory.DoesNotExist:
         raise Http404("Couldn't find an ensembl species history associated to mapping {}".format(mapping.mapping_id))
     
