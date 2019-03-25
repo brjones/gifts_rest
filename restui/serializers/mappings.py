@@ -364,20 +364,6 @@ class MappingViewsSerializer(serializers.Serializer):
                  'uniprotTaxId':None }
 
 
-class LabelSerializer(serializers.Serializer):
-    """
-    Serializer for an individual label
-    """
-    label = serializers.CharField()
-    id = serializers.IntegerField()
-    status = serializers.BooleanField()
-
-class MappingLabelsSerializer(serializers.Serializer):
-    """
-    For nested serialization of user label for a mapping in call to mapping/<id>/labels endpoint.
-    """
-    labels = LabelSerializer(many=True)
-    
 class CommentLabelSerializer(serializers.Serializer):
     """
     For nested serialization of user comment for a mapping in call to mapping/<id>/comments/ endpoint.
