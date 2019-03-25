@@ -10,7 +10,7 @@ from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMapp
 from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
     MappingSerializer, MappingCommentsSerializer, MappingsSerializer, MappingViewsSerializer,\
     MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer, ReleaseStatsSerializer, ReleasePerSpeciesSerializer
-from restui.serializers.annotations import StatusSerializer, CvUeStatusSerializer, CommentSerializer, LabelSerializer
+from restui.serializers.annotations import StatusSerializer, CvUeStatusSerializer, CommentSerializer, MappingLabelSerializer
 from restui.pagination import FacetPagination, MappingViewFacetPagination
 from restui.lib.external import ensembl_sequence
 from restui.lib.alignments import fetch_pairwise
@@ -304,16 +304,15 @@ class MappingLabelView(APIView):
         
         mapping_labels = UeMappingLabel.objects.filter(mapping=mapping,label=label_id)
         if mapping_labels:
-            # Mapping already exists, ignore
-
+            # mapping has already label, ignore
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         try:
             label = CvUeLabel.objects.get(pk=label_id)
-            serializer = LabelSerializer(data={ 'time_stamp': timezone.now(),
-                                                'user_stamp': request.user,
-                                                'label': label_id,
-                                                'mapping': pk })
+            serializer = MappingLabelSerializer(data={ 'time_stamp': timezone.now(),
+                                                       'user_stamp': request.user,
+                                                       'label': label_id,
+                                                       'mapping': pk })
         except KeyError:
             raise Http404("Must provide valid label")
         

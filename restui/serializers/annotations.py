@@ -1,13 +1,9 @@
-from restui.models.annotations import UeMappingStatus, UeMappingComment, UeMappingLabel, CvUeStatus
+from restui.models.annotations import UeMappingStatus, UeMappingComment, UeMappingLabel, CvUeStatus, UeUnmappedEntryLabel
 
 from rest_framework import serializers
 
 import pprint
 
-###################################################################
-#
-# TODO: include user_stamp when authentication system is in place
-#
 class StatusSerializer(serializers.ModelSerializer):
     """
     mapping/:id/status endpoint
@@ -70,7 +66,7 @@ class CommentSerializer(serializers.ModelSerializer):
         model = UeMappingComment
         fields = '__all__'
 
-class LabelSerializer(serializers.ModelSerializer):
+class MappingLabelSerializer(serializers.ModelSerializer):
     """
     mapping/:id/labels endpoint
 
@@ -80,18 +76,20 @@ class LabelSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return UeMappingLabel.objects.create(**validated_data)
 
-    def update(self, instance, validated_data):
-        instance.time_stamp = validated_data.get('time_stamp', instance.time_stamp)
-        instance.user_stamp = validated_data.get('user_stamp', instance.user_stamp)
-        instance.label = validated_data.get('label', instance.label)
-        instance.mapping = validated_data.get('mapping', instance.mapping)
-
-#        instance.save()
-#        return instance
-
     class Meta:
         model = UeMappingLabel
         fields = '__all__'
 
-#
-###################################################################
+class UnmappedEntryLabelSerializer(serializers.ModelSerializer):
+    """
+    unmapped/:id/labels endpoint
+
+    Serialize label associated to unmapped entry
+    """
+
+    def create(self, validated_data):
+        return UeUnmappedEntryLabel.objects.create(**validated_data)
+
+    class Meta:
+        model = UeUnmappedEntryLabel
+        fields = '__all__'

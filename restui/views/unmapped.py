@@ -3,7 +3,7 @@ from restui.models.uniprot import UniprotEntry
 from restui.models.mappings import MappingView, ReleaseMappingHistory
 
 from restui.serializers.unmapped import UnmappedEntrySerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer
-
+from restui.serializers.annotations import UnmappedEntryLabelSerializer
 from restui.pagination import UnmappedEnsemblEntryPagination
 
 from django.http import Http404
@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.schemas import ManualSchema
 
 import coreapi, coreschema
@@ -162,3 +163,73 @@ class UnmappedEntries(APIView):
         """
         assert self.paginator is not None
         return self.paginator.get_paginated_response(data)
+
+
+class AddDeleteLabel(APIView):
+    """
+    Add or delete label a associated to the given unmapped entry
+    """
+
+    permission_classes = (IsAuthenticated,)
+    schema = ManualSchema(description="Add or delete label a associated to the given unmapped entry",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="The mapping view id associated to the unmapped entry"
+                              ),
+                              coreapi.Field(
+                                  name="label_id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the label"
+                              ),])
+
+    def get_uniprot_entry(self, mapping_view_id):
+        try:
+            mapping_view = MappingView.objects.get(pk=pk)
+            uniprot_entry = UniprotEntry.get(pk=mapping_view.uniprot_id)
+
+        except (MappingView.DoesNotExist, UniprotEntry.DoesNotExist):
+            raise Http404
+
+        return uniprot_entry
+
+    def post(self, request, pk, label_id):
+        uniprot_entry = self.get_uniprot_entry(pk)
+
+        entry_labels = UeUnmappedEntryLabel.objects.filter(uniprot=uniprot_entry,label=label_id)
+        if entry_labels:
+            # label already attached, ignore
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        try:
+            label = CvUeLabel.objects.get(pk=label_id)
+            serializer = UnmappedEntryLabelSerializer(data={ 'time_stamp': timezone.now(),
+                                                             'user_stamp': request.user,
+                                                             'label': label_id,
+                                                             'uniprot': uniprot_entry.uniprot_id })
+        except KeyError:
+            raise Http404("Must provide valid label")
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, label_id):
+        uniprot_entry = self.get_uniprot_entry(pk)
+
+        # delete all labels with the given description attached to the mapping
+        # TODO: only those associated to the given user
+        entry_labels = UeUnmappedEntryLabel.objects.filter(uniprot=uniprot_entry,label=label_id)
+        if entry_labels:
+            entry_labels.delete()
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        raise Http404
