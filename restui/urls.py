@@ -1,7 +1,7 @@
 from django.urls import path
 from django.http import Http404
 from django.views.decorators.csrf import csrf_exempt
-from restui.views import alignments, ensembl, mappings, uniprot, service
+from restui.views import alignments, ensembl, mappings, uniprot, unmapped, service
 from restui.exceptions import FalloverROException
 from django.conf import settings
 
@@ -41,7 +41,6 @@ urlpatterns = [
     path('mappings/release_history/latest/assembly/<assembly_accession>/',              # fetch latest release_mapping_history for a given assembly
          mappings.LatestReleaseMappingHistory.as_view()),
     path('mappings/release_history/<int:pk>/', mappings.MappingsByHistory.as_view()),   # fetch mappings related to a given release mapping history
-    path('mappings/unmapped/<int:taxid>/<source>/', mappings.UnmappedEntries.as_view()),# fetch unmapped entries (Swissprot, Ensembl)
     path('mappings/release/<int:taxid>/', mappings.ReleasePerSpecies.as_view()),        # fetch ensembl/uniprot release per species
     path('mappings/stats/<int:taxid>/', mappings.ReleaseMappingStats.as_view()),        # species mapped/unmapped release stats
     path('mappings/statuses/', mappings.AvailableStatuses.as_view()),                   # retrieve available mapping statuses
@@ -58,7 +57,8 @@ urlpatterns = [
 
     path('uniprot/entry/<int:pk>/', uniprot.UniprotEntryFetch.as_view()),               # fetch uniprot entry by db ID
 
-    path('unmapped/<int:mapping_view_id>', mappings.UnmappedDetailed.as_view()),        # retrieve unmapped and related entries
+    path('unmapped/<int:mapping_view_id>', unmapped.UnmappedDetailed.as_view()),        # retrieve unmapped and related entries
+    path('unmapped/<int:taxid>/<source>/', unmapped.UnmappedEntries.as_view()),         # fetch unmapped entries (Swissprot, Ensembl)
 
     path('service/ping/', service.PingService.as_view())                                # return service status
 ]
