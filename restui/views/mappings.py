@@ -9,8 +9,8 @@ from restui.models.uniprot import UniprotEntry, UniprotEntryHistory
 from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
 from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
     MappingSerializer, MappingCommentsSerializer, MappingsSerializer, MappingViewsSerializer,\
-    MappingAlignmentsSerializer, CommentLabelSerializer, MappingLabelsSerializer, ReleaseStatsSerializer, ReleasePerSpeciesSerializer
-from restui.serializers.annotations import StatusSerializer, CvUeStatusSerializer, CommentSerializer, MappingLabelSerializer
+    MappingAlignmentsSerializer, CommentLabelSerializer, ReleaseStatsSerializer, ReleasePerSpeciesSerializer
+from restui.serializers.annotations import StatusSerializer, CvUeStatusSerializer, CommentSerializer, MappingLabelSerializer, LabelsSerializer
 from restui.pagination import FacetPagination, MappingViewFacetPagination
 from restui.lib.external import ensembl_sequence
 from restui.lib.alignments import fetch_pairwise
@@ -355,20 +355,15 @@ class MappingLabelsView(APIView):
         mapping = get_mapping(pk)
         
         all_labels = CvUeLabel.objects.all()
-        
         mapping_labels = mapping.labels.values_list('label', flat=True)
         
         label_map = []
-        
         for label in all_labels:
-            if label.id in mapping_labels:
-                label_map.append({'label': label.description, 'id': label.id, 'status': True})
-            else:
-                label_map.append({'label': label.description, 'id': label.id, 'status': False})
+            label_map.append({ 'label': label.description, 'id': label.id, 'status': True if label.id in mapping_labels else False })
 
         data = { 'labels': label_map }
+        serializer = LabelsSerializer(data)
 
-        serializer = MappingLabelsSerializer(data)
         return Response(serializer.data)
 
 class EditDeleteCommentView(APIView):
