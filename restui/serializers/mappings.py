@@ -6,7 +6,7 @@ from restui.models.annotations import CvEntryType, CvUeStatus
 from restui.models.mappings import Mapping, MappingView, ReleaseMappingHistory, MappingHistory, ReleaseStats
 from restui.models.ensembl import EnsemblSpeciesHistory
 from restui.serializers.ensembl import SpeciesHistorySerializer
-from restui.serializers.annotations import StatusSerializer, StatusHistorySerializer
+from restui.serializers.annotations import StatusHistorySerializer
 
 class TaxonomySerializer(serializers.Serializer):
     """

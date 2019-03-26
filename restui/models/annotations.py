@@ -92,7 +92,7 @@ class UeUnmappedEntryLabel(models.Model):
         db_table = 'ue_unmapped_entry_label'
 
 
-class UeUnMappedEntryStatus(models.Model):
+class UeUnmappedEntryStatus(models.Model):
     id = models.BigAutoField(primary_key=True)
     time_stamp = models.DateTimeField()
     user_stamp = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE, db_column='user_stamp')

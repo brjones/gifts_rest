@@ -1,11 +1,25 @@
 from restui.models.annotations import UeMappingStatus, UeMappingComment, UeMappingLabel, CvUeStatus,\
-    UeUnmappedEntryLabel, UeUnmappedEntryComment
+    UeUnmappedEntryLabel, UeUnmappedEntryComment, UeUnmappedEntryStatus
 
 from rest_framework import serializers
 
 import pprint
 
-class StatusSerializer(serializers.ModelSerializer):
+class CvUeStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CvUeStatus
+        fields = '__all__'
+
+class StatusHistorySerializer(serializers.Serializer):
+    """
+    Serialize a status history record
+    """
+    status = serializers.CharField()
+    time_stamp = serializers.DateTimeField()
+    user = serializers.CharField()
+
+
+class MappingStatusSerializer(serializers.ModelSerializer):
     """
     mapping/:id/status endpoint
 
@@ -28,18 +42,30 @@ class StatusSerializer(serializers.ModelSerializer):
         model = UeMappingStatus
         fields = '__all__'
 
-class CvUeStatusSerializer(serializers.ModelSerializer):
+
+class UnmappedEntryStatusSerializer(serializers.ModelSerializer):
+    """
+    unmapped/:id/status endpoint
+
+    Serialize status associated to unmapped entry
+    """
+
+    def create(self, validated_data):
+        return UeUnmappedEntryStatus.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        instance.time_stamp = validated_data.get('time_stamp', instance.time_stamp)
+        instance.user_stamp = validated_data.get('user_stamp', instance.user_stamp)
+        instance.status = validated_data.get('status', instance.status)
+        instance.uniprot = validated_data.get('uniprot', instance.uniprot)
+
+        instance.save()
+        return instance
+
     class Meta:
-        model = CvUeStatus
+        model = UeUnmappedEntryStatus
         fields = '__all__'
 
-class StatusHistorySerializer(serializers.Serializer):
-    """
-    Serialize a status history record
-    """
-    status = serializers.CharField()
-    time_stamp = serializers.DateTimeField()
-    user = serializers.CharField()
 
 class MappingCommentSerializer(serializers.ModelSerializer):
     """
