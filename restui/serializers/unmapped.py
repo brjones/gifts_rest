@@ -60,3 +60,23 @@ class UnmappedEnsemblEntrySerializer(serializers.Serializer):
 	                  'seqRegionStrand':gene.seq_region_strand,
                           'source':gene.source },
                  'transcripts':[ { 'enstId':t.enst_id, 'biotype':t.biotype, 'source':t.source }  for t in group ] }
+
+
+class CommentSerializer(serializers.Serializer):
+    """
+    For nested serialization of user comment for an unmapped entry in call to unmapped/<id>/comments/ endpoint.
+    """
+
+    commentId = serializers.IntegerField()
+    text = serializers.CharField()
+    timeAdded = serializers.DateTimeField()
+    user = serializers.CharField()
+    editable = serializers.BooleanField()
+
+class UnmappedEntryCommentsSerializer(serializers.Serializer):
+    """
+    Serialize data in call to unmapped/<id>/comments/ endpoint.
+    """
+
+    mapping_view_id = serializers.IntegerField()
+    comments = CommentSerializer(many=True)

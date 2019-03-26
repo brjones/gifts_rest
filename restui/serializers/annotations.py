@@ -1,4 +1,5 @@
-from restui.models.annotations import UeMappingStatus, UeMappingComment, UeMappingLabel, CvUeStatus, UeUnmappedEntryLabel
+from restui.models.annotations import UeMappingStatus, UeMappingComment, UeMappingLabel, CvUeStatus,\
+    UeUnmappedEntryLabel, UeUnmappedEntryComment
 
 from rest_framework import serializers
 
@@ -40,7 +41,7 @@ class StatusHistorySerializer(serializers.Serializer):
     time_stamp = serializers.DateTimeField()
     user = serializers.CharField()
 
-class CommentSerializer(serializers.ModelSerializer):
+class MappingCommentSerializer(serializers.ModelSerializer):
     """
     mapping/:id/comments endpoint
 
@@ -65,6 +66,33 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = UeMappingComment
         fields = '__all__'
+
+class UnmappedEntryCommentSerializer(serializers.ModelSerializer):
+    """
+    unmapped/:id/comments endpoint
+
+    Serialize comment associated to an unmapped entry
+    """
+
+    # this is probably not needed, the framework should already
+    # check the provided comment data is not blank
+    def validate_comment(self, value):
+        """
+        Check the comment is non-empty
+        """
+
+        if not value.translate({ord(" "):None, ord("\t"):None}):
+            raise serializers.ValidationError("Comment is empty")
+
+        return value
+
+    def create(self, validated_data):
+        return UeUnmappedEntryComment.objects.create(**validated_data)
+
+    class Meta:
+        model = UeUnmappedEntryComment
+        fields = '__all__'
+
 
 class MappingLabelSerializer(serializers.ModelSerializer):
     """
