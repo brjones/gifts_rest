@@ -10,7 +10,7 @@ from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMapp
 from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
     MappingSerializer, MappingCommentsSerializer, MappingsSerializer, MappingViewsSerializer,\
     MappingAlignmentsSerializer, CommentLabelSerializer, ReleaseStatsSerializer, ReleasePerSpeciesSerializer
-from restui.serializers.annotations import StatusSerializer, CvUeStatusSerializer, CommentSerializer, MappingLabelSerializer, LabelsSerializer
+from restui.serializers.annotations import StatusSerializer, CvUeStatusSerializer, MappingCommentSerializer, MappingLabelSerializer, LabelsSerializer
 from restui.pagination import FacetPagination, MappingViewFacetPagination
 from restui.lib.external import ensembl_sequence
 from restui.lib.alignments import fetch_pairwise
@@ -463,11 +463,11 @@ class MappingCommentsView(APIView):
         mapping = get_mapping(pk)
 
         try:
-            serializer = CommentSerializer(data={ 'time_stamp':timezone.now(),
-                                                  'user_stamp':request.user,
-                                                  'comment':request.data['text'],
-                                                  'mapping':mapping.mapping_id,
-                                                  'deleted':False })
+            serializer = MappingCommentSerializer(data={ 'time_stamp':timezone.now(),
+                                                         'user_stamp':request.user,
+                                                         'comment':request.data['text'],
+                                                         'mapping':mapping.mapping_id,
+                                                         'deleted':False })
         except KeyError:
             raise Http404("Must provide comment")
 
