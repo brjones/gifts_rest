@@ -82,7 +82,7 @@ class MappingLabelSerializer(serializers.ModelSerializer):
 
 class UnmappedEntryLabelSerializer(serializers.ModelSerializer):
     """
-    unmapped/:id/labels endpoint
+    unmapped/<int:mapping_view_id>/labels/<label_id>/ endpoint
 
     Serialize label associated to unmapped entry
     """
@@ -99,6 +99,7 @@ class LabelSerializer(serializers.Serializer):
     """
     Serializer for an individual label
     """
+
     label = serializers.CharField()
     id = serializers.IntegerField()
     status = serializers.BooleanField()
@@ -108,4 +109,5 @@ class LabelsSerializer(serializers.Serializer):
     """
     For nested serialization of user label for a mapping in call to (mapping|unmapped)/<id>/labels endpoint.
     """
+
     labels = LabelSerializer(many=True)

@@ -1,12 +1,13 @@
 from restui.models.ensembl import EnsemblTranscript
 from restui.models.uniprot import UniprotEntry
 from restui.models.mappings import MappingView, ReleaseMappingHistory
-from restui.models.annotations import CvUeStatus, CvUeLabel
+from restui.models.annotations import CvUeStatus, CvUeLabel, UeUnmappedEntryLabel
 
 from restui.serializers.unmapped import UnmappedEntrySerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer
 from restui.serializers.annotations import UnmappedEntryLabelSerializer, LabelsSerializer
 from restui.pagination import UnmappedEnsemblEntryPagination
 
+from django.utils import timezone
 from django.http import Http404
 
 from rest_framework.views import APIView
@@ -200,8 +201,8 @@ class AddDeleteLabel(APIView):
                                   description="A unique integer value identifying the label"
                               ),])
 
-    def post(self, request, pk, label_id):
-        uniprot_entry = get_uniprot_entry(pk)
+    def post(self, request, mapping_view_id, label_id):
+        uniprot_entry = get_uniprot_entry(mapping_view_id)
 
         entry_labels = UeUnmappedEntryLabel.objects.filter(uniprot=uniprot_entry,label=label_id)
         if entry_labels:
@@ -223,8 +224,8 @@ class AddDeleteLabel(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk, label_id):
-        uniprot_entry = get_uniprot_entry(pk)
+    def delete(self, request, mapping_view_id, label_id):
+        uniprot_entry = get_uniprot_entry(mapping_view_id)
 
         # delete all labels with the given description attached to the mapping
         # TODO: only those associated to the given user
