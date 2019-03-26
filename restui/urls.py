@@ -1,7 +1,7 @@
 from django.urls import path
 from django.http import Http404
 from django.views.decorators.csrf import csrf_exempt
-from restui.views import alignments, ensembl, mappings, uniprot, service
+from restui.views import alignments, ensembl, mappings, uniprot, unmapped, service
 from restui.exceptions import FalloverROException
 from django.conf import settings
 
@@ -41,16 +41,18 @@ urlpatterns = [
     path('mappings/release_history/latest/assembly/<assembly_accession>/',              # fetch latest release_mapping_history for a given assembly
          mappings.LatestReleaseMappingHistory.as_view()),
     path('mappings/release_history/<int:pk>/', mappings.MappingsByHistory.as_view()),   # fetch mappings related to a given release mapping history
-    path('mappings/unmapped/<int:taxid>/<source>/', mappings.UnmappedEntries.as_view()),# fetch unmapped entries (Swissprot, Ensembl)
     path('mappings/release/<int:taxid>/', mappings.ReleasePerSpecies.as_view()),        # fetch ensembl/uniprot release per species
     path('mappings/stats/<int:taxid>/', mappings.ReleaseMappingStats.as_view()),        # species mapped/unmapped release stats
     path('mappings/statuses/', mappings.AvailableStatuses.as_view()),                   # retrieve available mapping statuses
-    path('mapping/<int:pk>/labels/<label_id>/', method_router, {'VIEW': mappings.MappingLabelView.as_view()}),   # add/delete a label to a mapping
-    path('mapping/<int:pk>/labels/<label_id>/', mappings.MappingLabelView.as_view()),   # add/delete a label to a mapping
+    path('mapping/<int:pk>/labels/<label_id>/', method_router,                          # add/delete a label to a mapping
+         {'VIEW': mappings.MappingLabelView.as_view()}),
     path('mapping/<int:pk>/labels/', mappings.MappingLabelsView.as_view()),             # retrieve all labels of a mapping
-    path('mapping/<int:pk>/comments/<comment_id>/', method_router, {'VIEW': mappings.EditDeleteCommentView.as_view()}), # edit/delete comment
-    path('mapping/<int:pk>/comments/', method_router, {'VIEW': mappings.MappingCommentsView.as_view()}),           # add comment/retrieve all comments
-    path('mapping/<int:pk>/status/', method_router, {'VIEW': mappings.MappingStatusView.as_view()}),             # update mapping status
+    path('mapping/<int:pk>/comments/<comment_id>/', method_router,                      # edit/delete comment
+         {'VIEW': mappings.EditDeleteCommentView.as_view()}),
+    path('mapping/<int:pk>/comments/', method_router,                                   # add comment/retrieve all comments
+         {'VIEW': mappings.MappingCommentsView.as_view()}),
+    path('mapping/<int:pk>/status/', method_router,                                     # update mapping status
+         {'VIEW': mappings.MappingStatusView.as_view()}),
     path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),    # retrieve pairwise alignments for a mapping
     # path('mapping/<int:pk>/alignment_run/<alignment_run>/difference/')
     path('mapping/<int:pk>/', mappings.MappingDetailed.as_view()),                      # retrieve mapping and related entries
@@ -58,7 +60,17 @@ urlpatterns = [
 
     path('uniprot/entry/<int:pk>/', uniprot.UniprotEntryFetch.as_view()),               # fetch uniprot entry by db ID
 
-    path('unmapped/<int:mapping_view_id>', mappings.UnmappedDetailed.as_view()),        # retrieve unmapped and related entries
+    path('unmapped/<int:mapping_view_id>/labels/<label_id>/', method_router,            # add/delete a label to unmapped entry
+         {'VIEW': unmapped.AddDeleteLabel.as_view()}),
+    path('unmapped/<int:mapping_view_id>/labels/', unmapped.GetLabels.as_view()),       # retrieve all labels of an unmapped entry
+    path('unmapped/<int:mapping_view_id>/comments/<comment_id>/', method_router,        # edit/delete comment
+         {'VIEW': unmapped.EditDeleteComment.as_view()}),
+    path('unmapped/<int:mapping_view_id>/comments/', method_router,                     # add comment/retrieve all comments for an unmapped entry
+         {'VIEW': unmapped.AddGetComments.as_view()}),
+    path('unmapped/<int:mapping_view_id>/status/', method_router,                       # update status
+         {'VIEW': unmapped.StatusChange.as_view()}),
+    path('unmapped/<int:mapping_view_id>/', unmapped.UnmappedDetailed.as_view()),       # retrieve unmapped and related entries
+    path('unmapped/<int:taxid>/<source>/', unmapped.UnmappedEntries.as_view()),         # fetch unmapped entries (Swissprot, Ensembl)
 
     path('service/ping/', service.PingService.as_view())                                # return service status
 ]

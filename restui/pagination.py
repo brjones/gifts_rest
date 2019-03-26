@@ -3,7 +3,8 @@ from collections import OrderedDict
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 
-from restui.serializers.mappings import MappingsSerializer, MappingViewsSerializer, UnmappedEnsemblEntrySerializer
+from restui.serializers.mappings import MappingsSerializer, MappingViewsSerializer
+from restui.serializers.unmapped import UnmappedEnsemblEntrySerializer
 from restui.models.mappings import Mapping, MappingView
 from rest_framework import status
 #
