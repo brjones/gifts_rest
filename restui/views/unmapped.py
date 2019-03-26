@@ -3,8 +3,9 @@ from restui.models.uniprot import UniprotEntry
 from restui.models.mappings import MappingView, ReleaseMappingHistory
 from restui.models.annotations import CvUeStatus, CvUeLabel, UeUnmappedEntryLabel
 
-from restui.serializers.unmapped import UnmappedEntrySerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer
-from restui.serializers.annotations import UnmappedEntryLabelSerializer, LabelsSerializer
+from restui.serializers.unmapped import UnmappedEntrySerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer,\
+    CommentSerializer, UnmappedEntryCommentsSerializer
+from restui.serializers.annotations import LabelsSerializer, UnmappedEntryLabelSerializer, UnmappedEntryCommentSerializer
 from restui.pagination import UnmappedEnsemblEntryPagination
 
 from django.utils import timezone
@@ -266,3 +267,112 @@ class GetLabels(APIView):
         serializer = LabelsSerializer(data)
 
         return Response(serializer.data)
+
+class AddGetComments(APIView):
+    """
+    Add a comment/Retrieve all comments relative to a given unmapped entry
+    """
+
+    permission_classes = (IsAuthenticated,)
+    schema = ManualSchema(description="Add a comment/Retrieve all comments relative to a given unmapped entry.",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="The mapping view id associated to the unmapped entry"
+                              ),])
+
+    def get(self, request, mapping_view_id):
+        uniprot_entry = get_uniprot_entry(mapping_view_id)
+
+        # fetch mapping comment history, exclude deleted comments
+        entry_comments = uniprot_entry.comments.filter(deleted=False).order_by('-time_stamp')
+
+        # comments are editable if they belong to the requesting user
+        comments = map(lambda c: { 'commentId':c.id, 'text':c.comment, 'timeAdded':c.time_stamp, 'user': c.user_stamp.full_name, 'editable':True if request.user and request.user == c.user_stamp else False }, entry_comments)
+
+        data = { 'mapping_view_id': mapping_view_id, 'comments': list(comments) }
+        serializer = UnmappedEntryCommentsSerializer(data)
+
+        return Response(serializer.data)
+
+    def post(self, request, mapping_view_id):
+        uniprot_entry = get_uniprot_entry(mapping_view_id)
+
+        try:
+            serializer = UnmappedEntryCommentSerializer(data={ 'time_stamp': timezone.now(),
+                                                               'user_stamp': request.user,
+                                                               'comment': request.data['text'],
+                                                               'uniprot': uniprot_entry.uniprot_id,
+                                                               'deleted': False })
+        except KeyError:
+            raise Http404("Must provide comment")
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class EditDeleteComment(APIView):
+    """
+    Edit (PUT) and delete (DELETE) a comment for a given unmapped entry
+    """
+
+    permission_class = (IsAuthenticated,)
+    schema = ManualSchema(description="Edit or delete a comment for a given unmapped entry.",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="The mapping_view id associated to the unmapped entry"
+                              ),
+                              coreapi.Field(
+                                  name="comment_id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the comment"
+                              ),])
+
+    def put(self, request, mapping_view_id, comment_id):
+        uniprot_entry = get_uniprot_entry(mapping_view_id)
+
+        if 'text' not in request.data:
+            return Response({ "error": "Text not specified" }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            comment = uniprot_entry.comments.get(id=comment_id)
+        except UeUnmappedEntryComment.DoesNotExist:
+            return Response({ "error": "Invalid comment ID: {}".format(comment_id) }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            if comment.deleted:
+                return Response({ "error":"Cannot edit deleted comment" }, status=status.HTTP_400_BAD_REQUEST)
+
+            comment.comment = request.data['text']
+            comment.time_stamp = timezone.now()
+            comment.save()
+
+        serializer = CommentSerializer({ 'commentId': comment.id,
+                                         'text': comment.comment,
+                                         'timeAdded': comment.time_stamp,
+                                         'user': comment.user_stamp.full_name,
+                                         'editable': if request.user and request.user == comment.user_stamp else False })
+        return Response(serializer.data)
+
+    def delete(self, request, mapping_view_id, comment_id):
+        uniprot_entry = get_uniprot_entry(mapping_view_id)
+
+        try:
+            comment = uniprot_entry.comments.get(id=comment_id)
+        except:
+            return Response("Invalid comment ID: {}".format(comment_id), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            comment.deleted = True
+            comment.save()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

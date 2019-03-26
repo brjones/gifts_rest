@@ -63,6 +63,10 @@ urlpatterns = [
     path('unmapped/<int:mapping_view_id>/labels/<label_id>/', method_router,            # add/delete a label to unmapped entry
          {'VIEW': unmapped.AddDeleteLabel.as_view()}),
     path('unmapped/<int:mapping_view_id>/labels/', unmapped.GetLabels.as_view()),       # retrieve all labels of an unmapped entry
+    path('unmapped/<int:mapping_view_id>/comments/<comment_id>/', method_router,        # edit/delete comment
+         {'VIEW': unmapped.EditDeleteComment.as_view()}),
+    path('unmapped/<int:mapping_view_id>/comments/', method_router,                     # add comment/retrieve all comments for an unmapped entry
+         {'VIEW': unmapped.AddGetComments.as_view()}),
     path('unmapped/<int:mapping_view_id>/', unmapped.UnmappedDetailed.as_view()),       # retrieve unmapped and related entries
     path('unmapped/<int:taxid>/<source>/', unmapped.UnmappedEntries.as_view()),         # fetch unmapped entries (Swissprot, Ensembl)
 
