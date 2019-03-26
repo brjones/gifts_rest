@@ -1,6 +1,7 @@
 from restui.models.ensembl import EnsemblTranscript
 from restui.models.uniprot import UniprotEntry
 from restui.models.mappings import MappingView, ReleaseMappingHistory
+from restui.models.annotations import CvUeStatus, CvUeLabel
 
 from restui.serializers.unmapped import UnmappedEntrySerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer
 from restui.serializers.annotations import UnmappedEntryLabelSerializer, LabelsSerializer
@@ -18,15 +19,14 @@ from rest_framework.schemas import ManualSchema
 import coreapi, coreschema
 
 
-def get_uniprot_entry(self, mapping_view_id):
-        try:
-            mapping_view = MappingView.objects.get(pk=pk)
-            uniprot_entry = UniprotEntry.get(pk=mapping_view.uniprot_id)
+def get_uniprot_entry(mapping_view_id):
+    try:
+        mapping_view = MappingView.objects.get(pk=mapping_view_id)
+        uniprot_entry = UniprotEntry.objects.get(pk=mapping_view.uniprot_id)
+    except (MappingView.DoesNotExist, UniprotEntry.DoesNotExist):
+        raise Http404
 
-        except (MappingView.DoesNotExist, UniprotEntry.DoesNotExist):
-            raise Http404
-
-        return uniprot_entry
+    return uniprot_entry
 
 
 class UnmappedDetailed(APIView):
@@ -251,8 +251,8 @@ class GetLabels(APIView):
                                   description="The mapping view id associated to the given unmapped entry"
                               ),])
 
-    def get(self, request, pk):
-        uniprot_entry = get_uniprot_entry(pk)
+    def get(self, request, mapping_view_id):
+        uniprot_entry = get_uniprot_entry(mapping_view_id)
 
         all_labels = CvUeLabel.objects.all()
         entry_labels = uniprot_entry.labels.values_list('label', flat=True)
