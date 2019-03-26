@@ -10,7 +10,7 @@ from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMapp
 from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
     MappingSerializer, MappingCommentsSerializer, MappingsSerializer, MappingViewsSerializer,\
     MappingAlignmentsSerializer, CommentLabelSerializer, ReleaseStatsSerializer, ReleasePerSpeciesSerializer
-from restui.serializers.annotations import StatusSerializer, CvUeStatusSerializer, MappingCommentSerializer, MappingLabelSerializer, LabelsSerializer
+from restui.serializers.annotations import CvUeStatusSerializer, MappingStatusSerializer, MappingCommentSerializer, MappingLabelSerializer, LabelsSerializer
 from restui.pagination import FacetPagination, MappingViewFacetPagination
 from restui.lib.external import ensembl_sequence
 from restui.lib.alignments import fetch_pairwise
@@ -516,16 +516,16 @@ class MappingStatusView(APIView):
             pass
 
         else:
-            if mapping_status.status == s.id:
+            if mapping_status.status.id == s.id:
                 # The user is trying to change it to what the status
                 # already is, nothing to do.
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
         # create new mapping status
-        serializer = StatusSerializer(data={ 'time_stamp':timezone.now(),
-                                             'user_stamp':request.user,
-                                             'status':s.id,
-                                             'mapping':mapping.mapping_id })
+        serializer = MappingStatusSerializer(data={ 'time_stamp':timezone.now(),
+                                                    'user_stamp':request.user,
+                                                    'status':s.id,
+                                                    'mapping':mapping.mapping_id })
 
         if serializer.is_valid():
             serializer.save()

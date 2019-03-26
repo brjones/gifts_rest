@@ -67,6 +67,8 @@ urlpatterns = [
          {'VIEW': unmapped.EditDeleteComment.as_view()}),
     path('unmapped/<int:mapping_view_id>/comments/', method_router,                     # add comment/retrieve all comments for an unmapped entry
          {'VIEW': unmapped.AddGetComments.as_view()}),
+    path('unmapped/<int:mapping_view_id>/status/', method_router,                       # update status
+         {'VIEW': unmapped.StatusChange.as_view()}),
     path('unmapped/<int:mapping_view_id>/', unmapped.UnmappedDetailed.as_view()),       # retrieve unmapped and related entries
     path('unmapped/<int:taxid>/<source>/', unmapped.UnmappedEntries.as_view()),         # fetch unmapped entries (Swissprot, Ensembl)
 

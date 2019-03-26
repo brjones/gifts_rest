@@ -1,11 +1,11 @@
 from restui.models.ensembl import EnsemblTranscript
 from restui.models.uniprot import UniprotEntry
 from restui.models.mappings import MappingView, ReleaseMappingHistory
-from restui.models.annotations import CvUeStatus, CvUeLabel, UeUnmappedEntryLabel
+from restui.models.annotations import CvUeStatus, CvUeLabel, UeUnmappedEntryLabel, UeUnmappedEntryStatus
 
 from restui.serializers.unmapped import UnmappedEntrySerializer, UnmappedSwissprotEntrySerializer, UnmappedEnsemblEntrySerializer,\
     CommentSerializer, UnmappedEntryCommentsSerializer
-from restui.serializers.annotations import LabelsSerializer, UnmappedEntryLabelSerializer, UnmappedEntryCommentSerializer
+from restui.serializers.annotations import LabelsSerializer, UnmappedEntryLabelSerializer, UnmappedEntryCommentSerializer, UnmappedEntryStatusSerializer
 from restui.pagination import UnmappedEnsemblEntryPagination
 
 from django.utils import timezone
@@ -376,3 +376,74 @@ class EditDeleteComment(APIView):
             comment.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class StatusChange(APIView):
+    """
+    Change the status of an unmapped entry
+    """
+
+    permission_classes = (IsAuthenticated,)
+    schema = ManualSchema(description="Change the status of an unmapped entry",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="The mapping_view id associated to the unmapped entry"
+                              ),])
+
+    def put(self, request, mapping_view_id):
+        uniprot_entry = get_uniprot_entry(mapping_view_id)
+
+        # retrieve the status object associated to the given description
+        try:
+            s = CvUeStatus.objects.get(description=request.data['status'])
+        except KeyError:
+            raise Http404("Payload should have 'status'")
+        except CvUeStatus.DoesNotExist:
+            raise Http404("Couldn't get status object for {}".format(request.data['status']))
+        except MultipleObjectsReturned:
+            raise Http404("Couldn't get unique status for {}".format(request.data['status']))
+
+        # If the entry has already been assigned that status, update the timestamp,
+        # otherwise create one from scratch
+        try:
+            entry_status = UeUnmappedEntryStatus.objects.filter(uniprot=uniprot_entry).latest('time_stamp')
+        except UeUnmappedEntryStatus.DoesNotExist:
+            # It's alright, for the first status change the historic record won't exist.
+            pass
+        else:
+            if entry_status.status.id == s.id:
+                # The user is trying to change it to what the status
+                # already is, nothing to do.
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+        # create new status
+        serializer = UnmappedEntryStatusSerializer(data={ 'time_stamp': timezone.now(),
+                                                          'user_stamp': request.user,
+                                                          'status': s.id,
+                                                          'uniprot': uniprot_entry.uniprot_id })
+
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update the status in the uniprot entry?
+        # We should first add it to the corresponding model
+        # uniprot_entry.status = s
+        # uniprot_entry.save()
+
+        # update status on mapping_view corresponding entry,
+        # otherwise search won't reflect the status change
+        try:
+            mv = MappingView.objects.get(pk=mapping_view_id)
+        except MappingView.DoesNotExist:
+            return Response({ "error": "Could not find mapping_view {} in search table.".format(mapping_view_id) }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            mv.status = s.id
+            mv.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
