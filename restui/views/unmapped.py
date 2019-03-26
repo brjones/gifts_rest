@@ -361,7 +361,7 @@ class EditDeleteComment(APIView):
                                          'text': comment.comment,
                                          'timeAdded': comment.time_stamp,
                                          'user': comment.user_stamp.full_name,
-                                         'editable': if request.user and request.user == comment.user_stamp else False })
+                                         'editable': True if request.user and request.user == comment.user_stamp else False })
         return Response(serializer.data)
 
     def delete(self, request, mapping_view_id, comment_id):
