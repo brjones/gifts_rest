@@ -1,3 +1,20 @@
+"""
+.. See the NOTICE file distributed with this work for additional information
+   regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 import pprint
 import re
 import requests
@@ -20,6 +37,7 @@ from rest_framework import status
 from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
+
 
 class MappedStats(APIView):
     """
@@ -78,9 +96,9 @@ class MappedStats(APIView):
         # Stats relative to mapping labels
         #
         all_labels = CvUeLabel.objects.all()
-        
+
         label_counts = []
-        
+
         for label in all_labels:
             count = UeMappingLabel.objects.filter(label=label).count()
             label_counts.append({'label': label.description, 'count': count})
@@ -92,7 +110,7 @@ class MappedStats(APIView):
         status_totals = Mapping.objects.values('status').annotate(total=Count('status'))
         for status_count in status_totals:
             status_counts.append({'status': Mapping.status_type(status_count['status']), 'count': status_count['total']})
-    
+
         serializer = MappingStatsSerializer({'mapping': { 'total': mappings_count,
                                                           'uniprot': { 'mapped': uniprot_mapped_count,
                                                                        'not_mapped_sp': uniprot_not_mapped_sp_count },
@@ -103,4 +121,3 @@ class MappedStats(APIView):
                                              'label': label_counts })
 
         return Response(serializer.data)
-

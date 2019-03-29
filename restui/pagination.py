@@ -1,3 +1,20 @@
+"""
+.. See the NOTICE file distributed with this work for additional information
+   regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 import pprint
 from collections import OrderedDict
 from rest_framework.response import Response
@@ -7,9 +24,10 @@ from restui.serializers.mappings import MappingsSerializer, MappingViewsSerializ
 from restui.serializers.unmapped import UnmappedEnsemblEntrySerializer
 from restui.models.mappings import Mapping, MappingView
 from rest_framework import status
+
+
 #
 # TODO
-#
 # chromosome and mappings facets
 #
 class FacetPagination(LimitOffsetPagination):
@@ -35,7 +53,7 @@ class FacetPagination(LimitOffsetPagination):
 
         if len(species_set) == 1:
             chromosomes = OrderedDict([('name','chromosomes'),('label','Chromosomes'),('items',[])])
-            
+
             for chromosome in queryset.chromosomes():
                 chromosomes["items"].append({ 'name':chromosome.lower(), 'label':chromosome.upper() })
 
@@ -92,7 +110,7 @@ class MappingViewFacetPagination(LimitOffsetPagination):
             patches["items"].append({'name':'include', 'label':'Include'})
             patches["items"].append({'name':'exclude', 'label':'Exclude'})
             patches["items"].append({'name':'only', 'label':'Only patches'})
-            
+
         species_set = queryset.species()
         for species in species_set:
             organism["items"].append({ "name":species[0], "label":species[1] })

@@ -1,3 +1,20 @@
+"""
+.. See the NOTICE file distributed with this work for additional information
+   regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 import pprint
 import re
 import requests
@@ -27,13 +44,16 @@ from rest_framework.pagination import PageNumberPagination, LimitOffsetPaginatio
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.schemas import ManualSchema
 
-import coreapi, coreschema
+import coreapi
+import coreschema
+
 
 def get_mapping(pk):
     try:
         return Mapping.objects.get(pk=pk)
     except Mapping.DoesNotExist:
         raise Http404
+
 
 def get_mapping_history(mapping):
     # A mapping can have multiple entries in mapping history and it is not clear which one to go for.
@@ -46,6 +66,7 @@ def get_mapping_history(mapping):
     except MappingHistory.DoesNotExist:
         raise Http404
 
+
 def get_status(mapping):
     try:
         mapping_status = Mapping.status_type(mapping.status)
@@ -54,6 +75,7 @@ def get_status(mapping):
         mapping_status = None
 
     return mapping_status
+
 
 def get_label(label):
     """
@@ -66,7 +88,8 @@ def get_label(label):
         raise Http404("Couldn't get label object for {}".format(label))
     except MultipleObjectsReturned:
         raise Http404("Couldn't get unique label object for {}".format(label))
-    
+
+
 def build_taxonomy_data(mapping):
     # Find the ensembl tax id via one ensembl species history associated to transcript
     # associated to the given mapping.
@@ -76,7 +99,7 @@ def build_taxonomy_data(mapping):
         ensembl_species_history = EnsemblSpeciesHistory.objects.filter(transcripthistory__transcript=mapping.transcript).latest('time_loaded')
     except EnsemblSpeciesHistory.DoesNotExist:
         raise Http404("Couldn't find an ensembl species history associated to mapping {}".format(mapping.mapping_id))
-    
+
     try:
         return { 'species':ensembl_species_history.species,
                  'ensemblTaxId':ensembl_species_history.ensembl_tax_id,
@@ -102,6 +125,7 @@ def build_related_mappings_data(mapping):
 
     return list(map(lambda m: MappingsSerializer.build_mapping(m, fetch_sequence=False), related_mappings))
 
+
 def build_related_unmapped_entries_data(mapping):
     """
     Return the list of unmapped entries releated to the mapping (via grouping_id)
@@ -114,45 +138,53 @@ def build_related_unmapped_entries_data(mapping):
 
     related_unmapped_ue_histories = UniprotEntryHistory.objects.filter(release_version=mapping_mh_rmh.uniprot_release,
                                                                        grouping_id=mapping_grouping_id)
-    related_unmapped_ue_entries = map( lambda ue: { 'uniprotAccession': ue.uniprot_acc,
-                                                    'entryType': Mapping.entry_type(ue.entry_type_id),
-                                                    'sequenceVersion': ue.sequence_version,
-                                                    'upi': ue.upi,
-                                                    'md5': ue.md5,
-                                                    'isCanonical': False if ue.canonical_uniprot_id else True,
-                                                    'alias': ue.alias,
-                                                    'ensemblDerived': ue.ensembl_derived,
-                                                    'gene_symbol': ue.gene_symbol,
-                                                    'gene_accession': ue.chromosome_line,
-                                                    'length': ue.length,
-                                                    'protein_existence_id': ue.protein_existence_id }, ( ueh.uniprot for ueh in related_unmapped_ue_histories ) )
+    related_unmapped_ue_entries = map( lambda ue: {
+        'uniprotAccession': ue.uniprot_acc,
+        'entryType': Mapping.entry_type(ue.entry_type_id),
+        'sequenceVersion': ue.sequence_version,
+        'upi': ue.upi,
+        'md5': ue.md5,
+        'isCanonical': False if ue.canonical_uniprot_id else True,
+        'alias': ue.alias,
+        'ensemblDerived': ue.ensembl_derived,
+        'gene_symbol': ue.gene_symbol,
+        'gene_accession': ue.chromosome_line,
+        'length': ue.length,
+        'protein_existence_id': ue.protein_existence_id}, (
+            ueh.uniprot for ueh in related_unmapped_ue_histories
+        )
+    )
 
     related_unmapped_transcript_histories = TranscriptHistory.objects.filter(ensembl_species_history=mapping_mh_rmh.ensembl_species_history,
                                                                              grouping_id=mapping_grouping_id)
-    related_unmapped_transcripts = map(lambda transcript: { 'enstId':transcript.enst_id,
-                                                            'enstVersion':transcript.enst_version,
-                                                            'upi':transcript.uniparc_accession,
-                                                            'biotype':transcript.biotype,
-                                                            'deleted':transcript.deleted,
-                                                            'chromosome':transcript.gene.chromosome,
-                                                            'regionAccession':transcript.gene.region_accession,
-                                                            'seqRegionStart':transcript.seq_region_start,
-                                                            'seqRegionEnd':transcript.seq_region_end,
-                                                            'seqRegionStrand':transcript.gene.seq_region_strand,
-                                                            'ensgId':transcript.gene.ensg_id,
-                                                            'ensgName':transcript.gene.gene_name,
-                                                            'ensgSymbol':transcript.gene.gene_symbol,
-                                                            'ensgAccession':transcript.gene.gene_accession,
-                                                            'ensgRegionAccession':transcript.gene.region_accession,
-                                                            'sequence':None,
-                                                            'enspId':transcript.ensp_id,
-                                                            'enspLen':transcript.ensp_len,
-                                                            'source':transcript.source,
-                                                            'select':transcript.select }, ( th.transcript for th in related_unmapped_transcript_histories ) )
-
+    related_unmapped_transcripts = map(lambda transcript: {
+        'enstId':transcript.enst_id,
+        'enstVersion':transcript.enst_version,
+        'upi':transcript.uniparc_accession,
+        'biotype':transcript.biotype,
+        'deleted':transcript.deleted,
+        'chromosome':transcript.gene.chromosome,
+        'regionAccession':transcript.gene.region_accession,
+        'seqRegionStart':transcript.seq_region_start,
+        'seqRegionEnd':transcript.seq_region_end,
+        'seqRegionStrand':transcript.gene.seq_region_strand,
+        'ensgId':transcript.gene.ensg_id,
+        'ensgName':transcript.gene.gene_name,
+        'ensgSymbol':transcript.gene.gene_symbol,
+        'ensgAccession':transcript.gene.gene_accession,
+        'ensgRegionAccession':transcript.gene.region_accession,
+        'sequence':None,
+        'enspId':transcript.ensp_id,
+        'enspLen':transcript.ensp_len,
+        'source':transcript.source,
+        'select':transcript.select}, (
+            th.transcript for th in related_unmapped_transcript_histories
+        )
+    )
 
     return { 'ensembl':list(related_unmapped_transcripts),
              'uniprot':list(related_unmapped_ue_entries) }
+
 
 #
 # TODO: filter by ensembl release (optional argument)
@@ -190,6 +222,7 @@ class LatestReleaseMappingHistory(generics.RetrieveAPIView):
         self.check_object_permissions(self.request, obj)
 
         return obj
+
 
 class MappingsByHistory(generics.ListAPIView):
     """
@@ -241,6 +274,7 @@ class ReleasePerSpecies(APIView):
 
         return Response(serializer.data)
 
+
 class ReleaseMappingStats(APIView):
     """
     Species latest release mapped/unmapped stats (Swissprot/Ensembl)
@@ -268,6 +302,7 @@ class ReleaseMappingStats(APIView):
         serializer = ReleaseStatsSerializer(release_stats)
         return Response(serializer.data)
 
+
 class AvailableStatuses(generics.ListAPIView):
     """
     Retrieve available statuses
@@ -275,6 +310,7 @@ class AvailableStatuses(generics.ListAPIView):
 
     serializer_class = CvUeStatusSerializer
     queryset = CvUeStatus.objects.all()
+
 
 class MappingLabelView(APIView):
     """
@@ -301,7 +337,7 @@ class MappingLabelView(APIView):
 
     def post(self, request, pk, label_id):
         mapping = get_mapping(pk)
-        
+
         mapping_labels = UeMappingLabel.objects.filter(mapping=mapping,label=label_id)
         if mapping_labels:
             # mapping has already label, ignore
@@ -315,7 +351,7 @@ class MappingLabelView(APIView):
                                                        'mapping': pk })
         except KeyError:
             raise Http404("Must provide valid label")
-        
+
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -353,10 +389,10 @@ class MappingLabelsView(APIView):
 
     def get(self, request, pk):
         mapping = get_mapping(pk)
-        
+
         all_labels = CvUeLabel.objects.all()
         mapping_labels = mapping.labels.values_list('label', flat=True)
-        
+
         label_map = []
         for label in all_labels:
             label_map.append({ 'label': label.description, 'id': label.id, 'status': True if label.id in mapping_labels else False })
@@ -365,6 +401,7 @@ class MappingLabelsView(APIView):
         serializer = LabelsSerializer(data)
 
         return Response(serializer.data)
+
 
 class EditDeleteCommentView(APIView):
     """
@@ -426,7 +463,8 @@ class EditDeleteCommentView(APIView):
             comment.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
+
 class MappingCommentsView(APIView):
     """
     Add a comment/Retrieve all comments relative to a given mapping, includes mapping labels.
@@ -458,7 +496,7 @@ class MappingCommentsView(APIView):
 
         serializer = MappingCommentsSerializer(data)
         return Response(serializer.data)
-    
+
     def post(self, request, pk):
         mapping = get_mapping(pk)
 
@@ -476,6 +514,7 @@ class MappingCommentsView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class MappingStatusView(APIView):
     """
@@ -572,9 +611,9 @@ class MappingPairwiseAlignment(APIView):
         except Exception as e:
             pprint.pprint(e)
             raise Http404
-         
+
         serializer = MappingAlignmentsSerializer(alignments)
-         
+
         return Response(serializer.data)
 
 
@@ -604,6 +643,7 @@ class MappingDetailed(APIView):
         serializer = MappingSerializer(data)
 
         return Response(serializer.data)
+
 
 class MappingsSearch(generics.ListAPIView):
     """
@@ -640,13 +680,13 @@ class MappingsSearch(generics.ListAPIView):
                                   description="Filters for the given query, taking the form 'facets=key1:value1,key2:value2...'\nPossible keys (values) are: organism (taxid) , sequence (identical, small, large), status and chromosomes"
                               ),
                           ])
-    
+
     def get_queryset(self):
         results = dict()
-        
+
         # the ENSG, ENST, UniProt accession or mapping id. If none are provided all mappings are returned
         search_term = self.request.query_params.get('searchTerm', None)
-        
+
         # filters for the given query, taking the form facets=organism:9606,status:unreviewed
         facets_params = self.request.query_params.get('facets', None)
 

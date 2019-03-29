@@ -1,3 +1,20 @@
+"""
+.. See the NOTICE file distributed with this work for additional information
+   regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 from collections import defaultdict
 
 from django.db import models
@@ -7,6 +24,7 @@ from restui.lib.alignments import calculate_difference
 from django.template.defaultfilters import default
 from restui.models.annotations import CvEntryType, CvUeStatus
 from restui.models.ensembl import EnsemblSpeciesHistory
+
 
 class Alignment(models.Model):
     alignment_id = models.BigAutoField(primary_key=True)
@@ -22,6 +40,7 @@ class Alignment(models.Model):
     class Meta:
         managed = False
         db_table = 'alignment'
+
 
 class AlignmentRun(models.Model):
     alignment_run_id = models.BigAutoField(primary_key=True)
@@ -44,6 +63,7 @@ class AlignmentRun(models.Model):
         managed = False
         db_table = 'alignment_run'
 
+
 class MappingQuerySet(models.query.QuerySet):
     _counts = None
 
@@ -64,7 +84,7 @@ class MappingQuerySet(models.query.QuerySet):
         Retrieve the total number of groups based on unique grouping_id from a queryset
         """
         counts = self.grouped_counts()
-        
+
         return len(counts)
 
     def grouped_slice(self, offset, limit):
@@ -73,22 +93,22 @@ class MappingQuerySet(models.query.QuerySet):
         We first find how many records in to the queryset, counting by
         unique grouping_id intervals. Then find the number of records to extract
         to scoop up limit number of groups.
-        
+
         Finally return the groups all nicely packaged up in a dict of lists,
         where the dict key is the unique grouping_id and the value is a list of
         Mapping objects associated with that grouping_id
         """
         counts = self.grouped_counts()
-        
+
         if offset == 0:
             qs_offset = 0
         else:
             qs_offset = sum(int(row['total']) for row in counts[:offset])
-            
+
         qs_limit = sum(int(row['total']) for row in counts[offset:offset+limit])
 
         sub_qs = self.select_related('uniprot').select_related('transcript').select_related('transcript__gene').order_by('mapping_history__grouping_id')[qs_offset:qs_offset+qs_limit]
-        
+
         grouped_results = {}
         grouped_results_added = defaultdict(set) # there are duplicates in each group, don't know yet why
 
@@ -122,11 +142,11 @@ class MappingQuerySet(models.query.QuerySet):
         Return a list of all the statuses represented in this queryset
         """
         status_set = self.values('status').distinct()
-        
+
         status_list = []
         for status in status_set:
             status_list.append(status['status'])
-            
+
         return status_list
 
     def species(self):
@@ -145,12 +165,12 @@ class MappingQuerySet(models.query.QuerySet):
 
     def divergences(self):
         """
-        Return a list of all the alignment differences levels represented in the queryset 
+        Return a list of all the alignment differences levels represented in the queryset
         """
         identical = self.filter(alignment_difference=0).count()
         small = self.filter(alignment_difference__gt=0, alignment_difference__lte=5).count()
         large = self.filter(alignment_difference__gt=5).count()
-        
+
         return [identical, small, large]
 
     def chromosomes(self):
@@ -159,9 +179,11 @@ class MappingQuerySet(models.query.QuerySet):
         """
         return sorted( pair['transcript__gene__chromosome'] for pair in self.values('transcript__gene__chromosome').distinct() )
 
+
 class MappingManager(models.Manager):
     def get_queryset(self):
         return MappingQuerySet(self.model, using=self._db)
+
 
 class Mapping(models.Model):
     objects = MappingManager()
@@ -176,17 +198,17 @@ class Mapping(models.Model):
     @property
     def difference(self):
         diff_count = None
-        
+
         for alignment in self.alignments.all():
             if alignment.alignment_run.score1_type == 'perfect_match' and alignment.score1 == 1:
                 return 0;
-            
+
             elif alignment.alignment_run.score1_type == 'identity':
                 diff_count = calculate_difference(alignment.pairwise.cigarplus)
-                
+
         if diff_count:
             return diff_count
-        
+
         return None
 
     def statuses(self, usernames=False):
@@ -240,7 +262,8 @@ class Mapping(models.Model):
         managed = False
         db_table = 'mapping'
 
-#######################################################################################
+
+###############################################################################
 #
 # Refactored search
 #
@@ -327,7 +350,7 @@ class MappingViewQuerySet(models.query.QuerySet):
 
     def divergences(self):
         """
-        Return a list of all the alignment differences levels represented in the queryset 
+        Return a list of all the alignment differences levels represented in the queryset
         """
         identical = self.filter(alignment_difference=0).count()
         small = self.filter(alignment_difference__gt=0, alignment_difference__lte=5).count()
@@ -355,9 +378,11 @@ class MappingViewQuerySet(models.query.QuerySet):
 
         return self.filter(region_accession__iregex=r"^CHR").count() > 0
 
+
 class MappingViewManager(models.Manager):
     def get_queryset(self):
         return MappingViewQuerySet(self.model, using=self._db)
+
 
 class MappingView(models.Model):
     """
@@ -500,7 +525,8 @@ class MappingView(models.Model):
     class Meta:
         managed = False
         db_table = 'mapping_view'
-#
+
+
 #######################################################################################
 
 class MappingHistory(models.Model):
@@ -518,6 +544,7 @@ class MappingHistory(models.Model):
         managed = False
         db_table = 'mapping_history'
 
+
 class ReleaseMappingHistory(models.Model):
     release_mapping_history_id = models.BigAutoField(primary_key=True)
     ensembl_species_history = models.ForeignKey('EnsemblSpeciesHistory', models.DO_NOTHING, related_name='release_mapping_history', blank=True, null=True)
@@ -529,6 +556,7 @@ class ReleaseMappingHistory(models.Model):
     class Meta:
         managed = False
         db_table = 'release_mapping_history'
+
 
 class ReleaseStats(models.Model):
     release_mapping_history = models.ForeignKey(ReleaseMappingHistory, models.DO_NOTHING, primary_key=True)
@@ -551,7 +579,7 @@ class ReleaseStats(models.Model):
     genes_mapped_nonpc = models.BigIntegerField(blank=True, null=True)
     genes_unmapped_pc = models.BigIntegerField(blank=True, null=True)
     genes_unmapped_nonpc = models.BigIntegerField(blank=True, null=True)
-    
+
     class Meta:
         managed = False
         db_table = 'release_stats'

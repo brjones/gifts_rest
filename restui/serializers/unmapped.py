@@ -1,3 +1,20 @@
+"""
+.. See the NOTICE file distributed with this work for additional information
+   regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 from restui.serializers.mappings import MappingViewSerializer
 from rest_framework import serializers
 
@@ -51,15 +68,23 @@ class UnmappedEnsemblEntrySerializer(serializers.Serializer):
     def build_group(cls, ensg_id, group):
         gene = group[0].gene
 
-        return { 'gene':{ 'ensgId':gene.ensg_id,
-	                  'ensgName':gene.gene_name,
-	                  'chromosome':gene.chromosome,
-                          'regionAccession':gene.region_accession,
-	                  'seqRegionStart':gene.seq_region_start,
-	                  'seqRegionEnd':gene.seq_region_end,
-	                  'seqRegionStrand':gene.seq_region_strand,
-                          'source':gene.source },
-                 'transcripts':[ { 'enstId':t.enst_id, 'biotype':t.biotype, 'source':t.source }  for t in group ] }
+        return {
+            'gene':{
+                'ensgId':gene.ensg_id,
+                'ensgName':gene.gene_name,
+                'chromosome':gene.chromosome,
+                'regionAccession':gene.region_accession,
+                'seqRegionStart':gene.seq_region_start,
+                'seqRegionEnd':gene.seq_region_end,
+                'seqRegionStrand':gene.seq_region_strand,
+                'source':gene.source
+            },
+            'transcripts':[{
+                'enstId':t.enst_id,
+                'biotype':t.biotype,
+                'source':t.source
+            } for t in group]
+        }
 
 
 class CommentSerializer(serializers.Serializer):
@@ -72,6 +97,7 @@ class CommentSerializer(serializers.Serializer):
     timeAdded = serializers.DateTimeField()
     user = serializers.CharField()
     editable = serializers.BooleanField()
+
 
 class UnmappedEntryCommentsSerializer(serializers.Serializer):
     """
