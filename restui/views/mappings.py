@@ -1,6 +1,7 @@
 import pprint
 import re
 import requests
+import urllib.parse
 from collections import defaultdict, OrderedDict
 
 from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory, TranscriptHistory
@@ -742,7 +743,8 @@ class MappingViewsSearch(generics.ListAPIView):
         search_term = self.request.query_params.get('searchTerm', None)
 
         # filters for the given query, taking the form facets=organism:9606,status:unreviewed
-        facets_params = self.request.query_params.get('facets', None)
+        # NOTE: must unquote as apparently the browser does not decode
+        facets_params = urllib.parse.unquote(self.request.query_params.get('facets', None))
 
         # search the mappings according to the search term 'type'
         queryset = None
@@ -783,7 +785,7 @@ class MappingViewsSearch(generics.ListAPIView):
             # aligned protein sequences is, if there is an alignment
             if 'alignment' in facets:
                 # consider query may request for multiple alignment differences
-                alignment__diff_filter = Q()
+                alignment_diff_filter = Q()
 
                 for diff in facets['alignment'].split(','):
                     if diff == 'identical':
