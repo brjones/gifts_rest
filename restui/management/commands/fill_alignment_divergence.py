@@ -15,8 +15,9 @@
    limitations under the License.
 """
 
-from django.core.management.base import BaseCommand
+from __future__ import print_function
 
+from django.core.management.base import BaseCommand
 from restui.models.mappings import Mapping
 
 

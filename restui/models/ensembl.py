@@ -89,7 +89,11 @@ class EnsemblTranscriptQuerySet(PostgresQuerySet): # models.query.QuerySet
         """
 
         if self._counts is None:
-            self._counts = self.values('gene').annotate(total=Count('gene')).order_by('gene')
+            self._counts = self.values(
+                'gene'
+            ).annotate(
+                total=Count('gene')
+            ).order_by('gene')
 
         return self._counts
 
@@ -149,7 +153,10 @@ class EnsemblTranscript(PostgresModel):
     ensp_id = models.CharField(max_length=30, blank=True, null=True)
     ensp_len = models.IntegerField(blank=True, null=True)
     source = models.CharField(max_length=30, blank=True, null=True)
-    history = models.ManyToManyField(EnsemblSpeciesHistory, through='TranscriptHistory')
+    history = models.ManyToManyField(
+        EnsemblSpeciesHistory,
+        through='TranscriptHistory'
+    )
 
     def __str__(self):
         return "{0} - {1} ({2})".format(self.transcript_id, self.enst_id, self.gene)
@@ -160,7 +167,12 @@ class EnsemblTranscript(PostgresModel):
 
 
 class EnspUCigar(models.Model):
-    alignment = models.OneToOneField('Alignment', primary_key=True, on_delete=CASCADE, related_name='pairwise')
+    alignment = models.OneToOneField(
+        'Alignment',
+        primary_key=True,
+        on_delete=CASCADE,
+        related_name='pairwise'
+    )
     cigarplus = models.TextField(blank=True, null=True)
     mdz = models.TextField(blank=True, null=True)
 
@@ -172,7 +184,11 @@ class EnspUCigar(models.Model):
 class GeneHistory(PostgresModel):
     objects = PostgresManager()
 
-    ensembl_species_history = models.ForeignKey(EnsemblSpeciesHistory, models.DO_NOTHING, primary_key=True)
+    ensembl_species_history = models.ForeignKey(
+        EnsemblSpeciesHistory,
+        models.DO_NOTHING,
+        primary_key=True
+    )
     gene = models.ForeignKey(EnsemblGene, models.DO_NOTHING)
 
     class Meta:
@@ -184,7 +200,11 @@ class GeneHistory(PostgresModel):
 class TranscriptHistory(PostgresModel):
     objects = PostgresManager()
 
-    ensembl_species_history = models.ForeignKey(EnsemblSpeciesHistory, models.DO_NOTHING, primary_key=True)
+    ensembl_species_history = models.ForeignKey(
+        EnsemblSpeciesHistory,
+        models.DO_NOTHING,
+        primary_key=True
+    )
     transcript = models.ForeignKey(EnsemblTranscript, models.DO_NOTHING)
     grouping_id = models.BigIntegerField(blank=True, null=True)
 

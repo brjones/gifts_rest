@@ -15,8 +15,27 @@
    limitations under the License.
 """
 
-from .ensembl import EnsemblGene, EnsemblSpeciesHistory, EnsemblTranscript, EnspUCigar, GeneHistory, TranscriptHistory
-from .mappings import Alignment, AlignmentRun, Mapping, MappingHistory, ReleaseMappingHistory
-from .uniprot import Domain, Isoform, Ptm, UniprotEntry, UniprotEntryHistory
-from .annotations import CvEntryType, CvUeLabel, CvUeStatus, UeMappingComment, UeMappingLabel, UeMappingStatus
-from .other import PdbEns, TaxonomyMapping
+from restui.ensembl import EnsemblGene
+from restui.ensembl import EnsemblSpeciesHistory
+from restui.ensembl import EnsemblTranscript
+from restui.ensembl import EnspUCigar
+from restui.ensembl import GeneHistory
+from restui.ensembl import TranscriptHistory
+from restui.mappings import Alignment
+from restui.mappings import AlignmentRun
+from restui.mappings import Mapping
+from restui.mappings import MappingHistory
+from restui.mappings import ReleaseMappingHistory
+from restui.uniprot import Domain
+from restui.uniprot import Isoform
+from restui.uniprot import Ptm
+from restui.uniprot import UniprotEntry
+from restui.uniprot import UniprotEntryHistory
+from restui.annotations import CvEntryType
+from restui.annotations import CvUeLabel
+from restui.annotations import CvUeStatus
+from restui.annotations import UeMappingComment
+from restui.annotations import UeMappingLabel
+from restui.annotations import UeMappingStatus
+from restui.other import PdbEns
+from restui.other import TaxonomyMapping

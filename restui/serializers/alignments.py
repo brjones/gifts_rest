@@ -15,9 +15,14 @@
    limitations under the License.
 """
 
-from restui.models.mappings import Alignment, AlignmentRun #, Mapping, MappingHistory, ReleaseMappingHistory
+from restui.models.mappings import Alignment
+from restui.models.mappings import AlignmentRun
+# from restui.models.mappings import Mapping
+# from restui.models.mappings import MappingHistory
+# from restui.models.mappings import ReleaseMappingHistory
 
 from rest_framework import serializers
+
 
 class AlignmentRunSerializer(serializers.ModelSerializer):
     """
@@ -27,6 +32,7 @@ class AlignmentRunSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlignmentRun
         fields = '__all__'
+
 
 class AlignmentSerializer(serializers.ModelSerializer):
 

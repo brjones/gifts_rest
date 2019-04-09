@@ -41,39 +41,58 @@ def fetch_pairwise(mapping):
 
             uniprot_seq, match_str, ensembl_seq = pairwise_alignment(seq, cigarplus, mdz)
 
-            pairwise_alignments.append({'uniprot_alignment': uniprot_seq,
-                                        'ensembl_alignment': ensembl_seq,
-                                        'match_str': match_str,
-                                        'alignment_id': alignment.alignment_id,
-                                        'ensembl_release': ens_release,
-                                        'ensembl_id': ensp,
-                                        'uniprot_id': uniprot_id,
-                                        'alignment_type': 'identity'})
+            pairwise_alignments.append({
+                'uniprot_alignment': uniprot_seq,
+                'ensembl_alignment': ensembl_seq,
+                'match_str': match_str,
+                'alignment_id': alignment.alignment_id,
+                'ensembl_release': ens_release,
+                'ensembl_id': ensp,
+                'uniprot_id': uniprot_id,
+                'alignment_type': 'identity'
+            })
 
             # Break out of the loop, we're done
             break
 
-        elif alignment.alignment_run.score1_type == 'perfect_match' and alignment.score1 == 1:
+        elif (
+                alignment.alignment_run.score1_type == 'perfect_match' and
+                alignment.score1 == 1
+        ):
             ens_release = alignment.alignment_run.ensembl_release
 
             ensp = ensembl_protein(enst, ens_release)
             seq = ensembl_sequence(ensp, ens_release)
 
-            pairwise_alignments.append({'uniprot_alignment': seq,
-                                        'ensembl_alignment': seq,
-                                        'match_str': '|' * len(seq),
-                                        'alignment_id': alignment.alignment_id,
-                                        'ensembl_release': ens_release,
-                                        'ensembl_id': ensp,
-                                        'uniprot_id': uniprot_id,
-                                        'alignment_type': 'perfect_match'})
+            pairwise_alignments.append({
+                'uniprot_alignment': seq,
+                'ensembl_alignment': seq,
+                'match_str': '|' * len(seq),
+                'alignment_id': alignment.alignment_id,
+                'ensembl_release': ens_release,
+                'ensembl_id': ensp,
+                'uniprot_id': uniprot_id,
+                'alignment_type': 'perfect_match'
+            })
 
-
-    return {'mapping_id': mapping.mapping_id,
-            'alignments': pairwise_alignments}
+    return {
+        'mapping_id': mapping.mapping_id,
+        'alignments': pairwise_alignments
+    }
 
 
 def calculate_difference(cigar):
+    """
+    Calculate the difference between 2 sequences based on the cigar string
+
+    Parameters
+    ----------
+    cigar : str
+
+    Returns
+    -------
+    diff_count : int
+    """
     diff_count = 0
 
     for c, op in cigar_split(cigar):

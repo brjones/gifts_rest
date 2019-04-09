@@ -18,6 +18,7 @@
 from django.db import models
 from restui.models.annotations import CvEntryType
 
+
 class Isoform(models.Model):
     isoform_id = models.BigAutoField(primary_key=True)
     uniprot_id = models.BigIntegerField(blank=True, null=True)
@@ -69,7 +70,15 @@ class UniprotEntry(models.Model):
     alias = models.CharField(max_length=30, blank=True, null=True)
     gene_symbol = models.CharField(max_length=30, blank=True, null=True)
     chromosome_line = models.CharField(max_length=50, blank=True, null=True)
-    entry_type = models.ForeignKey('CvEntryType', models.DO_NOTHING, blank=True, null=True, db_column="entry_type")
+
+    entry_type = models.ForeignKey(
+        'CvEntryType',
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        db_column="entry_type"
+    )
+
     length = models.IntegerField(blank=True, null=True)
     protein_existence_id = models.SmallIntegerField(blank=True, null=True)
 

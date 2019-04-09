@@ -62,34 +62,43 @@ class UnmappedEnsemblEntrySerializer(serializers.Serializer):
     """
 
     gene = UnmappedEnsemblGeneSerializer()
-    transcripts = UnmappedEnsemblTranscriptSerializer(many=True) # serializers.ListField(child=serializers.CharField())
+
+    # serializers.ListField(child=serializers.CharField())
+    transcripts = UnmappedEnsemblTranscriptSerializer(many=True)
 
     @classmethod
     def build_group(cls, ensg_id, group):
         gene = group[0].gene
 
-        return {
-            'gene':{
-                'ensgId':gene.ensg_id,
-                'ensgName':gene.gene_name,
-                'chromosome':gene.chromosome,
-                'regionAccession':gene.region_accession,
-                'seqRegionStart':gene.seq_region_start,
-                'seqRegionEnd':gene.seq_region_end,
-                'seqRegionStrand':gene.seq_region_strand,
-                'source':gene.source
+        transcripts = []
+        for transcript in group:
+            transcripts.append({
+                'enstId': transcript.enst_id,
+                'biotype': transcript.biotype,
+                'source': transcript.source
+            })
+
+        output_group = {
+            'gene': {
+                'ensgId': gene.ensg_id,
+                'ensgName': gene.gene_name,
+                'chromosome': gene.chromosome,
+                'regionAccession': gene.region_accession,
+                'seqRegionStart': gene.seq_region_start,
+                'seqRegionEnd': gene.seq_region_end,
+                'seqRegionStrand': gene.seq_region_strand,
+                'source': gene.source
             },
-            'transcripts':[{
-                'enstId':t.enst_id,
-                'biotype':t.biotype,
-                'source':t.source
-            } for t in group]
+            'transcripts': transcripts
         }
+
+        return output_group
 
 
 class CommentSerializer(serializers.Serializer):
     """
-    For nested serialization of user comment for an unmapped entry in call to unmapped/<id>/comments/ endpoint.
+    For nested serialization of user comment for an unmapped entry in call to
+    unmapped/<id>/comments/ endpoint.
     """
 
     commentId = serializers.IntegerField()
