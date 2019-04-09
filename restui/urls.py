@@ -18,7 +18,12 @@
 from django.urls import path
 from django.http import Http404
 from django.views.decorators.csrf import csrf_exempt
-from restui.views import alignments, ensembl, mappings, uniprot, unmapped, service
+from restui.views import alignments
+from restui.views import ensembl
+from restui.views import mappings
+from restui.views import uniprot
+from restui.views import unmapped
+from restui.views import service
 from restui.exceptions import FalloverROException
 from django.conf import settings
 
