@@ -15,12 +15,20 @@
    limitations under the License.
 """
 
-from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnspUCigar, EnsemblSpeciesHistory
-from restui.serializers.ensembl import EnsemblGeneSerializer, EnspUCigarSerializer, EnsemblReleaseSerializer, SpeciesHistorySerializer, TranscriptSerializer
+from restui.models.ensembl import EnsemblGene
+from restui.models.ensembl import EnsemblTranscript
+from restui.models.ensembl import EnspUCigar
+from restui.models.ensembl import EnsemblSpeciesHistory
+from restui.serializers.ensembl import EnsemblGeneSerializer
+from restui.serializers.ensembl import EnspUCigarSerializer
+from restui.serializers.ensembl import EnsemblReleaseSerializer
+from restui.serializers.ensembl import SpeciesHistorySerializer
+from restui.serializers.ensembl import TranscriptSerializer
 from restui.lib.external import ensembl_sequence
 
 from django.http import Http404
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework import mixins
 from rest_framework import generics
@@ -28,66 +36,74 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
 
-import coreapi, coreschema
+import coreapi
+import coreschema
+
 
 class EnsemblFeature(mixins.CreateModelMixin,
                      generics.GenericAPIView):
 
     serializer_class = EnsemblGeneSerializer
-    schema = ManualSchema(description="Bulk load/update of genes and their transcript from an Ensembl release",
-                          fields=[
-                              coreapi.Field(
-                                  name="species",
-                                  required=True,
-                                  location="path",
-                                  schema=coreschema.String(),
-                                  description="Species scientific name"
-                              ),
-                              coreapi.Field(
-                                  name="assembly_accession",
-                                  required=True,
-                                  location="path",
-                                  schema=coreschema.String(),
-                                  description="Assembly accession"
-                              ),
-                              coreapi.Field(
-                                  name="ensembl_tax_id",
-                                  required=True,
-                                  location="path",
-                                  schema=coreschema.Integer(),
-                                  description="Species taxonomy id"
-                              ),
-                              coreapi.Field(
-                                  name="ensembl_release",
-                                  required=True,
-                                  location="path",
-                                  schema=coreschema.Integer(),
-                                  description="Ensembl release number"
-                              ),
-                          ])
+    schema = ManualSchema(
+        description="Bulk load/update of genes and their transcript from an Ensembl release",
+        fields=[
+            coreapi.Field(
+                name="species",
+                required=True,
+                location="path",
+                schema=coreschema.String(),
+                description="Species scientific name"
+            ),
+            coreapi.Field(
+                name="assembly_accession",
+                required=True,
+                location="path",
+                schema=coreschema.String(),
+                description="Assembly accession"
+            ),
+            coreapi.Field(
+                name="ensembl_tax_id",
+                required=True,
+                location="path",
+                schema=coreschema.Integer(),
+                description="Species taxonomy id"
+            ),
+            coreapi.Field(
+                name="ensembl_release",
+                required=True,
+                location="path",
+                schema=coreschema.Integer(),
+                description="Ensembl release number"
+            ),
+        ])
 
     def get_serializer(self, *args, **kwargs):
-        # method should have been passed request.data as 'data' keyword argument
-        # assert "data" in kwargs, (
-        #     "data not present"
-        # )
-        # # data should come as a list of feature-like items
-        # assert isinstance(kwargs["data"], list), (
-        #     "data is not a list"
-        # )
+        """
+        method should have been passed request.data as 'data' keyword argument
+        assert "data" in kwargs, (
+            "data not present"
+        )
+        # data should come as a list of feature-like items
+        assert isinstance(kwargs["data"], list), (
+            "data is not a list"
+        )
 
-        # when a serializer is instantiated and many=True is passed,
-        # a ListSerializer instance will be created. The serializer
-        # class then becomes a child of the parent ListSerializer
+        when a serializer is instantiated and many=True is passed,
+        a ListSerializer instance will be created. The serializer
+        class then becomes a child of the parent ListSerializer
+        """
         kwargs["many"] = True
 
         return super(EnsemblFeature, self).get_serializer(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        # this calls self.perform_create(self.get_serializer)
+        """
+        this calls self.perform_create(self.get_serializer)
+        """
         objs = self.create(request, *args, **kwargs)
 
         return Response({'success':1}, status=status.HTTP_201_CREATED)
+
 
 class EnspUCigarAlignmnent(APIView):
     """
@@ -97,6 +113,7 @@ class EnspUCigarAlignmnent(APIView):
     def get(self, request, pk):
         protein_alignment = get_object_or_404(EnspUCigar, pk=pk)
 
+
 class EnspUCigarCreate(generics.CreateAPIView):
     """
     Insert an alignment
@@ -104,50 +121,54 @@ class EnspUCigarCreate(generics.CreateAPIView):
 
     serializer_class = EnspUCigarSerializer
 
+
 class EnspUCigarFetch(generics.RetrieveAPIView):
     """
     Retrieve a protein alignment for an alignment run by uniprot acc/seq version and transcript id.
     """
 
     serializer_class = EnspUCigarSerializer
-    schema = ManualSchema(description="Retrieve a protein alignment for an alignment run by uniprot acc/seq version and transcript id",
-                          fields=[
-                              coreapi.Field(
-                                  name="run",
-                                  required=True,
-                                  location="path",
-                                  schema=coreschema.Integer(),
-                                  description="Alignmet run id"
-                              ),
-                              coreapi.Field(
-                                  name="acc",
-                                  required=True,
-                                  location="path",
-                                  schema=coreschema.Integer(),
-                                  description="Uniprot accession"
-                              ),
-                              coreapi.Field(
-                                  name="seq_version",
-                                  required=True,
-                                  location="path",
-                                  schema=coreschema.Integer(),
-                                  description="Sequence version"
-                              ),
-                              coreapi.Field(
-                                  name="enst_id",
-                                  required=True,
-                                  location="path",
-                                  schema=coreschema.Integer(),
-                                  description="Ensembl transcript ID"
-                              ),
-                          ])
+    schema = ManualSchema(
+        description="Retrieve a protein alignment for an alignment run by uniprot acc/seq version and transcript id",
+        fields=[
+            coreapi.Field(
+                name="run",
+                required=True,
+                location="path",
+                schema=coreschema.Integer(),
+                description="Alignmet run id"
+            ),
+            coreapi.Field(
+                name="acc",
+                required=True,
+                location="path",
+                schema=coreschema.Integer(),
+                description="Uniprot accession"
+            ),
+            coreapi.Field(
+                name="seq_version",
+                required=True,
+                location="path",
+                schema=coreschema.Integer(),
+                description="Sequence version"
+            ),
+            coreapi.Field(
+                name="enst_id",
+                required=True,
+                location="path",
+                schema=coreschema.Integer(),
+                description="Ensembl transcript ID"
+            ),
+        ])
 
     def get_object(self):
         try:
-            obj = EnspUCigar.objects.get(alignment__alignment_run=self.kwargs['run'],
-                                         alignment__mapping__uniprot__uniprot_acc=self.kwargs['acc'],
-                                         alignment__mapping__uniprot__sequence_version=self.kwargs['seq_version'],
-                                         alignment__transcript__enst_id=self.kwargs['enst_id'])
+            obj = EnspUCigar.objects.get(
+                alignment__alignment_run=self.kwargs['run'],
+                alignment__mapping__uniprot__uniprot_acc=self.kwargs['acc'],
+                alignment__mapping__uniprot__sequence_version=self.kwargs['seq_version'],
+                alignment__transcript__enst_id=self.kwargs['enst_id']
+            )
         except:
             raise Http404
 
@@ -156,30 +177,40 @@ class EnspUCigarFetch(generics.RetrieveAPIView):
 
         return obj
 
+
 class LatestEnsemblRelease(APIView):
     """
     Fetch the latest Ensembl release whose load is complete.
     """
 
-    schema = ManualSchema(description="Fetch the latest Ensembl release whose load is complete",
-                          fields=[
-                              coreapi.Field(
-                                  name="assembly_accession",
-                                  required=True,
-                                  location="path",
-                                  schema=coreschema.String(),
-                                  description="Assembly accession"
-                              ),])
+    schema = ManualSchema(
+        description="Fetch the latest Ensembl release whose load is complete",
+        fields=[
+            coreapi.Field(
+                name="assembly_accession",
+                required=True,
+                location="path",
+                schema=coreschema.String(),
+                description="Assembly accession"
+            )
+        ]
+    )
 
 
     def get(self, request, assembly_accession):
         try:
-            species_history = EnsemblSpeciesHistory.objects.filter(assembly_accession__iexact=assembly_accession,
-                                                                   status='LOAD_COMPLETE').latest('ensembl_release')
+            species_history = EnsemblSpeciesHistory.objects.filter(
+                assembly_accession__iexact=assembly_accession,
+                status='LOAD_COMPLETE'
+            ).latest(
+                'ensembl_release'
+            )
         except (EnsemblSpeciesHistory.DoesNotExist, IndexError):
             raise Http404
 
-        serializer = EnsemblReleaseSerializer({ 'release': species_history.ensembl_release })
+        serializer = EnsemblReleaseSerializer({
+            'release': species_history.ensembl_release
+        })
         return Response(serializer.data)
 
 class SpeciesHistory(generics.RetrieveAPIView):

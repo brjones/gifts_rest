@@ -19,7 +19,8 @@ from restui.models.uniprot import UniprotEntry
 from restui.serializers.uniprot import UniprotEntrySerializer
 
 from django.http import Http404
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework import mixins
 from rest_framework import generics
