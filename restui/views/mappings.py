@@ -181,8 +181,9 @@ class LatestReleaseMappingHistory(generics.RetrieveAPIView):
         # ensembl_release = self.request.query_params.get('ensembl_release')
 
         try:
-            # latest means by ensembl species history time loaded
-            obj = ReleaseMappingHistory.objects.select_related('ensembl_species_history').filter(ensembl_species_history__assembly_accession__iexact=assembly_accession).latest('ensembl_species_history__time_loaded')
+            # latest means by time mapped but for a completely loaded ensembl release
+            obj = ReleaseMappingHistory.objects.select_related('ensembl_species_history').filter(ensembl_species_history__assembly_accession__iexact=assembly_accession,
+                                                                                                 ensembl_species_history__status="LOAD_COMPLETE").latest('time_mapped')
 
         except ReleaseMappingHistory.DoesNotExist:
             raise Http404
