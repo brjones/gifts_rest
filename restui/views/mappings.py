@@ -181,8 +181,9 @@ class LatestReleaseMappingHistory(generics.RetrieveAPIView):
         # ensembl_release = self.request.query_params.get('ensembl_release')
 
         try:
-            # latest means by ensembl species history time loaded
-            obj = ReleaseMappingHistory.objects.select_related('ensembl_species_history').filter(ensembl_species_history__assembly_accession__iexact=assembly_accession).latest('ensembl_species_history__time_loaded')
+            # latest means by time mapped but for a completely loaded ensembl release
+            obj = ReleaseMappingHistory.objects.select_related('ensembl_species_history').filter(ensembl_species_history__assembly_accession__iexact=assembly_accession,
+                                                                                                 ensembl_species_history__status="LOAD_COMPLETE").latest('time_mapped')
 
         except ReleaseMappingHistory.DoesNotExist:
             raise Http404
@@ -743,8 +744,7 @@ class MappingViewsSearch(generics.ListAPIView):
         search_term = self.request.query_params.get('searchTerm', None)
 
         # filters for the given query, taking the form facets=organism:9606,status:unreviewed
-        # NOTE: must unquote as apparently the browser does not decode
-        facets_params = urllib.parse.unquote(self.request.query_params.get('facets', None))
+        facets_params = self.request.query_params.get('facets', None)
 
         # search the mappings according to the search term 'type'
         queryset = None
@@ -771,6 +771,9 @@ class MappingViewsSearch(generics.ListAPIView):
         # Apply filters based on facets parameters
         #
         if facets_params:
+            # NOTE: must unquote as apparently the browser does not decode
+            facets_params = urllib.parse.unquote(facets_params)
+
             # create facets dict from e.g. 'organism:9606,10090;status:unreviewed;chromosome:10,11,X'
             facets = dict( tuple(param.split(':')) for param in facets_params.split(';') )
 
