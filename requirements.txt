@@ -17,5 +17,5 @@ urllib3==1.23
 requests==2.19.1
 redis==3.2.1
 sam-alignment-reconstructor
-supervisor==4.0.0.dev0
+supervisor
 -e git+https://github.com/EMBL-EBI-TSI/aap-client-python.git#egg=aap-client-python
