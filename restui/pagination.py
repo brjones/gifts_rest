@@ -246,7 +246,6 @@ class MappingViewFacetPagination(LimitOffsetPagination):
 
         return [statuses, organism, sequence, types, patches]
 
-
     def paginate_queryset(self, queryset, request, view=None):
         self.count = queryset.grouped_count
         self.limit = self.get_limit(request)
@@ -286,6 +285,7 @@ class MappingViewFacetPagination(LimitOffsetPagination):
             ('results', data),
             ('facets', self.facets)
         ]))
+
 
 class UnmappedEnsemblEntryPagination(LimitOffsetPagination):
     """
