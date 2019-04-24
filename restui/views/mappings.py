@@ -115,7 +115,8 @@ def build_related_unmapped_entries_data(mapping):
 
     related_unmapped_ue_histories = UniprotEntryHistory.objects.filter(release_version=mapping_mh_rmh.uniprot_release,
                                                                        grouping_id=mapping_grouping_id)
-    related_unmapped_ue_entries = map( lambda ue: { 'uniprotAccession': ue.uniprot_acc,
+    related_unmapped_ue_entries = map( lambda ue: { 'uniprot_id':ue.uniprot_id,
+                                                    'uniprotAccession': ue.uniprot_acc,
                                                     'entryType': Mapping.entry_type(ue.entry_type_id),
                                                     'sequenceVersion': ue.sequence_version,
                                                     'upi': ue.upi,
@@ -130,7 +131,8 @@ def build_related_unmapped_entries_data(mapping):
 
     related_unmapped_transcript_histories = TranscriptHistory.objects.filter(ensembl_species_history=mapping_mh_rmh.ensembl_species_history,
                                                                              grouping_id=mapping_grouping_id)
-    related_unmapped_transcripts = map(lambda transcript: { 'enstId':transcript.enst_id,
+    related_unmapped_transcripts = map(lambda transcript: { 'transcript_id':transcript.transcript_id,
+                                                            'enstId':transcript.enst_id,
                                                             'enstVersion':transcript.enst_version,
                                                             'upi':transcript.uniparc_accession,
                                                             'biotype':transcript.biotype,
