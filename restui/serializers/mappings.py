@@ -278,6 +278,7 @@ class MappingViewsSerializer(serializers.Serializer):
                         'ensemblRelease':mapping_view.ensembl_release,
                         'uniprotRelease':mapping_view.uniprot_release,
                         'uniprotEntry': {
+                            'uniprot_id':mapping_view.uniprot_id,
                             'uniprotAccession':mapping_view.uniprot_acc,
                             'entryType':MappingView.entry_description(mapping_view.entry_type),
                             'sequenceVersion':mapping_view.sequence_version,
@@ -292,6 +293,7 @@ class MappingViewsSerializer(serializers.Serializer):
                             'protein_existence_id':mapping_view.protein_existence_id
                             },
                         'ensemblTranscript': {
+                            'transcript_id':mapping_view.transcript_id,
                             'enstId':mapping_view.enst_id,
                             'enstVersion':mapping_view.enst_version,
                             'upi':mapping_view.uniparc_accession,
