@@ -16,6 +16,7 @@ class EnsemblSpeciesHistory(PostgresModel):
     ensembl_release = models.BigIntegerField(blank=True, null=True)
     status = models.CharField(max_length=30, blank=True, null=True)
     time_loaded = models.DateTimeField(blank=True, null=True)
+    alignment_status = models.CharField(max_length=30, blank=True, null=True)
 
     def __str__(self):
         return "{0} - {1} {2} {3}".format(self.ensembl_species_history_id, self.species, self.assembly_accession, self.ensembl_tax_id, self.ensembl_release)
