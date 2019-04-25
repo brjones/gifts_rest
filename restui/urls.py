@@ -32,8 +32,9 @@ urlpatterns = [
          ensembl.EnsemblFeature.as_view()),
     path('ensembl/release/latest/assembly/<assembly_accession>/',                                   # fetch latest ensembl release (status load complete)
          ensembl.LatestEnsemblRelease.as_view()),
-    # TODO, add POST with the ability to change whatever species history attribute
-    path('ensembl/species_history/<int:pk>/', ensembl.SpeciesHistory.as_view()),                    # fetch species history by ID
+    path('ensembl/species_history/<int:pk>/', ensembl.SpeciesHistory.as_view()),        # fetch species history by ID
+    path('ensembl/species_history/<int:pk>/alignment_status/<status>/',                 # update species history alignment status
+         ensembl.SpeciesHistoryAlignmentStatus.as_view()),
     path('ensembl/transcript/<int:pk>/', ensembl.Transcript.as_view()),                             # fetch transcript by ID
     path('ensembl/cigar/align_run/<int:run>/uniprot/<acc>/<int:seq_version>/transcript/<enst_id>/', # fetch alignment by align run/uniprot/transcript
          ensembl.EnspUCigarFetch.as_view()),
