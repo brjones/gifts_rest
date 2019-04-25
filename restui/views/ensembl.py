@@ -139,6 +139,33 @@ class EnspUCigarFetch(generics.RetrieveAPIView):
 
         return obj
 
+class EnspUCigarFetchUpdateByAlignment(generics.RetrieveUpdateAPIView):
+    """
+    Fetch/Update cigar/mdz by alignment id
+    """
+
+    serializer_class = EnspUCigarSerializer
+    schema = ManualSchema(description="Fetch/Update cigar/mdz by alignment id",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="Alignmet id"
+                              ),
+                          ])
+
+    def get_object(self):
+        try:
+            obj = EnspUCigar.objects.get(alignment=self.kwargs['pk'])
+        except:
+            raise Http404
+
+        self.check_object_permissions(self.request, obj)
+
+        return obj
+
 class LatestEnsemblRelease(APIView):
     """
     Fetch the latest Ensembl release whose load is complete.

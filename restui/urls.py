@@ -38,7 +38,9 @@ urlpatterns = [
     path('ensembl/transcript/<int:pk>/', ensembl.Transcript.as_view()),                             # fetch transcript by ID
     path('ensembl/cigar/align_run/<int:run>/uniprot/<acc>/<int:seq_version>/transcript/<enst_id>/', # fetch alignment by align run/uniprot/transcript
          ensembl.EnspUCigarFetch.as_view()),
-    path('ensembl/cigar/', ensembl.EnspUCigarCreate.as_view()),                                     # insert cigar/mdz
+    path('ensembl/cigar/alignment/<int:pk>/',                                           # fetch/update cigar by alignment ID
+         ensembl.EnspUCigarFetchUpdateByAlignment.as_view()),
+    path('ensembl/cigar/', ensembl.EnspUCigarCreate.as_view()),                         # insert cigar/mdz
 
     path('mappings/release_history/latest/assembly/<assembly_accession>/',              # fetch latest release_mapping_history for a given assembly
          mappings.LatestReleaseMappingHistory.as_view()),
