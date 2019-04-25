@@ -139,6 +139,33 @@ class EnspUCigarFetch(generics.RetrieveAPIView):
 
         return obj
 
+class EnspUCigarFetchUpdateByAlignment(generics.RetrieveUpdateAPIView):
+    """
+    Fetch/Update cigar/mdz by alignment id
+    """
+
+    serializer_class = EnspUCigarSerializer
+    schema = ManualSchema(description="Fetch/Update cigar/mdz by alignment id",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="Alignmet id"
+                              ),
+                          ])
+
+    def get_object(self):
+        try:
+            obj = EnspUCigar.objects.get(alignment=self.kwargs['pk'])
+        except:
+            raise Http404
+
+        self.check_object_permissions(self.request, obj)
+
+        return obj
+
 class LatestEnsemblRelease(APIView):
     """
     Fetch the latest Ensembl release whose load is complete.
@@ -172,6 +199,42 @@ class SpeciesHistory(generics.RetrieveAPIView):
 
     queryset = EnsemblSpeciesHistory.objects.all()
     serializer_class = SpeciesHistorySerializer
+
+class SpeciesHistoryAlignmentStatus(APIView):
+    """
+    Update a species history's alignment status
+    """
+
+    schema = ManualSchema(description="Update a species history's alignment status",
+                          fields=[
+                              coreapi.Field(
+                                  name="id",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="A unique integer value identifying the species history"
+                              ),
+                              coreapi.Field(
+                                  name="status",
+                                  required=True,
+                                  location="path",
+                                  schema=coreschema.Integer(),
+                                  description="String representing the updated alignment status"
+                              ),
+                          ])
+
+    def post(self, request, pk, status):
+        try:
+            history = EnsemblSpeciesHistory.objects.get(pk=pk)
+        except EnsemblSpeciesHistory.DoesNotExist:
+            return Response({ "error": "Could not find species history {}".format(pk) }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            history.alignment_status = status
+            history.save()
+
+        serializer = SpeciesHistorySerializer(history)
+
+        return Response(serializer.data)
 
 class Transcript(generics.RetrieveAPIView):
     """
