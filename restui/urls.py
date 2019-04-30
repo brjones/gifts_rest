@@ -1,7 +1,7 @@
 from django.urls import path
 from django.http import Http404
 from django.views.decorators.csrf import csrf_exempt
-from restui.views import alignments, ensembl, mappings, uniprot, unmapped, service
+from restui.views import alignments, ensembl, mappings, uniprot, unmapped, pipelines, service
 from restui.exceptions import FalloverROException
 from django.conf import settings
 
@@ -79,6 +79,7 @@ urlpatterns = [
     path('unmapped/<int:mapping_view_id>/', unmapped.UnmappedDetailed.as_view()),       # retrieve unmapped and related entries
     path('unmapped/<int:taxid>/<source>/', unmapped.UnmappedEntries.as_view()),         # fetch unmapped entries (Swissprot, Ensembl)
 
+    path('job/<task_id>/', pipelines.CheckJobStatus().as_view()),                        # check job status
     path('service/ping/', service.PingService.as_view())                                # return service status
 ]
 
