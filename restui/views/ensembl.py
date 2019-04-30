@@ -65,12 +65,27 @@ class EnsemblFeature(mixins.CreateModelMixin,
         kwargs["many"] = True
 
         return super(EnsemblFeature, self).get_serializer(*args, **kwargs)
+
+    # we have to reimplement this as the original implementation is just
+    # invoking save without returning anything
+    # we need to return the task id/status from the underlying call to the
+    # create method of the serializer
+    def perform_create(self, serializer):
+        return serializer.save()
+
+    # another, almost identical reimplementation of the method from the base
+    # class so that we can intercept the return values (task id/status) from Celery
+    # and build the customise response
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        task_id, task_status = self.perform_create(serializer)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response({ "task_id": task_id, "status": task_status }, status=status.HTTP_201_CREATED, headers=headers)
     
     def post(self, request, *args, **kwargs):
-        # this calls self.perform_create(self.get_serializer)
-        objs = self.create(request, *args, **kwargs)
-
-        return Response({'success':1}, status=status.HTTP_201_CREATED)
+        return self.create(request, *args, **kwargs)
 
 class EnspUCigarAlignmnent(APIView):
     """
