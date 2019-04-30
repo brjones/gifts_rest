@@ -1,6 +1,9 @@
+from celery.result import ResultBase
+
 from django.utils import timezone
 from django.core.serializers import serialize
 from rest_framework import serializers
+
 
 from restui.tasks import bulk_upload_task
 from restui.models.ensembl import EnsemblTranscript, EnsemblSpeciesHistory, EnspUCigar
@@ -58,12 +61,14 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
         history_attrs = { k:v for (k,v) in self.context['view'].kwargs.items()
                           if k in ('species', 'assembly_accession', 'ensembl_tax_id', 'ensembl_release') }
         
-        return bulk_upload_task.delay(history = history_attrs, data = validated_data)
+        result = bulk_upload_task.delay(history = history_attrs, data = validated_data)
+
+        return ( result.get(),result.status )
 
 
 class EnsemblGeneSerializer(serializers.Serializer):
     gene_id = serializers.IntegerField(required=False)
-    ensg_id = serializers.CharField(max_length=30)
+    ensg_id = serializers.CharField(max_length=30, required=False)
     gene_name = serializers.CharField(max_length=255, required=False, default=None)
     chromosome = serializers.CharField(max_length=50, required=False, default=None)
     region_accession = serializers.CharField(max_length=50, required=False, default=None)
