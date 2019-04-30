@@ -74,9 +74,9 @@ def bulk_upload(history, data):
     #                                ConflictAction.UPDATE).bulk_insert([ dict(ensembl_species_history=history, gene=g) for g in genes ])
     #
     for gene in genes:
-        GeneHistory.objects.create(ensembl_species_history=history, gene=gene)
+        GeneHistory.objects.create(ensembl_species_history=species_history, gene=gene)
     for transcript in transcripts:
-        TranscriptHistory.objects.create(ensembl_species_history=history, transcript=transcript)
+        TranscriptHistory.objects.create(ensembl_species_history=species_history, transcript=transcript)
 
     species_history.time_loaded = timezone.now() # WARNING: this generates datetime with microseconds and no UTC
     species_history.status = 'LOAD_COMPLETE'
