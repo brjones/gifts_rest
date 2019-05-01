@@ -419,9 +419,9 @@ class AddGetComments(APIView):
         comments = map(
             lambda c: {
                 'commentId': c.id,
-                'text':c.comment
-                'timeAdded':c.time_stamp
-                'user': c.user_stamp.full_name
+                'text':c.comment,
+                'timeAdded':c.time_stamp,
+                'user': c.user_stamp.full_name,
                 # comments are editable if they belong to the requesting user
                 'editable':True if request.user and request.user == c.user_stamp else False
             },
