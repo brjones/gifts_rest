@@ -172,6 +172,11 @@ class UnmappedEntries(APIView):
             )
             # release_unmapped_sp_entries = release_uniprot_entries.exclude(uniprot_id__in=release_mapped_uniprot_entries.values_list('uniprot_id',flat=True))
 
+            # we have the list of related unmapped swissprot entries, which we want to
+            # serialize and paginate
+            # loop over each one of them and apply an anonymous function returning a
+            # dictionary of attribute/values representing the serialised version of the entry
+            # the resulting iterator is then transformed into an iterable
             data=list(
                 map(
                     lambda ue: {
@@ -407,13 +412,17 @@ class AddGetComments(APIView):
         # fetch mapping comment history, exclude deleted comments
         entry_comments = uniprot_entry.comments.filter(deleted=False).order_by('-time_stamp')
 
-        # comments are editable if they belong to the requesting user
+        # get an iterator of serialised comments by looping over the above
+        # entry comments and applying an anonymous function to each of them
+        # to extract a dictionary of comment attribute/values representing its
+        # serialised version
         comments = map(
             lambda c: {
                 'commentId': c.id,
                 'text':c.comment
                 'timeAdded':c.time_stamp
                 'user': c.user_stamp.full_name
+                # comments are editable if they belong to the requesting user
                 'editable':True if request.user and request.user == c.user_stamp else False
             },
             entry_comments

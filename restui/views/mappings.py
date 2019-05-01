@@ -165,13 +165,17 @@ def build_related_mappings_data(mapping):
       grouping_id=mapping_grouping_id
     )
 
+    # loop over the above mapping histories and get their mappings
+    # some of the above mapping histories might be linked to the given mapping
+    # in order to get its related mappings (only), we need to exclude it
+    # (using the mapping_id)
     related_mappings = filter(
         lambda m: m.mapping_id != mapping.mapping_id,
         (mh.mapping for mh in related_mappings_mh)
     )
 
-    # mappings = Mapping.objects.filter(mapping_history__grouping_id=mapping.mapping_history.latest('release_mapping_history__time_mapped').grouping_id, uniprot__uniprot_tax_id=mapping.uniprot.uniprot_tax_id).exclude(pk=mapping.mapping_id)
-
+    # build the serialised list of related mappings by getting the return of the
+    # corresponding serializer class method on each of the related mappings
     return list(map(lambda m: MappingsSerializer.build_mapping(m, fetch_sequence=False), related_mappings))
 
 
@@ -190,6 +194,11 @@ def build_related_unmapped_entries_data(mapping):
         grouping_id=mapping_grouping_id
     )
 
+    # so far we have the uniprot entry histories each one pointing to the
+    # desired uniprot entries
+    # we first obtain a generator to efficiently loop over these entries,
+    # then apply a function to each one of them to get the desired serialised version
+    # the result is an iterator of serialised related unmapped uniprot entries
     related_unmapped_ue_entries = map(
         lambda ue: {
             'uniprotAccession': ue.uniprot_acc,
@@ -214,6 +223,11 @@ def build_related_unmapped_entries_data(mapping):
         grouping_id=mapping_grouping_id
     )
 
+    # similarly to above, we have transcript histories pointing
+    # the related unampped transcripts
+    # get a generator to loop over these and apply an anonymous function
+    # to each one of them to get the corresponding serialised  version
+    # the result is an interator of serialised related unampped transcripts
     related_unmapped_transcripts = map(
         lambda transcript: {
             'enstId': transcript.enst_id,
@@ -633,13 +647,16 @@ class MappingCommentsView(APIView):
             '-time_stamp'
         )
 
-        # comments are editable if they belong to the requesting user
+        # get an iterator of serialised comments by looping over the above
+        # mapping comments and applying an anonymous function to each of them
+        # to extract a dictionary of comment attribute/values
         comments = map(
             lambda c: {
                 'commentId': c.id,
                 'text': c.comment,
                 'timeAdded': c.time_stamp,
                 'user': c.user_stamp.full_name,
+                # comments are editable if they belong to the requesting user
                 'editable': True if request.user and request.user == c.user_stamp else False
             },
             mapping_comments

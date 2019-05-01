@@ -314,6 +314,7 @@ class UnmappedEnsemblEntryPagination(LimitOffsetPagination):
                 UnmappedEnsemblEntrySerializer.build_group(ensg_id, group)
             )
 
+        # user request: sort the groups of unmapped entries according to their gene names
         unmapped_groups.sort(key=lambda e: e['gene']['ensgName'])
 
         return unmapped_groups
