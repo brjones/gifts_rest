@@ -1,5 +1,3 @@
-from celery.result import ResultBase
-
 from django.utils import timezone
 from django.core.serializers import serialize
 from rest_framework import serializers
