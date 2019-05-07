@@ -81,6 +81,14 @@ urlpatterns = [
     path('ensembl/cigar/align_run/<int:run>/uniprot/<acc>/<int:seq_version>/transcript/<enst_id>/',
          ensembl.EnspUCigarFetch.as_view()),
 
+    # update species history alignment status
+    path('ensembl/species_history/<int:pk>/alignment_status/<status>/',
+         ensembl.SpeciesHistoryAlignmentStatus.as_view()),
+
+    # fetch/update cigar by alignment ID
+    path('ensembl/cigar/alignment/<int:pk>/',
+         ensembl.EnspUCigarFetchUpdateByAlignment.as_view()),
+
     # insert cigar/mdz
     path('ensembl/cigar/', ensembl.EnspUCigarCreate.as_view()),
 
@@ -120,7 +128,12 @@ urlpatterns = [
          {'VIEW': mappings.MappingStatusView.as_view()}),
 
     # retrieve pairwise alignments for a mapping
+    # TODO?
     path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),
+
+    # update mapping alignment_difference
+    path('mapping/<int:pk>/alignment_difference/<int:difference>/', method_router,
+         {'VIEW': mappings.MappingAlignmentDifference.as_view()}),
 
     # path('mapping/<int:pk>/alignment_run/<alignment_run>/difference/')
 

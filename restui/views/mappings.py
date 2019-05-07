@@ -18,8 +18,10 @@
 import pprint
 import re
 import requests
+import urllib.parse
 from collections import defaultdict, OrderedDict
 
+<<<<<<< HEAD
 from restui.models.ensembl import EnsemblGene
 from restui.models.ensembl import EnsemblTranscript
 from restui.models.ensembl import EnsemblSpeciesHistory
@@ -55,6 +57,17 @@ from restui.serializers.annotations import MappingLabelSerializer
 from restui.serializers.annotations import LabelsSerializer
 from restui.pagination import FacetPagination
 from restui.pagination import MappingViewFacetPagination
+=======
+from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory, TranscriptHistory
+from restui.models.mappings import Mapping, MappingView, MappingHistory, ReleaseMappingHistory, ReleaseStats
+from restui.models.uniprot import UniprotEntry, UniprotEntryHistory
+from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
+from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
+    MappingSerializer, MappingCommentsSerializer, MappingsSerializer, MappingViewsSerializer,\
+    MappingAlignmentsSerializer, CommentLabelSerializer, ReleaseStatsSerializer, ReleasePerSpeciesSerializer, EnsemblUniprotMappingSerializer
+from restui.serializers.annotations import CvUeStatusSerializer, MappingStatusSerializer, MappingCommentSerializer, MappingLabelSerializer, LabelsSerializer
+from restui.pagination import FacetPagination, MappingViewFacetPagination
+>>>>>>> master
 from restui.lib.external import ensembl_sequence
 from restui.lib.alignments import fetch_pairwise
 
@@ -192,6 +205,7 @@ def build_related_unmapped_entries_data(mapping):
 
     related_unmapped_ue_entries = map(
         lambda ue: {
+            'uniprot_id':ue.uniprot_id,
             'uniprotAccession': ue.uniprot_acc,
             'entryType': Mapping.entry_type(ue.entry_type_id),
             'sequenceVersion': ue.sequence_version,
@@ -216,6 +230,7 @@ def build_related_unmapped_entries_data(mapping):
 
     related_unmapped_transcripts = map(
         lambda transcript: {
+            'transcript_id':transcript.transcript_id,
             'enstId': transcript.enst_id,
             'enstVersion': transcript.enst_version,
             'upi': transcript.uniparc_accession,
@@ -280,10 +295,9 @@ class LatestReleaseMappingHistory(generics.RetrieveAPIView):
             obj = ReleaseMappingHistory.objects.select_related(
                 'ensembl_species_history'
             ).filter(
-                ensembl_species_history__assembly_accession__iexact=assembly_accession
-            ).latest(
-                'ensembl_species_history__time_loaded'
-            )
+                ensembl_species_history__assembly_accession__iexact=assembly_accession,
+                ensembl_species_history__status="LOAD_COMPLETE"
+            ).latest('time_mapped')
 
         except ReleaseMappingHistory.DoesNotExist:
             raise Http404
@@ -775,6 +789,42 @@ class MappingStatusView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+class MappingAlignmentDifference(APIView):
+    """
+    Update a mapping's alignment difference
+    """
+
+    permission_classes = (IsAuthenticated,)
+    schema = ManualSchema(
+        description="Update a mapping's alignment difference",
+        fields=[
+            coreapi.Field(
+                name="id",
+                required=True,
+                location="path",
+                schema=coreschema.Integer(),
+                description="A unique integer value identifying the mapping"
+            ),
+            coreapi.Field(
+                name="difference",
+                required=True,
+                location="path",
+                schema=coreschema.Integer(),
+                description="An integer representing the alignment difference"
+            ),
+        ])
+
+    def post(self, request, pk, difference):
+        mapping = get_mapping(pk)
+
+        mapping.alignment_difference = difference
+        mapping.save()
+
+        serializer = EnsemblUniprotMappingSerializer(MappingsSerializer.build_mapping(mapping))
+
+        return Response(serializer.data)
+
+
 class MappingPairwiseAlignment(APIView):
     """
     Retrieve a set of pairwise alignments for a single mapping
@@ -1060,6 +1110,9 @@ class MappingViewsSearch(generics.ListAPIView):
         # Apply filters based on facets parameters
         #
         if facets_params:
+            # NOTE: must unquote as apparently the browser does not decode
+            facets_params = urllib.parse.unquote(facets_params)
+
             # create facets dict from e.g. 'organism:9606,10090;status:unreviewed;chromosome:10,11,X'
             facets = {}
             for param in facets_params.split(';'):

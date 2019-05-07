@@ -43,6 +43,7 @@ class TaxonomySerializer(serializers.Serializer):
 
 
 class UniprotEntryMappingSerializer(serializers.Serializer):
+    uniprot_id = serializers.IntegerField()
     uniprotAccession = serializers.CharField()
     entryType = serializers.CharField()
     sequenceVersion = serializers.IntegerField()
@@ -58,6 +59,7 @@ class UniprotEntryMappingSerializer(serializers.Serializer):
 
 
 class EnsemblTranscriptMappingSerializer(serializers.Serializer):
+    transcript_id = serializers.IntegerField()
     enstId = serializers.CharField()
     enstVersion = serializers.IntegerField()
     upi = serializers.CharField()
@@ -198,13 +200,13 @@ class MappingsSerializer(serializers.Serializer):
                 # TODO: log
                 print(e)
                 sequence = None
-
         mapping_obj = {
             'mappingId': mapping.mapping_id,
             'timeMapped': release_mapping_history.time_mapped,
             'ensemblRelease': ensembl_history.ensembl_release,
             'uniprotRelease': release_mapping_history.uniprot_release,
             'uniprotEntry': {
+                'uniprot_id': mapping.uniprot.uniprot_id,
                 'uniprotAccession': mapping.uniprot.uniprot_acc,
                 'entryType': Mapping.entry_type(mapping_history.entry_type_id),
                 'sequenceVersion': mapping.uniprot.sequence_version,
@@ -219,6 +221,7 @@ class MappingsSerializer(serializers.Serializer):
                 'protein_existence_id': mapping.uniprot.protein_existence_id
             },
             'ensemblTranscript': {
+                'transcript_id': mapping.transcript.transcript_id,
                 'enstId': mapping.transcript.enst_id,
                 'enstVersion': mapping.transcript.enst_version,
                 'upi': mapping.transcript.uniparc_accession,
@@ -350,6 +353,7 @@ class MappingViewsSerializer(serializers.Serializer):
             'ensemblRelease': mapping_view.ensembl_release,
             'uniprotRelease': mapping_view.uniprot_release,
             'uniprotEntry': {
+                'uniprot_id': mapping_view.uniprot_id,
                 'uniprotAccession': mapping_view.uniprot_acc,
                 'entryType': MappingView.entry_description(mapping_view.entry_type),
                 'sequenceVersion': mapping_view.sequence_version,
@@ -364,6 +368,7 @@ class MappingViewsSerializer(serializers.Serializer):
                 'protein_existence_id': mapping_view.protein_existence_id
             },
             'ensemblTranscript': {
+                'transcript_id': mapping_view.transcript_id,
                 'enstId': mapping_view.enst_id,
                 'enstVersion': mapping_view.enst_version,
                 'upi': mapping_view.uniparc_accession,
