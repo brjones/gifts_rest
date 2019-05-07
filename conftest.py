@@ -18,10 +18,14 @@
 import pytest
 
 
-def test_raw_sql(postgresql_db, schema):
-    r = postgresql_db.session.execute(
-        "SELECT COUNT(*) FROM ensembl_gifts.ensembl_gene;"
+@pytest.fixture
+def schema(postgresql_db):
+    print("\nPreparing the Schema")
+    postgresql_db.session.execute(
+        "CREATE USER ensrw CREATEDB"
     )
-    count = r.fetchall()
+    postgresql_db.session.execute(
+        open("schema/schema.sql", "r").read()
+    )
 
-    assert count[0][0] == 0
+    return
