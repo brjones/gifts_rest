@@ -15,13 +15,31 @@
    limitations under the License.
 """
 
-import pytest
+import json
+from rest_framework.test import APIClient
+from rest_framework.test import APITestCase
+
+from restui.models.ensembl import EnsemblGene
+from restui.models.ensembl import EnsemblTranscript
 
 
-def test_raw_sql(postgresql_db, schema):
-    r = postgresql_db.session.execute(
-        "SELECT COUNT(*) FROM ensembl_gifts.ensembl_gene;"
-    )
-    count = r.fetchall()
+class ServiceTest(APITestCase):
+    def test_ping(self):
+        client = APIClient()
+        response = client.get('/service/ping/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['ping'], 0)
 
-    assert count[0][0] == 0
+
+class EnsemblTest(APITestCase):
+    fixtures = ['ensembl_gene', 'ensembl_transcript']
+
+    def test_ensemblgene_request(self):
+        gene = EnsemblGene.objects.filter(pk=2).values()
+        self.assertEqual(gene[0]['gene_name'], 'RAD1')
+
+    def test_ensembltranscript_request(self):
+        transcript = EnsemblTranscript.objects.filter(pk=1).values()
+        self.assertEqual(transcript[0]['gene_id'], 1)
+
+    def test_(self):
