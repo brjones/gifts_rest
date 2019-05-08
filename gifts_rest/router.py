@@ -17,6 +17,11 @@
 
 
 class GiftsRouter(object):
+    """
+    This is for use when there are multiple databases and deciding on which of
+    the dbs should be searched
+    """
+
     def db_for_read(self, model, **hints):
         "Point all operations on restui models to 'gifts'"
         if model._meta.app_label == 'restui':
@@ -40,6 +45,6 @@ class GiftsRouter(object):
 
     def allow_syncdb(self, db, model):
         if db == 'gifts' or model._meta.app_label == "restui":
-            return False # we're not using syncdb on our legacy database
-        else: # but all other models/databases are fine
+            return False  # we're not using syncdb on our legacy database
+        else:  # but all other models/databases are fine
             return True
