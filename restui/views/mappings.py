@@ -21,7 +21,6 @@ import requests
 import urllib.parse
 from collections import defaultdict, OrderedDict
 
-<<<<<<< HEAD
 from restui.models.ensembl import EnsemblGene
 from restui.models.ensembl import EnsemblTranscript
 from restui.models.ensembl import EnsemblSpeciesHistory
@@ -57,17 +56,6 @@ from restui.serializers.annotations import MappingLabelSerializer
 from restui.serializers.annotations import LabelsSerializer
 from restui.pagination import FacetPagination
 from restui.pagination import MappingViewFacetPagination
-=======
-from restui.models.ensembl import EnsemblGene, EnsemblTranscript, EnsemblSpeciesHistory, TranscriptHistory
-from restui.models.mappings import Mapping, MappingView, MappingHistory, ReleaseMappingHistory, ReleaseStats
-from restui.models.uniprot import UniprotEntry, UniprotEntryHistory
-from restui.models.annotations import CvEntryType, CvUeStatus, CvUeLabel, UeMappingStatus, UeMappingComment, UeMappingLabel
-from restui.serializers.mappings import MappingByHistorySerializer, ReleaseMappingHistorySerializer, MappingHistorySerializer,\
-    MappingSerializer, MappingCommentsSerializer, MappingsSerializer, MappingViewsSerializer,\
-    MappingAlignmentsSerializer, CommentLabelSerializer, ReleaseStatsSerializer, ReleasePerSpeciesSerializer, EnsemblUniprotMappingSerializer
-from restui.serializers.annotations import CvUeStatusSerializer, MappingStatusSerializer, MappingCommentSerializer, MappingLabelSerializer, LabelsSerializer
-from restui.pagination import FacetPagination, MappingViewFacetPagination
->>>>>>> master
 from restui.lib.external import ensembl_sequence
 from restui.lib.alignments import fetch_pairwise
 
