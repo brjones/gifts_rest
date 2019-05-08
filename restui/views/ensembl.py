@@ -223,7 +223,6 @@ class LatestEnsemblRelease(APIView):
         ]
     )
 
-
     def get(self, request, assembly_accession):
         try:
             species_history = EnsemblSpeciesHistory.objects.filter(

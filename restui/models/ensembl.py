@@ -60,21 +60,25 @@ class EnsemblGene(PostgresModel):
     seq_region_strand = models.BigIntegerField(blank=True, null=True)
     biotype = models.CharField(max_length=40, blank=True, null=True)
     time_loaded = models.DateTimeField(blank=True, null=True)
-    history = models.ManyToManyField(EnsemblSpeciesHistory, through='GeneHistory')
     gene_symbol = models.CharField(max_length=30, blank=True, null=True)
     gene_accession = models.CharField(max_length=30, blank=True, null=True)
     source = models.CharField(max_length=30, blank=True, null=True)
 
+    # history is not a column
+    history = models.ManyToManyField(
+        EnsemblSpeciesHistory,
+        through='GeneHistory'
+    )
+
     def __str__(self):
         return "{0} - {1} ({2})".format(self.gene_id, self.ensg_id, self.gene_name)
-
 
     class Meta:
         managed = False
         db_table = 'ensembl_gene'
 
 
-class EnsemblTranscriptQuerySet(PostgresQuerySet): # models.query.QuerySet
+class EnsemblTranscriptQuerySet(PostgresQuerySet):  # models.query.QuerySet
     """
     A specialised query set to be able to deal with groupings
     of transcripts based on their corresponding gene.
@@ -154,6 +158,8 @@ class EnsemblTranscript(PostgresModel):
     ensp_id = models.CharField(max_length=30, blank=True, null=True)
     ensp_len = models.IntegerField(blank=True, null=True)
     source = models.CharField(max_length=30, blank=True, null=True)
+
+    # history is not a column
     history = models.ManyToManyField(
         EnsemblSpeciesHistory,
         through='TranscriptHistory'

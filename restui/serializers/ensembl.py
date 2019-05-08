@@ -100,7 +100,7 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
         """
 
         history_attrs = {}
-        for (k,v) in self.context['view'].kwargs.items():
+        for (k, v) in self.context['view'].kwargs.items():
             valid = [
                 'species',
                 'assembly_accession',
@@ -111,7 +111,7 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
             if k in (valid):
                 history_attrs[k] = v
 
-        history_attrs['status'] = 'LOAD_STARTED' # temporary status
+        history_attrs['status'] = 'LOAD_STARTED'  # temporary status
         history = EnsemblSpeciesHistory.objects.create(**history_attrs)
 
         """
