@@ -15,17 +15,17 @@
    limitations under the License.
 """
 
-import pytest
+# import pytest
 
 
-@pytest.fixture
-def schema(postgresql_db):
-    print("\nPreparing the Schema")
-    postgresql_db.session.execute(
-        "CREATE USER ensrw CREATEDB"
-    )
-    postgresql_db.session.execute(
-        open("schema/schema.sql", "r").read()
-    )
+# @pytest.fixture
+# def schema(postgresql_db):
+#     print("\nPreparing the Schema")
+#     postgresql_db.session.execute(
+#         "CREATE USER ensrw CREATEDB"
+#     )
+#     postgresql_db.session.execute(
+#         open("schema/schema.sql", "r").read()
+#     )
 
-    return
+#     return
