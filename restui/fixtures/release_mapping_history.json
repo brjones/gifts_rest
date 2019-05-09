@@ -1,0 +1,13 @@
+[
+    {
+        "model": "restui.releasemappinghistory",
+        "pk": 1,
+        "fields": {
+            "ensembl_species_history_id": "1",
+            "time_mapped": "2019-05-01 00:00:00",
+            "uniprot_release": "2019_05",
+            "uniprot_taxid": "9606",
+            "status": "MAPPING_COMPLETED"
+        }
+    }
+]

@@ -1,0 +1,38 @@
+[
+    {
+        "model": "restui.uniprotentry",
+        "pk": 1,
+        "fields": {
+            "uniprot_acc": "P51587",
+            "uniprot_tax_id": null,
+            "userstamp": null,
+            "timestamp": null,
+            "sequence_version": null,
+            "upi": null,
+            "md5": null,
+            "canonical_uniprot_id": null,
+            "ensembl_derived": null,
+            "alias": null,
+            "gene_symbol": null,
+            "chromosome_line": null
+        }
+    },
+    {
+        "model": "restui.uniprotentry",
+        "pk": 2,
+        "fields": {
+            "uniprot_acc": "O60671",
+            "uniprot_tax_id": null,
+            "userstamp": null,
+            "timestamp": null,
+            "sequence_version": null,
+            "upi": null,
+            "md5": null,
+            "canonical_uniprot_id": null,
+            "ensembl_derived": null,
+            "alias": null,
+            "gene_symbol": null,
+            "chromosome_line": null
+        }
+    }
+]

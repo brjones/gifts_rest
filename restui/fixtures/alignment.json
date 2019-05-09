@@ -1,0 +1,16 @@
+[
+    {
+        "model": "restui.alignment",
+        "pk": 1,
+        "fields": {
+            "uniprot_id": "1",
+            "score1": "1",
+            "report": "Alignment",
+            "is_current": null,
+            "score2": "1",
+            "alignment_run": "1",
+            "transcript": "1",
+            "mapping": "1"
+        }
+    }
+]

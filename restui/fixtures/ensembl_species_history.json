@@ -1,0 +1,15 @@
+[
+    {
+        "model": "restui.ensemblspecieshistory",
+        "pk": 1,
+        "fields": {
+            "species": "Homo sapiens",
+            "assembly_accession": "GRCh38",
+            "ensembl_tax_id": "9606",
+            "ensembl_release": "95",
+            "status": "LOAD_COMPLETE",
+            "time_loaded": "2019-05-01 00:00:00",
+            "alignment_status": "ALIGNMENT_COMPLETE"
+        }
+    }
+]
