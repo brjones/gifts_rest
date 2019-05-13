@@ -9,7 +9,7 @@
             "report_type": "sp mapping value",
             "pipeline_name": "test_loading",
             "pipeline_comment": "test",
-            "ensembl_release": "0",
+            "ensembl_release": "95",
             "uniprot_file_swissprot": "/test/location/sp.txt",
             "uniprot_file_isoform": "/test/location/iso.txt",
             "uniprot_dir_trembl": "/test/location/trembl",

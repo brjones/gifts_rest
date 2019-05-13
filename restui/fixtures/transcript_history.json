@@ -1,0 +1,10 @@
+[
+    {
+        "model": "restui.transcripthistory",
+        "pk": 1,
+        "fields": {
+            "transcript_id": 1,
+            "grouping_id": null
+        }
+    }
+]
