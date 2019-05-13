@@ -17,11 +17,23 @@
 
 import requests
 from django.http import Http404
-from gifts_rest.settings.base import TARK_SERVER, ENSEMBL_REST_SERVER
+from gifts_rest.settings.base import TARK_SERVER
+from gifts_rest.settings.base import ENSEMBL_REST_SERVER
 
 
 def tark_transcript(enst_id, release):
     """
+    Retrieve the TARK entry for a given ensembl id and release number
+
+    Parameters
+    ----------
+    enst_id : str
+        This needs to be the e! stable ID (eg ENST...)
+    release : int
+
+    Returns
+    -------
+    dict
     """
     url = "{}/api/transcript/?stable_id={}&release_short_name={}&expand=sequence"
 
@@ -76,6 +88,7 @@ def ensembl_sequence(enst_id, release):
     Parameters
     ----------
     enst_id : str
+        This needs to be the e! stable ID (eg ENST...)
     release : int
 
     Returns
@@ -105,6 +118,7 @@ def ensembl_protein(enst_id, release):
     Parameters
     ----------
     enst_id : str
+        This needs to be the e! stable ID (eg ENST...)
     release : int
 
     Returns
@@ -121,9 +135,9 @@ def ensembl_protein(enst_id, release):
     result = requests.get(
         "{}/lookup/id/{}?expand=1&content-type=application/json".format(server, enst_id)
     )
+
     if not result.ok:
         result.raise_for_status()
 
     ensembl_json = result.json()
-
     return ensembl_json['Translation']['id']
