@@ -1,9 +1,27 @@
+"""
+.. See the NOTICE file distributed with this work for additional information
+   regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 from django.urls import path
 from django.http import Http404
 from django.views.decorators.csrf import csrf_exempt
 from restui.views import alignments, ensembl, mappings, uniprot, unmapped, service
 from restui.exceptions import FalloverROException
 from django.conf import settings
+
 
 @csrf_exempt
 def method_router(request, *args, **kwargs):
@@ -27,7 +45,7 @@ urlpatterns = [
          alignments.AlignmentByAlignmentRunFetch().as_view()),                          # fetch alignments by alignment run ID
     path('alignments/alignment/<int:pk>/', alignments.AlignmentFetch.as_view()),        # retrieve alignment by ID
     path('alignments/alignment/', alignments.AlignmentCreate.as_view()),                # insert alignment
-    
+
     path('ensembl/load/<species>/<assembly_accession>/<int:ensembl_tax_id>/<int:ensembl_release>/', # bulk load of genes/transcripts
          ensembl.EnsemblFeature.as_view()),
     path('ensembl/release/latest/assembly/<assembly_accession>/',                                   # fetch latest ensembl release (status load complete)

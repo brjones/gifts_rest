@@ -1,3 +1,20 @@
+"""
+.. See the NOTICE file distributed with this work for additional information
+   regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 from restui.models.ensembl import EnsemblTranscript
 from restui.models.uniprot import UniprotEntry
 from restui.models.mappings import MappingView, ReleaseMappingHistory
@@ -101,7 +118,7 @@ class UnmappedEntries(APIView):
             release_uniprot_entries = UniprotEntry.objects.select_related('entry_type').filter(uniprot_tax_id=taxid,uniprotentryhistory__release_version=release_mapping_history.uniprot_release,entry_type__description__icontains='swiss')
             # find the mapped uniprot entries for the release and species
             release_mapped_uniprot_entries = UniprotEntry.objects.select_related('entry_type').filter(mapping__mapping_history__release_mapping_history=release_mapping_history,entry_type__description__icontains='swiss').distinct()
-            
+
             # the unmapped swiss-prot entries
             # NOTE: using select_related('entry_type') to speed up query generates 'Index out of range' error, using it in the two sets above works
             release_unmapped_sp_entries = release_uniprot_entries.difference(release_mapped_uniprot_entries)
@@ -115,7 +132,7 @@ class UnmappedEntries(APIView):
                                        "gene_accession":ue.chromosome_line,
                                        "length":ue.length,
                                        "protein_existence_id":ue.protein_existence_id }, release_unmapped_sp_entries.order_by('uniprot_acc')))
-            
+
             page = self.paginate_queryset(data)
             if page is not None:
                 serializer = UnmappedSwissprotEntrySerializer(page, many=True)
@@ -145,7 +162,7 @@ class UnmappedEntries(APIView):
 
         else:
             raise Http404('Unknown source')
-        
+
     @property
     def paginator(self):
         """
@@ -170,7 +187,7 @@ class UnmappedEntries(APIView):
             return None
 
         return self.paginator.paginate_queryset(queryset, self.request, view=self)
-        
+
     def get_paginated_response(self, data):
         """
         Return a paginated style `Response` object for the given output data.
@@ -268,6 +285,7 @@ class GetLabels(APIView):
 
         return Response(serializer.data)
 
+
 class AddGetComments(APIView):
     """
     Add a comment/Retrieve all comments relative to a given unmapped entry
@@ -315,6 +333,7 @@ class AddGetComments(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class EditDeleteComment(APIView):
     """

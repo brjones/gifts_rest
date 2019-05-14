@@ -1,7 +1,25 @@
+"""
+.. See the NOTICE file distributed with this work for additional information
+   regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 from django.http import Http404
 import requests
 
 from gifts_rest.settings.base import TARK_SERVER, ENSEMBL_REST_SERVER
+
 
 def tark_transcript(enst_id, release):
     url = "{}/api/transcript/?stable_id={}&release_short_name={}&expand=sequence"
@@ -20,16 +38,18 @@ def tark_transcript(enst_id, release):
 
     return response['results'][0]
 
+
 def ensembl_current_release():
     """
     Return current Ensembl release number.
     """
-    
+
     r = requests.get("{}/info/software".format(ENSEMBL_REST_SERVER), headers={ "Content-Type" : "application/json"})
     if not r.ok:
         r.raise_for_status()
 
     return r.json()['release']
+
 
 def ensembl_sequence(enst_id, release):
     e_current_release = ensembl_current_release()
@@ -40,6 +60,7 @@ def ensembl_sequence(enst_id, release):
         r.raise_for_status()
 
     return r.text
+
 
 def ensembl_protein(enst_id, release):
     e_current_release = ensembl_current_release()

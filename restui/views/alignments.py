@@ -1,3 +1,20 @@
+"""
+.. See the NOTICE file distributed with this work for additional information
+   regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 import pprint
 
 from restui.models.mappings import Alignment, AlignmentRun
@@ -12,12 +29,14 @@ from rest_framework.schemas import ManualSchema
 
 import coreapi, coreschema
 
+
 class AlignmentRunCreate(generics.CreateAPIView):
     """
-    Store an AlignmentRun 
+    Store an AlignmentRun
     """
 
     serializer_class = AlignmentRunSerializer
+
 
 class AlignmentRunFetch(generics.RetrieveAPIView):
     """
@@ -26,13 +45,15 @@ class AlignmentRunFetch(generics.RetrieveAPIView):
 
     queryset = AlignmentRun.objects.all()
     serializer_class = AlignmentRunSerializer
-    
+
+
 class AlignmentCreate(generics.CreateAPIView):
     """
     Insert an Alignment
     """
 
     serializer_class = AlignmentSerializer
+
 
 class AlignmentFetch(generics.RetrieveAPIView):
     """
@@ -41,6 +62,7 @@ class AlignmentFetch(generics.RetrieveAPIView):
 
     queryset = Alignment.objects.all()
     serializer_class = AlignmentSerializer
+
 
 class AlignmentByAlignmentRunFetch(generics.ListAPIView):
     """
@@ -67,6 +89,7 @@ class AlignmentByAlignmentRunFetch(generics.ListAPIView):
             raise Http404
 
         return Alignment.objects.filter(alignment_run=alignment_run)
+
 
 #
 # TODO
@@ -111,6 +134,5 @@ class LatestAlignmentsFetch(generics.ListAPIView):
                                                         score1_type=alignment_type).latest('alignment_run_id')
         except (AlignmentRun.DoesNotExist, IndexError):
             raise Http404
-        
+
         return Alignment.objects.filter(alignment_run=alignment_run).order_by('alignment_id')
-    

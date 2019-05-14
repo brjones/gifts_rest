@@ -1,3 +1,20 @@
+"""
+.. See the NOTICE file distributed with this work for additional information
+   regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 from rest_framework import serializers
 from django.http import Http404
 
@@ -8,6 +25,7 @@ from restui.models.ensembl import EnsemblSpeciesHistory
 from restui.serializers.ensembl import SpeciesHistorySerializer
 from restui.serializers.annotations import StatusHistorySerializer
 
+
 class TaxonomySerializer(serializers.Serializer):
     """
     For nested serialization of taxonomy in call to mapping/<id> endpoint.
@@ -16,6 +34,7 @@ class TaxonomySerializer(serializers.Serializer):
     species = serializers.CharField()
     ensemblTaxId = serializers.IntegerField()
     uniprotTaxId = serializers.IntegerField()
+
 
 class UniprotEntryMappingSerializer(serializers.Serializer):
     uniprot_id = serializers.IntegerField()
@@ -31,7 +50,8 @@ class UniprotEntryMappingSerializer(serializers.Serializer):
     gene_accession = serializers.CharField()
     length = serializers.IntegerField()
     protein_existence_id = serializers.IntegerField()
-    
+
+
 class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     transcript_id = serializers.IntegerField()
     enstId = serializers.CharField()
@@ -54,7 +74,8 @@ class EnsemblTranscriptMappingSerializer(serializers.Serializer):
     enspLen = serializers.IntegerField()
     source = serializers.CharField()
     select = serializers.NullBooleanField()
-    
+
+
 class EnsemblUniprotMappingSerializer(serializers.Serializer):
     """
     For nested serialization of Ensembl-Uniprot mapping in call to mapping/<id> endpoint.
@@ -72,12 +93,14 @@ class EnsemblUniprotMappingSerializer(serializers.Serializer):
     status = serializers.CharField()
     status_history = StatusHistorySerializer(many=True)
 
+
 class EnsemblUniprotRelatedUnmappedSerializer(serializers.Serializer):
     """
     Nested serialization of Ensembl-Uniprot unmapped entries related to a mapping
     """
     ensembl = EnsemblTranscriptMappingSerializer(many=True)
     uniprot = UniprotEntryMappingSerializer(many=True)
+
 
 class RelatedEntriesSerializer(serializers.Serializer):
     """
@@ -87,6 +110,7 @@ class RelatedEntriesSerializer(serializers.Serializer):
     mapped = EnsemblUniprotMappingSerializer(many=True)
     unmapped = EnsemblUniprotRelatedUnmappedSerializer()
 
+
 class MappingSerializer(serializers.Serializer):
     """
     Serialize data in call to mapping/:id endpoint.
@@ -94,10 +118,11 @@ class MappingSerializer(serializers.Serializer):
     JSON specs derived from:
     https://github.com/ebi-uniprot/gifts-mock/blob/master/data/mapping.json
     """
-    
+
     taxonomy = TaxonomySerializer()
     mapping = EnsemblUniprotMappingSerializer()
     relatedEntries = RelatedEntriesSerializer()
+
 
 class MappingHistorySerializer(serializers.ModelSerializer):
     """
@@ -119,6 +144,7 @@ class ReleaseMappingHistorySerializer(serializers.ModelSerializer):
         model = ReleaseMappingHistory
         fields = '__all__'
 
+
 class MappingByHistorySerializer(serializers.ModelSerializer):
     """
     Serializer for mappings returned by the mappings/release_history/<id> endpoint.
@@ -130,6 +156,7 @@ class MappingByHistorySerializer(serializers.ModelSerializer):
         model = Mapping
         fields = '__all__'
 
+
 class MappingsSerializer(serializers.Serializer):
     """
     Serialize data in call to mappings/ endpoint
@@ -139,11 +166,11 @@ class MappingsSerializer(serializers.Serializer):
     entryMappings = EnsemblUniprotMappingSerializer(many=True)
 
     @classmethod
-    def build_mapping(cls, mapping, fetch_sequence=False, authenticated=False): 
+    def build_mapping(cls, mapping, fetch_sequence=False, authenticated=False):
         mapping_history = mapping.mapping_history.select_related('release_mapping_history').select_related('release_mapping_history__ensembl_species_history').latest('mapping_history_id')
         release_mapping_history = mapping_history.release_mapping_history
         ensembl_history = mapping_history.release_mapping_history.ensembl_species_history
-        
+
         status = mapping.status.id
 
         sequence = None
@@ -153,73 +180,74 @@ class MappingsSerializer(serializers.Serializer):
             except Exception as e:
                 print(e) # TODO: log
                 sequence = None
-        
-        mapping_obj = { 'mappingId':mapping.mapping_id,
-                        'timeMapped':release_mapping_history.time_mapped,
-                        'ensemblRelease':ensembl_history.ensembl_release,
-                        'uniprotRelease':release_mapping_history.uniprot_release,
-                        'uniprotEntry': {
-                            'uniprot_id':mapping.uniprot.uniprot_id,
-                            'uniprotAccession':mapping.uniprot.uniprot_acc,
-                            'entryType':Mapping.entry_type(mapping_history.entry_type_id), 
-                            'sequenceVersion':mapping.uniprot.sequence_version,
-                            'upi':mapping.uniprot.upi,
-                            'md5':mapping.uniprot.md5,
-                            'isCanonical': False if mapping.uniprot.canonical_uniprot_id else True,
-                            'alias': mapping.uniprot.alias,
-                            'ensemblDerived':mapping.uniprot.ensembl_derived,
-                            'gene_symbol':mapping.uniprot.gene_symbol,
-                            'gene_accession':mapping.uniprot.chromosome_line,
-                            'length':mapping.uniprot.length,
-                            'protein_existence_id':mapping.uniprot.protein_existence_id
-                            },
-                        'ensemblTranscript': {
-                            'transcript_id':mapping.transcript.transcript_id,
-                            'enstId':mapping.transcript.enst_id,
-                            'enstVersion':mapping.transcript.enst_version,
-                            'upi':mapping.transcript.uniparc_accession,
-                            'biotype':mapping.transcript.biotype,
-                            'deleted':mapping.transcript.deleted,
-                            'chromosome':mapping.transcript.gene.chromosome,
-                            'regionAccession':mapping.transcript.gene.region_accession,
-                            'seqRegionStart':mapping.transcript.seq_region_start,
-                            'seqRegionEnd':mapping.transcript.seq_region_end,
-                            'seqRegionStrand': mapping.transcript.gene.seq_region_strand,
-                            'ensgId':mapping.transcript.gene.ensg_id,
-                            'ensgName':mapping.transcript.gene.gene_name,
-                            'ensgSymbol':mapping.transcript.gene.gene_symbol,
-                            'ensgAccession':mapping.transcript.gene.gene_accession,
-                            'ensgRegionAccession':mapping.transcript.gene.region_accession,
-                            'sequence':sequence,
-                            'enspId':mapping.transcript.ensp_id,
-                            'enspLen':mapping.transcript.ensp_len,
-                            'source':mapping.transcript.source,
-                            'select':mapping.transcript.select
-                            },
-                       'alignment_difference': mapping.alignment_difference,
-                       'status': Mapping.status_type(status),
-                       'status_history': mapping.statuses(usernames=authenticated)
-                       }
+
+        mapping_obj = {
+            'mappingId':mapping.mapping_id,
+            'timeMapped':release_mapping_history.time_mapped,
+            'ensemblRelease':ensembl_history.ensembl_release,
+            'uniprotRelease':release_mapping_history.uniprot_release,
+            'uniprotEntry': {
+                'uniprot_id':mapping.uniprot.uniprot_id,
+                'uniprotAccession':mapping.uniprot.uniprot_acc,
+                'entryType':Mapping.entry_type(mapping_history.entry_type_id),
+                'sequenceVersion':mapping.uniprot.sequence_version,
+                'upi':mapping.uniprot.upi,
+                'md5':mapping.uniprot.md5,
+                'isCanonical': False if mapping.uniprot.canonical_uniprot_id else True,
+                'alias': mapping.uniprot.alias,
+                'ensemblDerived':mapping.uniprot.ensembl_derived,
+                'gene_symbol':mapping.uniprot.gene_symbol,
+                'gene_accession':mapping.uniprot.chromosome_line,
+                'length':mapping.uniprot.length,
+                'protein_existence_id':mapping.uniprot.protein_existence_id
+                },
+            'ensemblTranscript': {
+                'transcript_id':mapping.transcript.transcript_id,
+                'enstId':mapping.transcript.enst_id,
+                'enstVersion':mapping.transcript.enst_version,
+                'upi':mapping.transcript.uniparc_accession,
+                'biotype':mapping.transcript.biotype,
+                'deleted':mapping.transcript.deleted,
+                'chromosome':mapping.transcript.gene.chromosome,
+                'regionAccession':mapping.transcript.gene.region_accession,
+                'seqRegionStart':mapping.transcript.seq_region_start,
+                'seqRegionEnd':mapping.transcript.seq_region_end,
+                'seqRegionStrand': mapping.transcript.gene.seq_region_strand,
+                'ensgId':mapping.transcript.gene.ensg_id,
+                'ensgName':mapping.transcript.gene.gene_name,
+                'ensgSymbol':mapping.transcript.gene.gene_symbol,
+                'ensgAccession':mapping.transcript.gene.gene_accession,
+                'ensgRegionAccession':mapping.transcript.gene.region_accession,
+                'sequence':sequence,
+                'enspId':mapping.transcript.ensp_id,
+                'enspLen':mapping.transcript.ensp_len,
+                'source':mapping.transcript.source,
+                'select':mapping.transcript.select
+            },
+            'alignment_difference': mapping.alignment_difference,
+            'status': Mapping.status_type(status),
+            'status_history': mapping.statuses(usernames=authenticated)
+        }
 
         return mapping_obj
 
     @classmethod
     def build_mapping_group(cls, mappings_group, fetch_sequence=False):
-        mapping_set = dict() 
+        mapping_set = dict()
         try:
             mapping_set['taxonomy'] = cls.build_taxonomy_data(mappings_group[0])
         except Exception as e:
             ###log
             print(e)
             raise Http404("Couldn't create taxonomy element for mapping object {}".format(mappings_group[0].mapping_id))
-    
+
         mapping_set['entryMappings'] = []
-        
+
         for mapping in mappings_group:
             mapping_set['entryMappings'].append(cls.build_mapping(mapping, fetch_sequence=fetch_sequence))
 
         return mapping_set
-    
+
     @classmethod
     def build_taxonomy_data(cls, mapping):
         # Find the ensembl tax id via one ensembl species history associated to transcript
@@ -234,13 +262,14 @@ class MappingsSerializer(serializers.Serializer):
             ###log
             print(e)
             raise Http404("Couldn't find an ensembl species history associated to mapping {}".format(mapping.mapping_id))
-        
+
         try:
             return { 'species':ensembl_history.species,
                      'ensemblTaxId':ensembl_history.ensembl_tax_id,
                      'uniprotTaxId':uniprot_tax_id }
         except:
             raise Http404("Couldn't find uniprot tax id as I couldn't find a uniprot entry associated to the mapping")
+
 
 class MappingViewSerializer(serializers.ModelSerializer):
     """
@@ -250,6 +279,7 @@ class MappingViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = MappingView
         fields = '__all__'
+
 
 class MappingViewsSerializer(serializers.Serializer):
     """
@@ -271,54 +301,55 @@ class MappingViewsSerializer(serializers.Serializer):
                 print(e) # TODO: log
                 sequence = None
 
-        mapping_obj = { 'id':mapping_view.id,
-                        'mappingId':mapping_view.mapping_id,
-                        'groupingId':mapping_view.grouping_id,
-                        'timeMapped':mapping_view.time_mapped,
-                        'ensemblRelease':mapping_view.ensembl_release,
-                        'uniprotRelease':mapping_view.uniprot_release,
-                        'uniprotEntry': {
-                            'uniprot_id':mapping_view.uniprot_id,
-                            'uniprotAccession':mapping_view.uniprot_acc,
-                            'entryType':MappingView.entry_description(mapping_view.entry_type),
-                            'sequenceVersion':mapping_view.sequence_version,
-                            'upi':mapping_view.upi,
-                            'md5':mapping_view.md5,
-                            'isCanonical': False if mapping_view.canonical_uniprot_id else True,
-                            'alias': mapping_view.alias,
-                            'ensemblDerived':mapping_view.ensembl_derived,
-                            'gene_symbol':mapping_view.gene_symbol_up,
-                            'gene_accession':mapping_view.chromosome_line,
-                            'length':mapping_view.length,
-                            'protein_existence_id':mapping_view.protein_existence_id
-                            },
-                        'ensemblTranscript': {
-                            'transcript_id':mapping_view.transcript_id,
-                            'enstId':mapping_view.enst_id,
-                            'enstVersion':mapping_view.enst_version,
-                            'upi':mapping_view.uniparc_accession,
-                            'biotype':mapping_view.biotype,
-                            'deleted':mapping_view.deleted,
-                            'chromosome':mapping_view.chromosome,
-                            'regionAccession':mapping_view.region_accession,
-                            'seqRegionStart':mapping_view.seq_region_start,
-                            'seqRegionEnd':mapping_view.seq_region_end,
-                            'seqRegionStrand':mapping_view.seq_region_strand,
-                            'ensgId':mapping_view.ensg_id,
-                            'ensgName':mapping_view.gene_name,
-                            'ensgSymbol':mapping_view.gene_symbol_eg,
-                            'ensgAccession':mapping_view.gene_accession,
-                            'ensgRegionAccession':mapping_view.region_accession,
-                            'sequence':sequence,
-                            'enspId':mapping_view.ensp_id,
-                            'enspLen':mapping_view.ensp_len,
-                            'source':mapping_view.source,
-                            'select':mapping_view.select
-                            },
-                       'alignment_difference': mapping_view.alignment_difference,
-                       'status': MappingView.status_description(status),
-                       'status_history': mapping_view.statuses(usernames=authenticated)
-                       }
+        mapping_obj = {
+            'id':mapping_view.id,
+            'mappingId':mapping_view.mapping_id,
+            'groupingId':mapping_view.grouping_id,
+            'timeMapped':mapping_view.time_mapped,
+            'ensemblRelease':mapping_view.ensembl_release,
+            'uniprotRelease':mapping_view.uniprot_release,
+            'uniprotEntry': {
+                'uniprot_id':mapping_view.uniprot_id,
+                'uniprotAccession':mapping_view.uniprot_acc,
+                'entryType':MappingView.entry_description(mapping_view.entry_type),
+                'sequenceVersion':mapping_view.sequence_version,
+                'upi':mapping_view.upi,
+                'md5':mapping_view.md5,
+                'isCanonical': False if mapping_view.canonical_uniprot_id else True,
+                'alias': mapping_view.alias,
+                'ensemblDerived':mapping_view.ensembl_derived,
+                'gene_symbol':mapping_view.gene_symbol_up,
+                'gene_accession':mapping_view.chromosome_line,
+                'length':mapping_view.length,
+                'protein_existence_id':mapping_view.protein_existence_id
+                },
+            'ensemblTranscript': {
+                'transcript_id':mapping_view.transcript_id,
+                'enstId':mapping_view.enst_id,
+                'enstVersion':mapping_view.enst_version,
+                'upi':mapping_view.uniparc_accession,
+                'biotype':mapping_view.biotype,
+                'deleted':mapping_view.deleted,
+                'chromosome':mapping_view.chromosome,
+                'regionAccession':mapping_view.region_accession,
+                'seqRegionStart':mapping_view.seq_region_start,
+                'seqRegionEnd':mapping_view.seq_region_end,
+                'seqRegionStrand':mapping_view.seq_region_strand,
+                'ensgId':mapping_view.ensg_id,
+                'ensgName':mapping_view.gene_name,
+                'ensgSymbol':mapping_view.gene_symbol_eg,
+                'ensgAccession':mapping_view.gene_accession,
+                'ensgRegionAccession':mapping_view.region_accession,
+                'sequence':sequence,
+                'enspId':mapping_view.ensp_id,
+                'enspLen':mapping_view.ensp_len,
+                'source':mapping_view.source,
+                'select':mapping_view.select
+                },
+            'alignment_difference': mapping_view.alignment_difference,
+            'status': MappingView.status_description(status),
+            'status_history': mapping_view.statuses(usernames=authenticated)
+        }
 
         return mapping_obj
 
@@ -381,6 +412,7 @@ class CommentLabelSerializer(serializers.Serializer):
     user = serializers.CharField()
     editable = serializers.BooleanField()
 
+
 class MappingCommentsSerializer(serializers.Serializer):
     """
     Serialize data in call to comments/<mapping_id> endpoint.
@@ -390,6 +422,7 @@ class MappingCommentsSerializer(serializers.Serializer):
 
     mappingId = serializers.IntegerField()
     comments = CommentLabelSerializer(many=True)
+
 
 class MappingPairwiseAlignmentSerializer(serializers.Serializer):
     """
@@ -403,13 +436,15 @@ class MappingPairwiseAlignmentSerializer(serializers.Serializer):
     ensembl_release = serializers.IntegerField()
     ensembl_id = serializers.CharField()
     uniprot_id = serializers.CharField()
-    
+
+
 class MappingAlignmentsSerializer(serializers.Serializer):
     """
     Serializer for pairwise alignment sets
     """
     mapping_id = serializers.IntegerField()
     alignments = MappingPairwiseAlignmentSerializer(many=True)
+
 
 class UniprotMappedCountSerializer(serializers.Serializer):
     """
@@ -418,6 +453,7 @@ class UniprotMappedCountSerializer(serializers.Serializer):
 
     mapped = serializers.IntegerField()
     not_mapped_sp = serializers.IntegerField()
+
 
 class EnsemblMappedCountSerializer(serializers.Serializer):
     """
@@ -428,6 +464,7 @@ class EnsemblMappedCountSerializer(serializers.Serializer):
     gene_not_mapped_sp = serializers.IntegerField()
     transcript_mapped = serializers.IntegerField()
 
+
 class MappingCountSerializer(serializers.Serializer):
     """
     Serializer for general and specific mapping counts
@@ -437,6 +474,7 @@ class MappingCountSerializer(serializers.Serializer):
     uniprot = UniprotMappedCountSerializer()
     ensembl = EnsemblMappedCountSerializer()
 
+
 class StatusCountSerializer(serializers.Serializer):
     """
     Serializer for an individual status' count
@@ -444,12 +482,14 @@ class StatusCountSerializer(serializers.Serializer):
     status = serializers.CharField()
     count = serializers.IntegerField()
 
+
 class LabelCountSerializer(serializers.Serializer):
     """
     Serializer for an individual label's count
     """
     label = serializers.CharField()
     count = serializers.IntegerField()
+
 
 class ReleaseStatsSerializer(serializers.ModelSerializer):
     """
@@ -459,6 +499,7 @@ class ReleaseStatsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReleaseStats
         fields = '__all__'
+
 
 class ReleasePerSpeciesSerializer(serializers.Serializer):
     """

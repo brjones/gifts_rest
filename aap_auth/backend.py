@@ -1,3 +1,20 @@
+"""
+.. See the NOTICE file distributed with this work for additional information
+   regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 from rest_framework import authentication
 from aap_auth.models import AAPUser as User
 
@@ -7,6 +24,7 @@ from jwt import DecodeError, InvalidTokenError as JWTInvalidTokenError
 from aap_auth.auth import AAPAcess
 
 from future.utils import raise_with_traceback
+
 
 class AAPBackend(authentication.BaseAuthentication):
     """
@@ -34,7 +52,7 @@ class AAPBackend(authentication.BaseAuthentication):
         # verify that the auth header exists
         auth_header = request.META.get('HTTP_AUTHORIZATION', None)
         if auth_header:
-            
+
             # verify that the header is in the correct format
             # Authorization: Bearer <JWT>
             splitted_header = auth_header.split()
@@ -57,7 +75,7 @@ class AAPBackend(authentication.BaseAuthentication):
         except JWTInvalidTokenError as err:
             raise_with_traceback(
                 Exception(u'{}'.format(err)))
-        
+
         try:
             user = User.objects.get(elixir_id=decoded_token['sub'])
 
@@ -66,7 +84,7 @@ class AAPBackend(authentication.BaseAuthentication):
                 return None, None
 
         except User.DoesNotExist:
-            ''' Create a new user''' 
+            ''' Create a new user'''
             #log Creating user for elixir_id
             profile = AAPAcess().fetchProfile(decoded_token['sub'], jwt)
             user = User(elixir_id=decoded_token['sub'],
@@ -100,7 +118,7 @@ class YesBackend(authentication.BaseAuthentication):
 
         user = User(elixir_id='usr-d03bb471-5718-4899-addd-393de8b6ad69',
                     full_name="Zapp Brannigan",
-                        email="zapp@nimbus.doop")
+                    email="zapp@nimbus.doop")
         user.is_admin = False
         user.validated = True
 
@@ -111,7 +129,7 @@ class YesBackend(authentication.BaseAuthentication):
 
         user = User(elixir_id='usr-d03bb471-5718-4899-addd-393de8b6ad69',
                     full_name="Zapp Brannigan",
-                        email="zapp@nimbus.doop")
+                    email="zapp@nimbus.doop")
         user.is_admin = False
         user.validated = True
 

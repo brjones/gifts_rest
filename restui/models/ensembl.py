@@ -1,3 +1,20 @@
+"""
+.. See the NOTICE file distributed with this work for additional information
+   regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 from collections import defaultdict
 
 from django.db import models
@@ -6,9 +23,10 @@ from psqlextra.models import PostgresModel
 from psqlextra.manager import PostgresManager, PostgresQuerySet
 from django.db.models.deletion import CASCADE
 
+
 class EnsemblSpeciesHistory(PostgresModel):
     objects = PostgresManager()
-    
+
     ensembl_species_history_id = models.BigAutoField(primary_key=True)
     species = models.CharField(max_length=30, blank=True, null=True)
     assembly_accession = models.CharField(max_length=30, blank=True, null=True)
@@ -20,15 +38,16 @@ class EnsemblSpeciesHistory(PostgresModel):
 
     def __str__(self):
         return "{0} - {1} {2} {3}".format(self.ensembl_species_history_id, self.species, self.assembly_accession, self.ensembl_tax_id, self.ensembl_release)
-    
+
     class Meta:
         managed = False
         db_table = 'ensembl_species_history'
 
+
 class EnsemblGene(PostgresModel):
     # override default Django manager
     objects = PostgresManager()
-    
+
     gene_id = models.BigAutoField(primary_key=True)
     ensg_id = models.CharField(unique=True, max_length=30, blank=True, null=True)
     gene_name = models.CharField(max_length=255, blank=True, null=True)
@@ -48,11 +67,12 @@ class EnsemblGene(PostgresModel):
 
     def __str__(self):
         return "{0} - {1} ({2})".format(self.gene_id, self.ensg_id, self.gene_name)
-        
-    
+
+
     class Meta:
         managed = False
         db_table = 'ensembl_gene'
+
 
 class EnsemblTranscriptQuerySet(PostgresQuerySet): # models.query.QuerySet
     """
@@ -104,9 +124,11 @@ class EnsemblTranscriptQuerySet(PostgresQuerySet): # models.query.QuerySet
 
         return grouped_results
 
+
 class EnsemblTranscriptManager(PostgresManager):
     def get_queryset(self):
         return EnsemblTranscriptQuerySet(self.model, using=self._db)
+
 
 class EnsemblTranscript(PostgresModel):
     objects = EnsemblTranscriptManager()
@@ -132,10 +154,11 @@ class EnsemblTranscript(PostgresModel):
 
     def __str__(self):
         return "{0} - {1} ({2})".format(self.transcript_id, self.enst_id, self.gene)
-    
+
     class Meta:
         managed = False
         db_table = 'ensembl_transcript'
+
 
 class EnspUCigar(models.Model):
     alignment = models.OneToOneField('Alignment', primary_key=True, on_delete=CASCADE, related_name='pairwise')
@@ -149,7 +172,7 @@ class EnspUCigar(models.Model):
 
 class GeneHistory(PostgresModel):
     objects = PostgresManager()
-    
+
     ensembl_species_history = models.ForeignKey(EnsemblSpeciesHistory, models.DO_NOTHING, primary_key=True)
     gene = models.ForeignKey(EnsemblGene, models.DO_NOTHING)
 
@@ -158,9 +181,10 @@ class GeneHistory(PostgresModel):
         db_table = 'gene_history'
         unique_together = (('ensembl_species_history', 'gene'),)
 
+
 class TranscriptHistory(PostgresModel):
     objects = PostgresManager()
-    
+
     ensembl_species_history = models.ForeignKey(EnsemblSpeciesHistory, models.DO_NOTHING, primary_key=True)
     transcript = models.ForeignKey(EnsemblTranscript, models.DO_NOTHING)
     grouping_id = models.BigIntegerField(blank=True, null=True)
