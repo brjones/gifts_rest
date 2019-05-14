@@ -131,9 +131,8 @@ class LatestAlignmentsFetch(generics.ListAPIView):
 
         try:
             alignment_run = AlignmentRun.objects.filter(release_mapping_history__ensembl_species_history__assembly_accession__iexact=assembly_accession,
-                                                        score1_type=alignment_type).order_by('-time_run')[0]
+                                                        score1_type=alignment_type).latest('alignment_run_id')
         except (AlignmentRun.DoesNotExist, IndexError):
             raise Http404
 
-        return Alignment.objects.filter(alignment_run=alignment_run)
-
+        return Alignment.objects.filter(alignment_run=alignment_run).order_by('alignment_id')

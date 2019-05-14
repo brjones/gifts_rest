@@ -50,11 +50,15 @@ urlpatterns = [
          ensembl.EnsemblFeature.as_view()),
     path('ensembl/release/latest/assembly/<assembly_accession>/',                                   # fetch latest ensembl release (status load complete)
          ensembl.LatestEnsemblRelease.as_view()),
-    path('ensembl/species_history/<int:pk>/', ensembl.SpeciesHistory.as_view()),                    # fetch species history by ID
+    path('ensembl/species_history/<int:pk>/', ensembl.SpeciesHistory.as_view()),        # fetch species history by ID
+    path('ensembl/species_history/<int:pk>/alignment_status/<status>/',                 # update species history alignment status
+         ensembl.SpeciesHistoryAlignmentStatus.as_view()),
     path('ensembl/transcript/<int:pk>/', ensembl.Transcript.as_view()),                             # fetch transcript by ID
     path('ensembl/cigar/align_run/<int:run>/uniprot/<acc>/<int:seq_version>/transcript/<enst_id>/', # fetch alignment by align run/uniprot/transcript
          ensembl.EnspUCigarFetch.as_view()),
-    path('ensembl/cigar/', ensembl.EnspUCigarCreate.as_view()),                                     # insert cigar/mdz
+    path('ensembl/cigar/alignment/<int:pk>/',                                           # fetch/update cigar by alignment ID
+         ensembl.EnspUCigarFetchUpdateByAlignment.as_view()),
+    path('ensembl/cigar/', ensembl.EnspUCigarCreate.as_view()),                         # insert cigar/mdz
 
     path('mappings/release_history/latest/assembly/<assembly_accession>/',              # fetch latest release_mapping_history for a given assembly
          mappings.LatestReleaseMappingHistory.as_view()),
@@ -71,7 +75,10 @@ urlpatterns = [
          {'VIEW': mappings.MappingCommentsView.as_view()}),
     path('mapping/<int:pk>/status/', method_router,                                     # update mapping status
          {'VIEW': mappings.MappingStatusView.as_view()}),
+    path('mapping/<int:pk>/alignment_difference/<int:difference>/', method_router,      # update mapping alignment_difference
+         {'VIEW': mappings.MappingAlignmentDifference.as_view()}),
     path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),    # retrieve pairwise alignments for a mapping
+    # TODO?
     # path('mapping/<int:pk>/alignment_run/<alignment_run>/difference/')
     path('mapping/<int:pk>/', mappings.MappingDetailed.as_view()),                      # retrieve mapping and related entries
     path('mappings/', mappings.MappingViewsSearch.as_view()),                           # search the mappings (limit/offset paginated results)
