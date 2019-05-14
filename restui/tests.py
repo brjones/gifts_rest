@@ -33,7 +33,7 @@ class EnsemblTest(APITestCase):
         'cv_ue_status', 'mapping', 'ensembl_species_history',
         'release_mapping_history', 'alignment_run', 'alignment',
         'ensp_u_cigar', 'transcript_history', 'cv_entry_type',
-        'mapping_history'
+        'mapping_history', 'mapping_view', 'release_stats'
     ]
 
     # Test that data is present in the test db
@@ -257,6 +257,7 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['mapping_id'], 1)
 
+    ## This is a function that is not publically available
     # def test_mapping_status_request(self):
     #     client = APIClient()
     #     response = client.put(
@@ -272,13 +273,43 @@ class EnsemblTest(APITestCase):
     # /mappings #
     #############
 
-    # def test_mappings_request(self):
-    #     client = APIClient()
-    #     response = client.get('/mappings/')
-    #     print(response)
-    #     print(response.data)
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(response.data['enst_id'], '1')
+    def test_mappings_request(self):
+        client = APIClient()
+        response = client.get('/mappings/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+
+    def test_mappings_release_request(self):
+        client = APIClient()
+        response = client.get('/mappings/release/9606/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['ensembl'], 95)
+        self.assertEqual(response.data['uniprot'], '2019_05')
+
+    def test_mappings_release_history_latest_request(self):
+        client = APIClient()
+        response = client.get('/mappings/release_history/latest/assembly/GRCh38/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['status'], 'MAPPING_COMPLETED')
+
+    def test_mappings_release_history_request(self):
+        client = APIClient()
+        response = client.get('/mappings/release_history/1/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+
+    def test_mappings_stats_request(self):
+        client = APIClient()
+        response = client.get('/mappings/stats/9606/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(isinstance(response.data, dict), True)
+
+    def test_mappings_status_request(self):
+        client = APIClient()
+        response = client.get('/mappings/statuses/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data[0]['id'], 1)
+        self.assertEqual(response.data[0]['description'], 'testing')
 
     ############
     # /service #
