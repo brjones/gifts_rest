@@ -272,11 +272,11 @@ class EnsemblTest(APITestCase):
     # /mappings #
     #############
 
-    def test_mappings_request(self):
-        client = APIClient()
-        response = client.get('/mappings/')
-        print(response)
-        print(response.data)
+    # def test_mappings_request(self):
+    #     client = APIClient()
+    #     response = client.get('/mappings/')
+    #     print(response)
+    #     print(response.data)
     #     self.assertEqual(response.status_code, 200)
     #     self.assertEqual(response.data['enst_id'], '1')
 
@@ -334,6 +334,22 @@ class LibAlignment(APITestCase):
             pwaln['alignments'][0]['ensembl_alignment'][0:7],
             'MPIGSKE'
         )
+
+    def test_fetch_alignment(self):
+        mapping = Mapping.objects.prefetch_related(
+            'alignments'
+        ).select_related(
+            'transcript'
+        ).select_related(
+            'uniprot'
+        ).get(pk=1)
+
+        enst = mapping.transcript.enst_id
+        uniprot_id = mapping.uniprot.uniprot_acc
+        mapped_aln = mapping.alignments.all()
+
+        aln = alignments._fetch_alignment(mapped_aln[0], enst, uniprot_id)
+        self.assertEqual(aln['uniprot_alignment'][0:7], 'MPIGSKE')
 
     def test_calculate_difference(self):
         diff = alignments.calculate_difference('3M1I3M1D5M')
