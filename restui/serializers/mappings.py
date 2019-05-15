@@ -21,7 +21,8 @@ from rest_framework import serializers
 from django.http import Http404
 
 from restui.lib.external import ensembl_sequence
-from restui.models.annotations import CvEntryType, CvUeStatus
+from restui.models.annotations import CvEntryType
+from restui.models.annotations import CvUeStatus
 from restui.models.mappings import Mapping
 from restui.models.mappings import MappingView
 from restui.models.mappings import ReleaseMappingHistory
@@ -200,6 +201,7 @@ class MappingsSerializer(serializers.Serializer):
                 # TODO: log
                 print(e)
                 sequence = None
+
         mapping_obj = {
             'mappingId': mapping.mapping_id,
             'timeMapped': release_mapping_history.time_mapped,

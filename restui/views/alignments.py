@@ -26,7 +26,8 @@ from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.schemas import ManualSchema
 
-import coreapi, coreschema
+import coreapi
+import coreschema
 
 
 class AlignmentRunCreate(generics.CreateAPIView):
