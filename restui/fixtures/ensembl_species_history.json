@@ -8,7 +8,7 @@
             "ensembl_tax_id": "9606",
             "ensembl_release": "95",
             "status": "LOAD_COMPLETE",
-            "time_loaded": "2019-05-01 00:00:00",
+            "time_loaded": "2019-05-01T00:00:00Z",
             "alignment_status": "ALIGNMENT_COMPLETE"
         }
     }

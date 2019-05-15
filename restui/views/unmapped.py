@@ -222,8 +222,11 @@ class UnmappedEntries(APIView):
 
             see https://docs.djangoproject.com/en/1.11/ref/models/querysets/#django.db.models.query.QuerySet.union
             """
-            # release_unmapped_transcripts = release_transcripts.difference(release_mapped_transcripts)
-            release_unmapped_transcripts = release_transcripts.exclude(transcript_id__in=release_mapped_transcripts.values_list('transcript_id', flat=True))
+            release_unmapped_transcripts = EnsemblTranscript.objects.exclude(
+                transcript_id__in=release_mapped_transcripts.values_list(
+                    'transcript_id', flat=True
+                )
+            )
 
             page = self.paginate_queryset(release_unmapped_transcripts)
             if page is not None:

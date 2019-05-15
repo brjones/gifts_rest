@@ -25,6 +25,7 @@ from restui.models.mappings import Mapping
 from restui.lib import alignments
 from restui.lib import external
 from restui.views import mappings
+from restui.views import unmapped
 
 
 class EnsemblTest(APITestCase):
@@ -33,7 +34,8 @@ class EnsemblTest(APITestCase):
         'cv_ue_status', 'mapping', 'ensembl_species_history',
         'release_mapping_history', 'alignment_run', 'alignment',
         'ensp_u_cigar', 'transcript_history', 'cv_entry_type',
-        'mapping_history', 'mapping_view', 'release_stats'
+        'mapping_history', 'mapping_view', 'release_stats', 'cv_ue_label',
+        'aap_auth_aapuser', 'ue_mapping_label', 'ue_unmapped_entry_label'
     ]
 
     # Test that data is present in the test db
@@ -246,10 +248,13 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.data['mapping']['mappingId'], 1)
 
     def test_mapping_labels_request(self):
+        mapping = mappings.get_mapping(1)
+        mapped_label = mapping.labels.values_list('label', flat=True)[0]
+
         client = APIClient()
         response = client.get('/mapping/1/labels/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['labels'], [])
+        self.assertEqual(response.data['labels'][mapped_label-1]['status'], True)
 
     def test_mapping_pairwise_request(self):
         client = APIClient()
@@ -277,7 +282,7 @@ class EnsemblTest(APITestCase):
         client = APIClient()
         response = client.get('/mappings/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['count'], 2)
 
     def test_mappings_release_request(self):
         client = APIClient()
@@ -334,6 +339,34 @@ class EnsemblTest(APITestCase):
     #############
     # /unmapped #
     #############
+
+    def test_get_uniprot_entry(self):
+        uniprot_entry = unmapped.get_uniprot_entry(1)
+        self.assertEqual(uniprot_entry.uniprot_acc, "P51587")
+
+    def test_unmapped_request(self):
+        client = APIClient()
+        response = client.get('/unmapped/2/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['entry']['uniprot_acc'], "P54792")
+
+    def test_unmapped_labels_request(self):
+        uniprot_entry = unmapped.get_uniprot_entry(2)
+        mapped_label = uniprot_entry.labels.values_list('label', flat=True)[0]
+
+        client = APIClient()
+        response = client.get('/unmapped/2/labels/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data['labels'][mapped_label-1]['status'],
+            True
+        )
+
+    def test_unmapped_tax_source_request(self):
+        client = APIClient()
+        response = client.get('/unmapped/9606/ensembl/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['results'][0]['gene']['ensgName'], 'RAD1')
 
 
 class LibAlignment(APITestCase):

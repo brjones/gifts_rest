@@ -14,7 +14,7 @@
         "model": "restui.mapping",
         "pk": 2,
         "fields": {
-            "uniprot_id": "2",
+            "uniprot_id": "3",
             "transcript_id": "2",
             "alignment_difference": null,
             "status": "1",

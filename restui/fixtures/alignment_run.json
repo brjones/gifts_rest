@@ -4,7 +4,7 @@
         "pk": 1,
         "fields": {
             "userstamp": "test_userstamp",
-            "time_run": "2019-05-01 00:00:00",
+            "time_run": "2019-05-01T00:00:00Z",
             "score1_type": "perfect_match",
             "report_type": "sp mapping value",
             "pipeline_name": "test_loading",
