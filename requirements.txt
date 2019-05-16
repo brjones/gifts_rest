@@ -21,3 +21,5 @@ supervisor
 -e git+https://github.com/EMBL-EBI-TSI/aap-client-python.git#egg=aap-client-python
 mock
 coveralls
+testing.common.database
+testing.postgresql
