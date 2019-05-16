@@ -20,3 +20,4 @@ sam-alignment-reconstructor
 supervisor
 -e git+https://github.com/EMBL-EBI-TSI/aap-client-python.git#egg=aap-client-python
 mock
+coveralls
