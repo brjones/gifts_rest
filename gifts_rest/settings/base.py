@@ -135,18 +135,18 @@ if 'TRAVIS' in os.environ:
             # 'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'ENGINE': 'psqlextra.backend',
             'NAME': 'ensembl_gifts',
-            'USER': 'travis',
+            'USER': 'postgres',
             'PASSWORD': '',
-            'HOST': 'postgres',
-#            'PORT': '',
+            'HOST': 'localhost',
+            'PORT': '5433',
         },
         'gifts': {
             'ENGINE': 'psqlextra.backend',
             'NAME': 'ensembl_gifts',
-            'USER': 'travis',
+            'USER': 'postgres',
             'PASSWORD': '',
-            'HOST': 'postgres',
-#            'PORT': '',
+            'HOST': 'localhost',
+            'PORT': '5433',
         }
     }
 else:
