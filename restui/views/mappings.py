@@ -83,46 +83,46 @@ def get_mapping(pk):
         raise Http404
 
 
-def get_mapping_history(mapping):
-    """
-    A mapping can have multiple entries in mapping history and it is not clear
-    which one to go for.
+# def get_mapping_history(mapping):
+#     """
+#     A mapping can have multiple entries in mapping history and it is not clear
+#     which one to go for.
 
-    The assumption would be that when mapping is curated it is always related
-    to latest status
+#     The assumption would be that when mapping is curated it is always related
+#     to latest status
 
-    just pick latest mapping_history entry (the one with the highest id)
+#     just pick latest mapping_history entry (the one with the highest id)
 
-    """
-    try:
-        return MappingHistory.objects.filter(
-            mapping=mapping
-        ).order_by('-mapping_history_id')[0]
-    except MappingHistory.DoesNotExist:
-        raise Http404
-
-
-def get_status(mapping):
-    try:
-        mapping_status = Mapping.status_type(mapping.status)
-    except (IndexError, CvUeStatus.DoesNotExist):
-        # TODO: should log this anomaly or do something else
-        mapping_status = None
-
-    return mapping_status
+#     """
+#     try:
+#         return MappingHistory.objects.filter(
+#             mapping=mapping
+#         ).order_by('-mapping_history_id')[0]
+#     except MappingHistory.DoesNotExist:
+#         raise Http404
 
 
-def get_label(label):
-    """
-    Retrieve the label object associated to the given description
-    """
+# def get_status(mapping):
+#     try:
+#         mapping_status = Mapping.status_type(mapping.status)
+#     except (IndexError, CvUeStatus.DoesNotExist):
+#         # TODO: should log this anomaly or do something else
+#         mapping_status = None
 
-    try:
-        return CvUeLabel.objects.get(description=label)
-    except CvUeLabel.DoesNotExist:
-        raise Http404("Couldn't get label object for {}".format(label))
-    except MultipleObjectsReturned:
-        raise Http404("Couldn't get unique label object for {}".format(label))
+#     return mapping_status
+
+
+# def get_label(label):
+#     """
+#     Retrieve the label object associated to the given description
+#     """
+
+#     try:
+#         return CvUeLabel.objects.get(description=label)
+#     except CvUeLabel.DoesNotExist:
+#         raise Http404("Couldn't get label object for {}".format(label))
+#     except MultipleObjectsReturned:
+#         raise Http404("Couldn't get unique label object for {}".format(label))
 
 
 def build_taxonomy_data(mapping):

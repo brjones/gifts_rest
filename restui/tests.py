@@ -15,8 +15,12 @@
    limitations under the License.
 """
 
+import mock
+
 from rest_framework.test import APIClient
 from rest_framework.test import APITestCase
+
+from django.http import Http404
 
 from restui.models.ensembl import EnsemblGene
 from restui.models.ensembl import EnsemblTranscript
@@ -229,8 +233,18 @@ class EnsemblTest(APITestCase):
     ############
 
     def test_mapping_functions(self):
+        with self.assertRaises(Http404):
+            mapping = mappings.get_mapping(99)
+
         mapping = mappings.get_mapping(1)
         self.assertEqual(mapping.transcript.gene.gene_name, 'BRCA2')
+
+        with self.assertRaises(Http404):
+            mock_mapping = mock.Mock(spec=Mapping)
+            mock_mapping.transcript = 99
+            tax = mappings.build_taxonomy_data(
+                mock_mapping
+            )
 
         tax = mappings.build_taxonomy_data(mapping)
         self.assertEqual(tax['ensemblTaxId'], 9606)
