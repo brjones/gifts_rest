@@ -241,6 +241,8 @@ class EnsemblTest(APITestCase):
         unrelated_mappings = mappings.build_related_unmapped_entries_data(mapping)
         self.assertEqual(unrelated_mappings['ensembl'][0]['transcript_id'], 1)
 
+
+
     def test_mapping_request(self):
         client = APIClient()
         response = client.get('/mapping/1/')

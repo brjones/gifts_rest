@@ -144,7 +144,8 @@ class MappingHistorySerializer(serializers.ModelSerializer):
 
 class ReleaseMappingHistorySerializer(serializers.ModelSerializer):
     """
-    Serializers for ReleaseMappingHistory instances, includes nested ensembl species history
+    Serializers for ReleaseMappingHistory instances, includes nested ensembl
+    species history
     """
     # mapping_history = MappingHistorySerializer(many=True)
     ensembl_species_history = SpeciesHistorySerializer()
