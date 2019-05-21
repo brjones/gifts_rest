@@ -172,7 +172,7 @@ class UnmappedEntries(APIView):
             )
             # release_unmapped_sp_entries = release_uniprot_entries.exclude(uniprot_id__in=release_mapped_uniprot_entries.values_list('uniprot_id',flat=True))
 
-            data=list(
+            data = list(
                 map(
                     lambda ue: {
                         'uniprotAccession': ue.uniprot_acc,
