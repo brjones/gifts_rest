@@ -149,32 +149,47 @@ def build_taxonomy_data(mapping):
             'uniprotTaxId': mapping.uniprot.uniprot_tax_id
         }
     except:
-        raise Http404("Couldn't find uniprot tax id as I couldn't find a uniprot entry associated to the mapping")
+        raise Http404(
+            "Couldn't find uniprot tax id as I couldn't find a uniprot entry associated to the mapping")
 
 
 def build_related_mappings_data(mapping):
     """
-    Return the list of mappings sharing the same ENST or Uniprot accession of the given mapping.
+    Return the list of mappings sharing the same ENST or Uniprot accession of
+    the given mapping.
+
+    Parameters
+    ----------
+    mapping : Mapping object
+
+    Returns
+    -------
+    list
+        List of objects that are related to the same mapping group
     """
 
     # related mappings share the same group_id and tax id
-    mapping_mh = mapping.mapping_history.latest('release_mapping_history__time_mapped')
+    mapping_mh = mapping.mapping_history.latest(
+        'release_mapping_history__time_mapped'
+    )
+
     mapping_mh_rmh = mapping_mh.release_mapping_history
     mapping_grouping_id = mapping_mh.grouping_id
 
     related_mappings_mh = MappingHistory.objects.filter(
-      release_mapping_history=mapping_mh_rmh,
-      grouping_id=mapping_grouping_id
+        release_mapping_history=mapping_mh_rmh,
+        grouping_id=mapping_grouping_id
     )
 
-    related_mappings = filter(
-        lambda m: m.mapping_id != mapping.mapping_id,
-        (mh.mapping for mh in related_mappings_mh)
-    )
+    related_mappings = []
+    for mh in related_mappings_mh:
+        m = mh.mapping
+        if m.mapping_id != mapping.mapping_id:
+            related_mappings.append(
+                MappingsSerializer.build_mapping(m, fetch_sequence=False)
+            )
 
-    # mappings = Mapping.objects.filter(mapping_history__grouping_id=mapping.mapping_history.latest('release_mapping_history__time_mapped').grouping_id, uniprot__uniprot_tax_id=mapping.uniprot.uniprot_tax_id).exclude(pk=mapping.mapping_id)
-
-    return list(map(lambda m: MappingsSerializer.build_mapping(m, fetch_sequence=False), related_mappings))
+    return related_mappings
 
 
 def build_related_unmapped_entries_data(mapping):
@@ -192,8 +207,10 @@ def build_related_unmapped_entries_data(mapping):
         grouping_id=mapping_grouping_id
     )
 
-    related_unmapped_ue_entries = map(
-        lambda ue: {
+    related_unmapped_ue_entries = []
+    for ueh in related_unmapped_ue_histories:
+        ue = ueh.uniprot
+        related_unmapped_ue_entries.append({
             'uniprot_id':ue.uniprot_id,
             'uniprotAccession': ue.uniprot_acc,
             'entryType': Mapping.entry_type(ue.entry_type_id),
@@ -207,19 +224,18 @@ def build_related_unmapped_entries_data(mapping):
             'gene_accession': ue.chromosome_line,
             'length': ue.length,
             'protein_existence_id': ue.protein_existence_id
-        }, (
-            ueh.uniprot for ueh in related_unmapped_ue_histories
-        )
-    )
+        })
 
     related_unmapped_transcript_histories = TranscriptHistory.objects.filter(
         ensembl_species_history=mapping_mh_rmh.ensembl_species_history,
         grouping_id=mapping_grouping_id
     )
 
-    related_unmapped_transcripts = map(
-        lambda transcript: {
-            'transcript_id':transcript.transcript_id,
+    related_unmapped_transcripts = []
+    for th in related_unmapped_transcript_histories:
+        transcript = th.transcript
+        related_unmapped_transcripts.append({
+            'transcript_id': transcript.transcript_id,
             'enstId': transcript.enst_id,
             'enstVersion': transcript.enst_version,
             'upi': transcript.uniparc_accession,
@@ -240,10 +256,7 @@ def build_related_unmapped_entries_data(mapping):
             'enspLen': transcript.ensp_len,
             'source': transcript.source,
             'select': transcript.select
-        }, (
-            th.transcript for th in related_unmapped_transcript_histories
-        )
-    )
+        })
 
     return {
         'ensembl': list(related_unmapped_transcripts),
