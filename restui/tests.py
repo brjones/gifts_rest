@@ -21,10 +21,16 @@ from rest_framework.test import APIClient
 from rest_framework.test import APITestCase
 
 from django.http import Http404
+from django.db import connection
 
 from restui.models.ensembl import EnsemblGene
 from restui.models.ensembl import EnsemblTranscript
+from restui.models.ensembl import EnsemblSpeciesHistory
+from restui.models.ensembl import TranscriptHistory
+from restui.models.ensembl import EnspUCigar
 from restui.models.mappings import Mapping
+from restui.models.mappings import MappingView
+from restui.models.mappings import MappingHistory
 
 from restui.lib import alignments
 from restui.lib import external
@@ -38,7 +44,7 @@ class EnsemblTest(APITestCase):
         'cv_ue_status', 'mapping', 'ensembl_species_history',
         'release_mapping_history', 'alignment_run', 'alignment',
         'ensp_u_cigar', 'transcript_history', 'cv_entry_type',
-        'mapping_history', 'mapping_view', 'release_stats', 'cv_ue_label',
+        'mapping_view', 'mapping_history', 'release_stats', 'cv_ue_label',
         'aap_auth_aapuser', 'ue_mapping_label', 'ue_unmapped_entry_label'
     ]
 
@@ -49,8 +55,43 @@ class EnsemblTest(APITestCase):
         self.assertEqual(gene[0]['gene_name'], 'RAD1')
 
     def test_ensembltranscript_request(self):
-        transcript = EnsemblTranscript.objects.filter(pk=1).values()
+        transcript = EnsemblTranscript.objects.filter(pk=2).values()
         self.assertEqual(transcript[0]['gene_id'], 1)
+
+    def test_ensembl_species_history_request(self):
+        mapping = mappings.get_mapping(1)
+        ensembl_species_history = EnsemblSpeciesHistory.objects.filter(
+            transcripthistory__transcript=mapping.transcript
+        ).latest('time_loaded')
+        self.assertEqual(ensembl_species_history.assembly_accession, 'GRCh37')
+
+        mapping = mappings.get_mapping(2)
+        ensembl_species_history = EnsemblSpeciesHistory.objects.filter(
+            transcripthistory__transcript=mapping.transcript
+        ).latest('time_loaded')
+        self.assertEqual(ensembl_species_history.assembly_accession, 'GRCh38')
+
+        mapping = mappings.get_mapping(3)
+        ensembl_species_history = EnsemblSpeciesHistory.objects.filter(
+            transcripthistory__transcript=mapping.transcript
+        ).latest('time_loaded')
+        self.assertEqual(ensembl_species_history.assembly_accession, 'GRCh38')
+
+        mapping = mappings.get_mapping(4)
+        ensembl_species_history = EnsemblSpeciesHistory.objects.filter(
+            transcripthistory__transcript=mapping.transcript
+        ).latest('time_loaded')
+        self.assertEqual(ensembl_species_history.assembly_accession, 'GRCh38')
+
+        mock_mapping = mock.Mock(spec=Mapping)
+        mock_mapping.transcript = 2
+
+        ensembl_species_history = EnsemblSpeciesHistory.objects.filter(
+            transcripthistory__transcript=mock_mapping.transcript
+        ).latest('time_loaded')
+        self.assertEqual(ensembl_species_history.assembly_accession, 'GRCh38')
+
+
 
     ###############
     # /alignments #
@@ -72,7 +113,7 @@ class EnsemblTest(APITestCase):
         client = APIClient()
         response = client.get('/alignments/alignment/latest/assembly/GRCh38/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['results'][0]['alignment_id'], 1)
+        self.assertEqual(response.data['results'][0]['alignment_id'], 2)
 
     def test_alignment_run_request(self):
         client = APIClient()
@@ -102,7 +143,7 @@ class EnsemblTest(APITestCase):
             }
         )
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.data['alignment_run_id'], 2)
+        self.assertEqual(response.data['alignment_run_id'], 3)
 
         client = APIClient()
         response = client.post(
@@ -113,13 +154,13 @@ class EnsemblTest(APITestCase):
                 'report': 'Alignment',
                 'is_current': True,
                 'score2': 1,
-                'alignment_run': 2,
+                'alignment_run': 3,
                 'transcript': 2,
                 'mapping': 2
             }
         )
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.data['alignment_id'], 2)
+        self.assertEqual(response.data['alignment_id'], 4)
 
     ############
     # /ensembl #
@@ -178,10 +219,10 @@ class EnsemblTest(APITestCase):
     def test_cigar_align_run_request(self):
         client = APIClient()
         response = client.get(
-            '/ensembl/cigar/align_run/1/uniprot/P51587/1/transcript/ENST00000380152.7/'
+            '/ensembl/cigar/align_run/2/uniprot/P51587/1/transcript/ENST00000380152.7/'
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['alignment'], 1)
+        self.assertEqual(response.data['alignment'], 3)
 
     def test_cigar_alignment_get_request(self):
         client = APIClient()
@@ -217,14 +258,14 @@ class EnsemblTest(APITestCase):
 
     def test_spp_history_request(self):
         client = APIClient()
-        response = client.get('/ensembl/species_history/1/')
+        response = client.get('/ensembl/species_history/2/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['assembly_accession'], 'GRCh38')
         self.assertEqual(response.data['alignment_status'], 'ALIGNMENT_COMPLETE')
 
     def test_transcript_request(self):
         client = APIClient()
-        response = client.get('/ensembl/transcript/1/')
+        response = client.get('/ensembl/transcript/2/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['enst_id'], 'ENST00000380152.7')
 
@@ -236,8 +277,9 @@ class EnsemblTest(APITestCase):
         with self.assertRaises(Http404):
             mapping = mappings.get_mapping(99)
 
-        mapping = mappings.get_mapping(1)
+        mapping = mappings.get_mapping(3)
         self.assertEqual(mapping.transcript.gene.gene_name, 'BRCA2')
+        self.assertEqual(mapping.uniprot.uniprot_acc, 'P51587')
 
         with self.assertRaises(Http404):
             mock_mapping = mock.Mock(spec=Mapping)
@@ -250,12 +292,27 @@ class EnsemblTest(APITestCase):
         self.assertEqual(tax['ensemblTaxId'], 9606)
 
         related_mappings = mappings.build_related_mappings_data(mapping),
-        self.assertEqual(related_mappings[0], [])
+        self.assertEqual(related_mappings[0][0]['mappingId'], 4)
+        self.assertEqual(
+            related_mappings[0][0]['ensemblTranscript']['ensgId'],
+            'ENSG00000139618'
+        )
+        self.assertEqual(
+            related_mappings[0][0]['ensemblTranscript']['ensgName'],
+            'BRCA2'
+        )
+        self.assertEqual(
+            related_mappings[0][0]['ensemblTranscript']['enstId'],
+            'ENST00000380152.7'
+        )
+        self.assertEqual(
+            related_mappings[0][0]['uniprotEntry']['uniprotAccession'],
+            'O60671'
+        )
 
         unrelated_mappings = mappings.build_related_unmapped_entries_data(mapping)
-        self.assertEqual(unrelated_mappings['ensembl'][0]['transcript_id'], 1)
-
-
+        print("\nUNRELATED MAPPINGS:", unrelated_mappings)
+        self.assertEqual(unrelated_mappings['ensembl'], [])
 
     def test_mapping_request(self):
         client = APIClient()
@@ -298,7 +355,7 @@ class EnsemblTest(APITestCase):
         client = APIClient()
         response = client.get('/mappings/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['count'], 2)
+        self.assertEqual(response.data['count'], 3)
 
     def test_mappings_release_request(self):
         client = APIClient()
@@ -314,6 +371,9 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.data['status'], 'MAPPING_COMPLETED')
 
     def test_mappings_release_history_request(self):
+        """
+        This raises an UnorderedObjectListWarning
+        """
         client = APIClient()
         response = client.get('/mappings/release_history/1/')
         self.assertEqual(response.status_code, 200)
@@ -367,11 +427,11 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.data['entry']['uniprot_acc'], "P54792")
 
     def test_unmapped_labels_request(self):
-        uniprot_entry = unmapped.get_uniprot_entry(2)
+        uniprot_entry = unmapped.get_uniprot_entry(4)
         mapped_label = uniprot_entry.labels.values_list('label', flat=True)[0]
 
         client = APIClient()
-        response = client.get('/unmapped/2/labels/')
+        response = client.get('/unmapped/4/labels/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.data['labels'][mapped_label-1]['status'],
@@ -382,7 +442,10 @@ class EnsemblTest(APITestCase):
         client = APIClient()
         response = client.get('/unmapped/9606/ensembl/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['results'][0]['gene']['ensgName'], 'RAD1')
+        self.assertEqual(
+            response.data['results'][0]['transcripts'][0]['enstId'],
+            'ENST00000544455.5'
+        )
 
 
 class LibAlignment(APITestCase):
@@ -402,7 +465,7 @@ class LibAlignment(APITestCase):
             'transcript'
         ).select_related(
             'uniprot'
-        ).get(pk=1)
+        ).get(pk=3)
 
         pwaln = alignments.fetch_pairwise(mapping)
 
@@ -422,7 +485,7 @@ class LibAlignment(APITestCase):
             'transcript'
         ).select_related(
             'uniprot'
-        ).get(pk=1)
+        ).get(pk=3)
 
         enst = mapping.transcript.enst_id
         uniprot_id = mapping.uniprot.uniprot_acc

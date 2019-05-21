@@ -53,6 +53,5 @@ MIGRATION_MODULES = {
     'aap_auth': None
 }
 
-
 # Set Django's test runner to the custom class defined above
 TEST_RUNNER = 'gifts_rest.settings.test.UnManagedModelTestRunner'
