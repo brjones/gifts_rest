@@ -506,6 +506,73 @@ class MappingViewManager(models.Manager):
         return MappingViewQuerySet(self.model, using=self._db)
 
 
+#######################################################################################
+
+class ReleaseMappingHistory(models.Model):
+    release_mapping_history_id = models.BigAutoField(primary_key=True)
+
+    ensembl_species_history = models.ForeignKey(
+        'EnsemblSpeciesHistory',
+        models.DO_NOTHING,
+        related_name='release_mapping_history',
+        blank=True,
+        null=True
+    )
+
+    time_mapped = models.DateTimeField()
+    uniprot_release = models.CharField(max_length=7, blank=True, null=True)
+    uniprot_taxid = models.BigIntegerField(blank=True, null=True)
+    status = models.CharField(max_length=20, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'release_mapping_history'
+
+
+class MappingHistory(models.Model):
+
+    mapping_history_id = models.BigAutoField(primary_key=True)
+
+    release_mapping_history = models.ForeignKey(
+        'ReleaseMappingHistory',
+        models.DO_NOTHING,
+        related_name='mapping_history'
+    )
+
+    sequence_version = models.SmallIntegerField()
+
+    entry_type = models.ForeignKey(
+        'CvEntryType',
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        db_column="entry_type"
+    )
+
+    entry_version = models.IntegerField()
+    enst_version = models.SmallIntegerField()
+
+    mapping = models.ForeignKey(
+        Mapping,
+        models.DO_NOTHING,
+        related_name='mapping_history'
+    )
+
+    sp_ensembl_mapping_type = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True
+    )
+
+    grouping_id = models.BigIntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'mapping_history'
+
+
+#######################################################################################
+
 class MappingView(models.Model):
     """
     Model of the denormalised table for mappings
@@ -548,8 +615,10 @@ class MappingView(models.Model):
     ensp_id = models.CharField(max_length=30, blank=True, null=True)
     ensp_len = models.IntegerField(blank=True, null=True)
     source = models.CharField(max_length=30, blank=True, null=True)
+
     mapping_history_id = models.BigIntegerField(blank=True, null=True)
     release_mapping_history_id = models.BigIntegerField(blank=True, null=True)
+
     entry_version = models.IntegerField(blank=True, null=True)
     sp_ensembl_mapping_type = models.CharField(max_length=50, blank=True, null=True)
     grouping_id = models.BigIntegerField(blank=True, null=True)
@@ -657,69 +726,6 @@ class MappingView(models.Model):
 
 
 #######################################################################################
-
-class MappingHistory(models.Model):
-
-    mapping_history_id = models.BigAutoField(primary_key=True)
-
-    release_mapping_history = models.ForeignKey(
-        'ReleaseMappingHistory',
-        models.DO_NOTHING,
-        related_name='mapping_history'
-    )
-
-    sequence_version = models.SmallIntegerField()
-
-    entry_type = models.ForeignKey(
-        'CvEntryType',
-        models.DO_NOTHING,
-        blank=True,
-        null=True,
-        db_column="entry_type"
-    )
-
-    entry_version = models.IntegerField()
-    enst_version = models.SmallIntegerField()
-
-    mapping = models.ForeignKey(
-        Mapping,
-        models.DO_NOTHING,
-        related_name='mapping_history'
-    )
-
-    sp_ensembl_mapping_type = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True
-    )
-
-    grouping_id = models.BigIntegerField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'mapping_history'
-
-
-class ReleaseMappingHistory(models.Model):
-    release_mapping_history_id = models.BigAutoField(primary_key=True)
-
-    ensembl_species_history = models.ForeignKey(
-        'EnsemblSpeciesHistory',
-        models.DO_NOTHING,
-        related_name='release_mapping_history',
-        blank=True,
-        null=True
-    )
-
-    time_mapped = models.DateTimeField()
-    uniprot_release = models.CharField(max_length=7, blank=True, null=True)
-    uniprot_taxid = models.BigIntegerField(blank=True, null=True)
-    status = models.CharField(max_length=20, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'release_mapping_history'
-
 
 class ReleaseStats(models.Model):
 
