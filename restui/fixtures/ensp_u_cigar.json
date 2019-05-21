@@ -6,5 +6,15 @@
             "cigarplus": "282=13D5X2=8D1X1=1X1=1X1=2X12D2X1=6X2=3X4I",
             "mdz": "MD:Z:282^LDEALLRHLRLSP0S0Q0V0A0Q2^LHLHLHRL0L1P1T1S0R0^DPPSELLAPLPP0Y0F1R0T0L0Q0C0L2S0Q0Q"
         }
+    },
+    {
+        "model": "restui.enspucigar",
+        "pk": 2,
+        "fields": {
+            "alignment": "3",
+
+            "cigarplus": "282=13D5X2=8D1X1=1X1=1X1=2X12D2X1=6X2=3X4I",
+            "mdz": "MD:Z:282^LDEALLRHLRLSP0S0Q0V0A0Q2^LHLHLHRL0L1P1T1S0R0^DPPSELLAPLPP0Y0F1R0T0L0Q0C0L2S0Q0Q"
+        }
     }
 ]

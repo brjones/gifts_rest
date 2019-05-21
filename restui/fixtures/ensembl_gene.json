@@ -3,7 +3,7 @@
         "model": "restui.ensemblgene",
         "pk": 1,
         "fields": {
-            "ensg_id": "1",
+            "ensg_id": "ENSG00000139618",
             "gene_name": "BRCA2",
             "chromosome": "1",
             "region_accession": null,
@@ -13,7 +13,7 @@
             "seq_region_end": "10000",
             "seq_region_strand": "1",
             "biotype": "protein_coding",
-            "time_loaded": null,
+            "time_loaded": "2012-01-01T00:00:00Z",
             "gene_symbol": null,
             "gene_accession": null,
             "source": null
@@ -23,8 +23,28 @@
         "model": "restui.ensemblgene",
         "pk": 2,
         "fields": {
-            "ensg_id": "2",
+            "ensg_id": "ENSG00000113456",
             "gene_name": "RAD1",
+            "chromosome": "1",
+            "region_accession": null,
+            "mod_id": null,
+            "deleted": null,
+            "seq_region_start": "20000",
+            "seq_region_end": "30000",
+            "seq_region_strand": "-1",
+            "biotype": "protein_coding",
+            "time_loaded": null,
+            "gene_symbol": null,
+            "gene_accession": null,
+            "source": null
+        }
+    },
+    {
+        "model": "restui.ensemblgene",
+        "pk": 3,
+        "fields": {
+            "ensg_id": "ENSG0003.1",
+            "gene_name": "NOM8",
             "chromosome": "1",
             "region_accession": null,
             "mod_id": null,

@@ -52,5 +52,23 @@
             "gene_symbol": null,
             "chromosome_line": null
         }
+    },
+    {
+        "model": "restui.uniprotentry",
+        "pk": 4,
+        "fields": {
+            "uniprot_acc": "PUNM4P",
+            "uniprot_tax_id": null,
+            "userstamp": null,
+            "timestamp": null,
+            "sequence_version": 1,
+            "upi": null,
+            "md5": null,
+            "canonical_uniprot_id": null,
+            "ensembl_derived": null,
+            "alias": null,
+            "gene_symbol": null,
+            "chromosome_line": null
+        }
     }
 ]

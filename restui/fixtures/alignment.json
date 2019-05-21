@@ -12,5 +12,33 @@
             "transcript": "1",
             "mapping": "1"
         }
+    },
+    {
+        "model": "restui.alignment",
+        "pk": 2,
+        "fields": {
+            "uniprot_id": "3",
+            "score1": "1",
+            "report": "Alignment",
+            "is_current": null,
+            "score2": "1",
+            "alignment_run": "2",
+            "transcript": "3",
+            "mapping": "2"
+        }
+    },
+    {
+        "model": "restui.alignment",
+        "pk": 3,
+        "fields": {
+            "uniprot_id": "1",
+            "score1": "1",
+            "report": "Alignment",
+            "is_current": null,
+            "score2": "1",
+            "alignment_run": "2",
+            "transcript": "2",
+            "mapping": "3"
+        }
     }
 ]

@@ -3,7 +3,26 @@
         "model": "restui.transcripthistory",
         "pk": 1,
         "fields": {
+            "ensembl_species_history": 1,
             "transcript_id": 1,
+            "grouping_id": null
+        }
+    },
+    {
+        "model": "restui.transcripthistory",
+        "pk": 2,
+        "fields": {
+            "ensembl_species_history": 2,
+            "transcript_id": 2,
+            "grouping_id": null
+        }
+    },
+    {
+        "model": "restui.transcripthistory",
+        "pk": 3,
+        "fields": {
+            "ensembl_species_history": 2,
+            "transcript_id": 3,
             "grouping_id": null
         }
     }
