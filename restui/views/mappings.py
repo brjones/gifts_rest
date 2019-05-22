@@ -259,8 +259,8 @@ def build_related_unmapped_entries_data(mapping):
         })
 
     return {
-        'ensembl': list(related_unmapped_transcripts),
-        'uniprot': list(related_unmapped_ue_entries)
+        'ensembl': related_unmapped_transcripts,
+        'uniprot': related_unmapped_ue_entries
     }
 
 
@@ -609,7 +609,7 @@ class EditDeleteCommentView(APIView):
             comment = mapping.comments.get(id=comment_id)
         except:
             return Response(
-                "Invalid comment ID: {}".format(comment_id),
+                {"error": "Invalid comment ID: {}".format(comment_id)},
                 status=status.HTTP_400_BAD_REQUEST
             )
         else:
