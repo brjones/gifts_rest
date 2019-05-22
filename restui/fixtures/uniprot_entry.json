@@ -14,7 +14,10 @@
             "ensembl_derived": null,
             "alias": null,
             "gene_symbol": null,
-            "chromosome_line": null
+            "chromosome_line": null,
+            "entry_type": 2,
+            "length": null,
+            "protein_existence_id": null
         }
     },
     {
@@ -32,7 +35,10 @@
             "ensembl_derived": null,
             "alias": null,
             "gene_symbol": null,
-            "chromosome_line": null
+            "chromosome_line": null,
+            "entry_type": 2,
+            "length": null,
+            "protein_existence_id": null
         }
     },
     {
@@ -50,7 +56,10 @@
             "ensembl_derived": null,
             "alias": null,
             "gene_symbol": null,
-            "chromosome_line": null
+            "chromosome_line": null,
+            "entry_type": 2,
+            "length": null,
+            "protein_existence_id": null
         }
     },
     {
@@ -68,7 +77,10 @@
             "ensembl_derived": null,
             "alias": null,
             "gene_symbol": null,
-            "chromosome_line": null
+            "chromosome_line": null,
+            "entry_type": 2,
+            "length": null,
+            "protein_existence_id": null
         }
     }
 ]

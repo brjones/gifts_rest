@@ -5,5 +5,12 @@
         "fields": {
             "description": "Test entry type"
         }
+    },
+    {
+        "model": "restui.cventrytype",
+        "pk": 2,
+        "fields": {
+            "description": "UniProt entry type"
+        }
     }
 ]

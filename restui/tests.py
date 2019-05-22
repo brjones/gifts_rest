@@ -21,16 +21,13 @@ from rest_framework.test import APIClient
 from rest_framework.test import APITestCase
 
 from django.http import Http404
-from django.db import connection
+# from django.db import connection
 
+from aap_auth.models import AAPUser
 from restui.models.ensembl import EnsemblGene
 from restui.models.ensembl import EnsemblTranscript
 from restui.models.ensembl import EnsemblSpeciesHistory
-from restui.models.ensembl import TranscriptHistory
-from restui.models.ensembl import EnspUCigar
 from restui.models.mappings import Mapping
-from restui.models.mappings import MappingView
-from restui.models.mappings import MappingHistory
 
 from restui.lib import alignments
 from restui.lib import external
@@ -45,7 +42,8 @@ class EnsemblTest(APITestCase):
         'release_mapping_history', 'alignment_run', 'alignment',
         'ensp_u_cigar', 'transcript_history', 'cv_entry_type',
         'mapping_view', 'mapping_history', 'release_stats', 'cv_ue_label',
-        'aap_auth_aapuser', 'ue_mapping_label', 'ue_unmapped_entry_label'
+        'aapuser', 'ue_mapping_label', 'ue_unmapped_entry_label',
+        'uniprot_entry_history'
     ]
 
     # Test that data is present in the test db
@@ -311,8 +309,8 @@ class EnsemblTest(APITestCase):
         )
 
         unrelated_mappings = mappings.build_related_unmapped_entries_data(mapping)
-        print("\nUNRELATED MAPPINGS:", unrelated_mappings)
         self.assertEqual(unrelated_mappings['ensembl'], [])
+        self.assertEqual(len(unrelated_mappings['uniprot']), 3)
 
     def test_mapping_request(self):
         client = APIClient()
@@ -334,6 +332,104 @@ class EnsemblTest(APITestCase):
         response = client.get('/mapping/1/pairwise/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['mapping_id'], 1)
+
+    def test_mapping_comment_requests(self):
+        client = APIClient()
+        # client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+        # client.credentials(HTTP_AUTHORIZATION='Token testtesttest123')
+
+        # client.login(username='testtesttest123', password='check')
+
+        # client.session.auth = HTTPBasicAuth('testtesttest123', 'check')
+
+        # print("\nUSERS:", AAPUser.objects.all().values())
+        # user = AAPUser.objects.filter(elixir_id='testtesttest123')
+        # print("\nUSER:", user)
+        # client.force_authenticate(user=user)
+        # print("\nFORCE AUTH")
+
+        # View comment - mappings.MappingCommentsView
+        response = client.get('/mapping/1/comments/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['comments'], [])
+
+        # Add a comment - mappings.MappingCommentsView
+        response = client.post(
+            '/mapping/1/comments/',
+            data={
+                'text': 'This is a test comment'
+            }
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['id'], 1)
+
+        # View a comment
+        response = client.get('/mapping/1/comments/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['comments'][0]['text'], 'This is a test comment')
+        self.assertEqual(response.data['comments'][0]['user'], 'Zapp Brannigan')
+
+        # Edit a comment - mappings.EditDeleteCommentView
+        response = client.put(
+            '/mapping/1/comments/1/',
+            data={
+                'text': 'This is a changed comment'
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['commentId'], 1)
+
+        # View a comment
+        response = client.get('/mapping/1/comments/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data['comments'][0]['text'],
+            'This is a changed comment'
+        )
+        self.assertEqual(
+            response.data['comments'][0]['user'],
+            'Zapp Brannigan'
+        )
+
+        response = client.put(
+            '/mapping/1/comments/1/',
+            data={}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], 'Text not specified')
+
+        response = client.put(
+            '/mapping/1/comments/99/',
+            data={
+                'text': 'Editing a non-existent comment'
+            }
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], 'Invalid comment ID: 99')
+
+        # Delete a comment - mappings.EditDeleteCommentView
+        response = client.delete('/mapping/1/comments/1/')
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.data, None)
+
+        response = client.delete('/mapping/1/comments/99/')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], 'Invalid comment ID: 99')
+
+        # View comment - mappings.MappingCommentsView
+        response = client.get('/mapping/1/comments/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['comments'], [])
+
+        # Edit a deleted comment - mappings.EditDeleteCommentView
+        response = client.put(
+            '/mapping/1/comments/1/',
+            data={
+                'text': 'This is not possible'
+            }
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], 'Cannot edit deleted comment')
 
     ## This is a function that is not publically available
     # def test_mapping_status_request(self):
@@ -446,6 +542,16 @@ class EnsemblTest(APITestCase):
             response.data['results'][0]['transcripts'][0]['enstId'],
             'ENST00000544455.5'
         )
+
+    def test_unmapped_comment_lifecycle(self):
+        client = APIClient()
+        response = client.post(
+            '/mapping/2/comments',
+            data={
+                'text': 'This is a test comment for the mapping',
+            }
+        )
+
 
 
 class LibAlignment(APITestCase):
