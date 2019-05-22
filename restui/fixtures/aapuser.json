@@ -3,12 +3,12 @@
         "model": "aap_auth.AAPUser",
         "pk": 1,
         "fields": {
-            "password": "",
+            "password": "check",
             "last_login": null,
             "elixir_id": "testtesttest123",
             "full_name": "Travis Test",
             "email": "tt@gifts.ens",
-            "is_admin": false,
+            "is_admin": true,
             "validated": true
         }
     }
