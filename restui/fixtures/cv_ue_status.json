@@ -3,7 +3,7 @@
         "model": "restui.CvUeStatus",
         "pk": 1,
         "fields": {
-            "description": "testing"
+            "description": "TESTING"
         }
     }
 ]

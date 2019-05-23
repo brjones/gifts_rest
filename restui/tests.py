@@ -319,13 +319,36 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.data['mapping']['mappingId'], 1)
 
     def test_mapping_labels_request(self):
+        client = APIClient()
+
         mapping = mappings.get_mapping(1)
         mapped_label = mapping.labels.values_list('label', flat=True)[0]
 
-        client = APIClient()
+        # View labels
         response = client.get('/mapping/1/labels/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['labels'][mapped_label-1]['status'], True)
+
+        # Add label - mappings.MappingLabelView
+        response = client.post('/mapping/1/labels/4/')
+        self.assertEqual(response.status_code, 204)
+
+        response = client.get('/mapping/1/labels/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['labels'][mapped_label-1]['status'], True)
+        self.assertEqual(response.data['labels'][3]['status'], True)
+
+        # Delete label - mappings.MappingLabelView
+        response = client.delete('/mapping/1/labels/4/')
+        self.assertEqual(response.status_code, 204)
+
+        response = client.get('/mapping/1/labels/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['labels'][3]['status'], False)
+
+        # Try to delete previsouly deleted label - mappings.MappingLabelView
+        response = client.delete('/mapping/1/labels/4/')
+        self.assertEqual(response.status_code, 404)
 
     def test_mapping_pairwise_request(self):
         client = APIClient()
@@ -453,6 +476,68 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['count'], 3)
 
+        # Search Terms - mappings.MappingViewsSearch
+        response = client.get('/mappings/?searchTerm=ENSG00000139618')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+
+        response = client.get('/mappings/?searchTerm=ENST00000380152.7')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+
+        response = client.get('/mappings/?searchTerm=P51587')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+
+        response = client.get('/mappings/?searchTerm=BRCA2')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+
+        # Facet Terms - Organism - mappings.MappingViewsSearch
+        response = client.get('/mappings/?facets=organism:9606')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 3)
+
+        # Facet Terms - Alignment - mappings.MappingViewsSearch
+        response = client.get('/mappings/?facets=alignment:identical')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+
+        response = client.get('/mappings/?facets=alignment:small')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 2)
+
+        response = client.get('/mappings/?facets=alignment:large')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+
+        # Facet Terms - Status - mappings.MappingViewsSearch
+        response = client.get('/mappings/?facets=status:testing')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+
+        response = client.get('/mappings/?facets=status:invalid')
+        self.assertEqual(response.status_code, 404)
+
+        # Facet Terms - Chromosomes - mappings.MappingViewsSearch
+        response = client.get('/mappings/?facets=chromosomes:1')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+
+        # Facet Terms - Type - mappings.MappingViewsSearch
+        response = client.get('/mappings/?facets=type:mapped')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+
+        # Facet Terms - Patches - mappings.MappingViewsSearch
+        response = client.get('/mappings/?facets=patches:exclude')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 2)
+
+        response = client.get('/mappings/?facets=patches:only')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+
     def test_mappings_release_request(self):
         client = APIClient()
         response = client.get('/mappings/release/9606/')
@@ -486,7 +571,7 @@ class EnsemblTest(APITestCase):
         response = client.get('/mappings/statuses/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data[0]['id'], 1)
-        self.assertEqual(response.data[0]['description'], 'testing')
+        self.assertEqual(response.data[0]['description'], 'TESTING')
 
     ############
     # /service #
@@ -533,6 +618,27 @@ class EnsemblTest(APITestCase):
             response.data['labels'][mapped_label-1]['status'],
             True
         )
+
+        # Add label - mappings.MappingLabelView
+        response = client.post('/unmapped/4/labels/4/')
+        self.assertEqual(response.status_code, 201)
+
+        response = client.get('/unmapped/4/labels/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['labels'][mapped_label-1]['status'], True)
+        self.assertEqual(response.data['labels'][3]['status'], True)
+
+        # Delete label - mappings.MappingLabelView
+        response = client.delete('/unmapped/4/labels/4/')
+        self.assertEqual(response.status_code, 204)
+
+        response = client.get('/unmapped/4/labels/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['labels'][3]['status'], False)
+
+        # Try to delete previsouly deleted label - mappings.MappingLabelView
+        response = client.delete('/unmapped/4/labels/4/')
+        self.assertEqual(response.status_code, 404)
 
     def test_unmapped_tax_source_request(self):
         client = APIClient()
