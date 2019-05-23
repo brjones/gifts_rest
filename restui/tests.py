@@ -356,6 +356,12 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['mapping_id'], 1)
 
+    def test_mapping_alignment_diff_request(self):
+        client = APIClient()
+        response = client.post('/mapping/1/alignment_difference/5/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['alignment_difference'], 5)
+
     def test_mapping_comment_requests(self):
         client = APIClient()
         # client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
