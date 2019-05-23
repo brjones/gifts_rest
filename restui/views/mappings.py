@@ -230,6 +230,7 @@ def build_related_unmapped_entries_data(mapping):
         ensembl_species_history=mapping_mh_rmh.ensembl_species_history,
         grouping_id=mapping_grouping_id
     )
+    # print("\nrelated_unmapped_transcript_histories:", related_unmapped_transcript_histories)
 
     related_unmapped_transcripts = []
     for th in related_unmapped_transcript_histories:
@@ -1096,7 +1097,7 @@ class MappingViewsSearch(generics.ListAPIView):
             if re.match(r"^ENS[A-Z]*?G[0-9]+?$", search_term, re.I):
                 queryset = MappingView.objects.filter(ensg_id__iexact=search_term)
 
-            elif re.match(r"^ENS[A-Z]*?T[0-9]+?$", search_term, re.I):
+            elif re.match(r"^ENS[A-Z]*?T[0-9]+(.[0-9]+)?$", search_term, re.I):
                 queryset = MappingView.objects.filter(enst_id__iexact=search_term)
 
             elif re.match(r"^([O,P,Q][0-9][A-Z, 0-9]{3}[0-9]|[A-N,R-Z]([0-9][A-Z][A-Z, 0-9]{2}){1,2}[0-9])(-\d+)*$",
@@ -1112,6 +1113,7 @@ class MappingViewsSearch(generics.ListAPIView):
                 query_filter |= Q(gene_symbol_eg__iregex=r"^"+search_term)
                 query_filter |= Q(gene_name__iregex=r"^"+search_term)
                 queryset = MappingView.objects.filter(query_filter)
+
         else:
             # no search term: return all mappings
             queryset = MappingView.objects.all()
