@@ -756,6 +756,50 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['error'], 'Cannot edit deleted comment')
 
+    def test_unmapped_status_request(self):
+        client = APIClient()
+
+        response = client.put(
+            '/unmapped/2/status/',
+            data={}
+        )
+        self.assertEqual(response.status_code, 404)
+
+        response = client.put(
+            '/unmapped/2/status/',
+            data={
+                'status': 999
+            }
+        )
+        self.assertEqual(response.status_code, 404)
+
+        response = client.put(
+            '/unmapped/2/status/',
+            data={
+                'status': 'TESTING2'
+            }
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['uniprot'], 3)
+
+        response = client.put(
+            '/unmapped/2/status/',
+            data={
+                'status': 'TESTING2'
+            }
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.data, None)
+
+        response = client.put(
+            '/unmapped/2/status/',
+            data={
+                'status': 'TESTING'
+            }
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['uniprot'], 3)
+
 
 class LibAlignment(APITestCase):
 

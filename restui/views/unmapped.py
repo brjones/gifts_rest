@@ -566,6 +566,7 @@ class StatusChange(APIView):
                 "Couldn't get status object for {}".format(request.data['status'])
             )
         except MultipleObjectsReturned:
+            print("\nFAILED HERE MultipleObjectsReturned")
             raise Http404(
                 "Couldn't get unique status for {}".format(request.data['status'])
             )
