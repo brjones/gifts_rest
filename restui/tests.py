@@ -454,17 +454,40 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['error'], 'Cannot edit deleted comment')
 
-    ## This is a function that is not publically available
-    # def test_mapping_status_request(self):
-    #     client = APIClient()
-    #     response = client.put(
-    #         '/mapping/1/status/',
-    #         data={}
-    #     )
-    #     print(response)
-    #     print(response.data)
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(response.data['labels'], [])
+    def test_mapping_status_request(self):
+        client = APIClient()
+
+        response = client.put(
+            '/mapping/2/status/',
+            data={}
+        )
+        self.assertEqual(response.status_code, 404)
+
+        response = client.put(
+            '/mapping/2/status/',
+            data={
+                'status': 999
+            }
+        )
+        self.assertEqual(response.status_code, 404)
+
+        response = client.put(
+            '/mapping/2/status/',
+            data={
+                'status': 'TESTING2'
+            }
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['mapping'], 2)
+
+        response = client.put(
+            '/mapping/2/status/',
+            data={
+                'status': 'TESTING2'
+            }
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.data, None)
 
     #############
     # /mappings #
