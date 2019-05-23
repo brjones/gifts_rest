@@ -20,6 +20,7 @@ from restui.models.uniprot import UniprotEntry
 from restui.models.mappings import MappingView
 from restui.models.mappings import ReleaseMappingHistory
 from restui.models.annotations import CvUeStatus, CvUeLabel
+from restui.models.annotations import UeUnmappedEntryComment
 from restui.models.annotations import UeUnmappedEntryLabel
 from restui.models.annotations import UeUnmappedEntryStatus
 
@@ -484,7 +485,7 @@ class EditDeleteComment(APIView):
 
         if 'text' not in request.data:
             return Response(
-                {"error": "Text not specified"},
+                {'error': 'Text not specified'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -492,13 +493,13 @@ class EditDeleteComment(APIView):
             comment = uniprot_entry.comments.get(id=comment_id)
         except UeUnmappedEntryComment.DoesNotExist:
             return Response(
-                {"error": "Invalid comment ID: {}".format(comment_id)},
+                {'error': "Invalid comment ID: {}".format(comment_id)},
                 status=status.HTTP_400_BAD_REQUEST
             )
         else:
             if comment.deleted:
                 return Response(
-                    {"error": "Cannot edit deleted comment"},
+                    {'error': 'Cannot edit deleted comment'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -523,7 +524,7 @@ class EditDeleteComment(APIView):
             comment = uniprot_entry.comments.get(id=comment_id)
         except:
             return Response(
-                "Invalid comment ID: {}".format(comment_id),
+                {'error': "Invalid comment ID: {}".format(comment_id)},
                 status=status.HTTP_400_BAD_REQUEST
             )
         else:

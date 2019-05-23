@@ -552,6 +552,103 @@ class EnsemblTest(APITestCase):
             }
         )
 
+    def test_unmapped_comment_requests(self):
+        client = APIClient()
+        # client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+        # client.credentials(HTTP_AUTHORIZATION='Token testtesttest123')
+
+        # client.login(username='testtesttest123', password='check')
+
+        # client.session.auth = HTTPBasicAuth('testtesttest123', 'check')
+
+        # print("\nUSERS:", AAPUser.objects.all().values())
+        # user = AAPUser.objects.filter(elixir_id='testtesttest123')
+        # print("\nUSER:", user)
+        # client.force_authenticate(user=user)
+        # print("\nFORCE AUTH")
+
+        # View comment - unmapped.AddGetComments
+        response = client.get('/unmapped/2/comments/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['comments'], [])
+
+        # Add a comment - unmapped.AddGetComments
+        response = client.post(
+            '/unmapped/2/comments/',
+            data={
+                'text': 'This is a test comment'
+            }
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['id'], 1)
+
+        # View a comment - unmapped.AddGetComments
+        response = client.get('/unmapped/2/comments/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['comments'][0]['text'], 'This is a test comment')
+        self.assertEqual(response.data['comments'][0]['user'], 'Zapp Brannigan')
+
+        # Edit a comment - unmapped.EditDeleteComment
+        response = client.put(
+            '/unmapped/2/comments/1/',
+            data={
+                'text': 'This is a changed comment'
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['commentId'], 1)
+
+        # View a comment - unmapped.AddGetComments
+        response = client.get('/unmapped/2/comments/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data['comments'][0]['text'],
+            'This is a changed comment'
+        )
+        self.assertEqual(
+            response.data['comments'][0]['user'],
+            'Zapp Brannigan'
+        )
+
+        response = client.put(
+            '/unmapped/2/comments/1/',
+            data={}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], 'Text not specified')
+
+        response = client.put(
+            '/unmapped/2/comments/99/',
+            data={
+                'text': 'Editing a non-existent comment'
+            }
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], 'Invalid comment ID: 99')
+
+        # Delete a comment - unmapped.EditDeleteComment
+        response = client.delete('/unmapped/2/comments/1/')
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.data, None)
+
+        response = client.delete('/unmapped/2/comments/99/')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], 'Invalid comment ID: 99')
+
+        # View comment - mappings.MappingCommentsView
+        response = client.get('/unmapped/2/comments/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['comments'], [])
+
+        # Edit a deleted comment - unmapped.EditDeleteComment
+        response = client.put(
+            '/unmapped/2/comments/1/',
+            data={
+                'text': 'This is not possible'
+            }
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], 'Cannot edit deleted comment')
 
 
 class LibAlignment(APITestCase):
