@@ -138,7 +138,7 @@ if 'TRAVIS' in os.environ:
             'USER': 'postgres',
             'PASSWORD': '',
             'HOST': 'localhost',
-            'PORT': '5433',
+            # 'PORT': '5433',
         },
         'gifts': {
             'ENGINE': 'psqlextra.backend',
@@ -146,7 +146,7 @@ if 'TRAVIS' in os.environ:
             'USER': 'postgres',
             'PASSWORD': '',
             'HOST': 'localhost',
-            'PORT': '5433',
+            # 'PORT': '5433',
         }
     }
 else:
