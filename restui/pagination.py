@@ -15,22 +15,27 @@
    limitations under the License.
 """
 
-import pprint
 from collections import OrderedDict
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 
-from restui.serializers.mappings import MappingsSerializer, MappingViewsSerializer
+from restui.serializers.mappings import MappingsSerializer
+from restui.serializers.mappings import MappingViewsSerializer
 from restui.serializers.unmapped import UnmappedEnsemblEntrySerializer
-from restui.models.mappings import Mapping, MappingView
-from rest_framework import status
+from restui.models.mappings import Mapping
+from restui.models.mappings import MappingView
 
 
-#
-# TODO
-# chromosome and mappings facets
-#
 class FacetPagination(LimitOffsetPagination):
+    def __init__(self):
+        self.count = None
+        self.limit = None
+        self.offset = None
+        self.request = None
+        self.facets = None
+        self.display_page_controls = None
+
     def create_facets(self, queryset):
         statuses = OrderedDict([
             ('name', 'status'),
@@ -106,7 +111,6 @@ class FacetPagination(LimitOffsetPagination):
 
         return [statuses, organism, sequence]
 
-
     def paginate_queryset(self, queryset, request, view=None):
         self.count = queryset.grouped_count
         self.limit = self.get_limit(request)
@@ -144,6 +148,14 @@ class FacetPagination(LimitOffsetPagination):
         ]))
 
 class MappingViewFacetPagination(LimitOffsetPagination):
+    def __init__(self):
+        self.count = None
+        self.limit = None
+        self.offset = None
+        self.request = None
+        self.facets = None
+        self.display_page_controls = None
+
     def create_facets(self, queryset):
         statuses = OrderedDict([
             ('name', 'status'),
@@ -291,6 +303,14 @@ class UnmappedEnsemblEntryPagination(LimitOffsetPagination):
     """
     Paginate unmapped ensembl transcripts
     """
+
+    def __init__(self):
+        self.count = None
+        self.limit = None
+        self.offset = None
+        self.request = None
+        self.facets = None
+        self.display_page_controls = None
 
     def paginate_queryset(self, queryset, request, view=None):
         self.count = queryset.grouped_count
