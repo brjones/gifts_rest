@@ -24,3 +24,4 @@ coveralls
 testing.common.database
 testing.postgresql
 pylint
+pylint-django

@@ -29,14 +29,14 @@ class Command(BaseCommand):
         print("Ensure all mappings have a unique grouping_id")
 
         max_grouping_id = Mapping.objects.aggregate(
-          largest=Max('unique_grouping_id')
+            largest=Max('unique_grouping_id')
         )
 
         if not max_grouping_id['largest']:
             max_grouping_id = 1
 
         mappings = Mapping.objects.filter(
-          unique_grouping_id__isnull=True
+            unique_grouping_id__isnull=True
         ).order_by('grouping_id').all()
 
         if mappings.first():

@@ -15,6 +15,8 @@
    limitations under the License.
 """
 
+from rest_framework import serializers
+
 from restui.models.annotations import UeMappingStatus
 from restui.models.annotations import UeMappingComment
 from restui.models.annotations import UeMappingLabel
@@ -22,8 +24,6 @@ from restui.models.annotations import CvUeStatus
 from restui.models.annotations import UeUnmappedEntryLabel
 from restui.models.annotations import UeUnmappedEntryComment
 from restui.models.annotations import UeUnmappedEntryStatus
-
-from rest_framework import serializers
 
 
 class CvUeStatusSerializer(serializers.ModelSerializer):

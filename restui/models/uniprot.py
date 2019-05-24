@@ -16,7 +16,6 @@
 """
 
 from django.db import models
-from restui.models.annotations import CvEntryType
 
 
 class Isoform(models.Model):

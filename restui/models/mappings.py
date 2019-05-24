@@ -18,10 +18,12 @@
 from collections import defaultdict
 
 from django.db import models
-from django.db.models import Count, Case, When
-from django.template.defaultfilters import default
+from django.db.models import Count
+from django.db.models import Case
+from django.db.models import When
 from restui.lib.alignments import calculate_difference
-from restui.models.annotations import CvEntryType, CvUeStatus
+from restui.models.annotations import CvEntryType
+from restui.models.annotations import CvUeStatus
 from restui.models.ensembl import EnsemblSpeciesHistory
 
 
@@ -194,7 +196,6 @@ class MappingQuerySet(models.query.QuerySet):
         """
         Return a list of tuples, of all the tax_id and species in this queryset
         """
-#        species_set = self.values('transcript__history__ensembl_species_history__ensembl_tax_id', 'transcript__transcripthistory__ensembl_species_history__species').distinct()
         species_set = self.values(
             'transcript__transcripthistory__ensembl_species_history__ensembl_tax_id',
             'transcript__transcripthistory__ensembl_species_history__species'
@@ -285,7 +286,7 @@ class Mapping(models.Model):
             ):
                 return 0
 
-            elif alignment.alignment_run.score1_type == 'identity':
+            if alignment.alignment_run.score1_type == 'identity':
                 diff_count = calculate_difference(alignment.pairwise.cigarplus)
 
         if diff_count:
@@ -314,32 +315,31 @@ class Mapping(models.Model):
 
         return statuses
 
-    """
-    The goal of these two functions is to reduce the number of database calls.
-    Rather than a lookup per mapping record, we'll cache these constants for
-    the life of the request in the serializer class.
-    """
-    _entry_type = None
-    _status_type = None
+
+    # The goal of these two functions is to reduce the number of database calls.
+    # Rather than a lookup per mapping record, we'll cache these constants for
+    # the life of the request in the serializer class.
+    _entry_type = {}
+    _status_type = {}
     @classmethod
-    def entry_type(cls, id):
+    def entry_type(cls, identity):
         if not cls._entry_type:
             entries = {}
             for entry in CvEntryType.objects.all():
                 entries[entry.id] = entry.description
             cls._entry_type = entries
 
-        return cls._entry_type[id]
+        return cls._entry_type[identity]
 
     @classmethod
-    def status_type(cls, id):
+    def status_type(cls, identity):
         if not cls._status_type:
             statuses = {}
             for status in CvUeStatus.objects.all():
                 statuses[status.id] = status.description
             cls._status_type = statuses
 
-        return cls._status_type[id]
+        return cls._status_type[identity]
 
     def __str__(self):
         return "{0} - ({1}, {2})".format(
@@ -437,7 +437,6 @@ class MappingViewQuerySet(models.query.QuerySet):
 
         return status_list
 
-    # TODO: ask to include species or extract from ensembl_species_history
     def species(self):
         """
         Return a list of all the unique (tax_id, species name) tuples in this queryset
@@ -648,7 +647,7 @@ class MappingView(models.Model):
                 ):
                     return 0
 
-                elif alignment.alignment_run.score1_type == 'identity':
+                if alignment.alignment_run.score1_type == 'identity':
                     diff_count = calculate_difference(alignment.pairwise.cigarplus)
         except:
             pass  # No mapping ID: cannot get difference
@@ -682,16 +681,14 @@ class MappingView(models.Model):
 
         return statuses
 
-    '''
-    The goal of these two functions is to reduce the number of database calls.
-    Rather than a lookup per mapping record, we'll cache these constants for
-    the life of the request in the serializer class.
-    '''
-    _entry_type = None
-    _status_type = None
+    # The goal of these two functions is to reduce the number of database calls.
+    # Rather than a lookup per mapping record, we'll cache these constants for
+    # the life of the request in the serializer class.
+    _entry_type = {}
+    _status_type = {}
 
     @classmethod
-    def entry_description(cls, id):
+    def entry_description(cls, identity):
         if not cls._entry_type:
             entries = {}
             for entry in CvEntryType.objects.all():
@@ -699,14 +696,14 @@ class MappingView(models.Model):
             cls._entry_type = entries
 
         try:
-            return cls._entry_type[id]
+            return cls._entry_type[identity]
         except KeyError:
             pass
 
         return None
 
     @classmethod
-    def status_description(cls, id):
+    def status_description(cls, identity):
         if not cls._status_type:
             statuses = {}
             for status in CvUeStatus.objects.all():
@@ -714,7 +711,7 @@ class MappingView(models.Model):
             cls._status_type = statuses
 
         try:
-            return cls._status_type[id]
+            return cls._status_type[identity]
         except KeyError:
             pass
 

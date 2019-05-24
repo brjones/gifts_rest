@@ -19,4 +19,7 @@ from django.apps import AppConfig
 
 
 class RestuiConfig(AppConfig):
+    """
+    Register the name of the application
+    """
     name = 'restui'

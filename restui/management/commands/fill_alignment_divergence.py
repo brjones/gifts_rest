@@ -22,8 +22,14 @@ from restui.models.mappings import Mapping
 
 
 class Command(BaseCommand):
+    """
+    Base commands
+    """
 
     def handle(self, *args, **options):
+        """
+        Back-filling protein alignment divergence
+        """
         print("Back-filling protein alignment divergence")
 
         mappings = Mapping.objects.all()

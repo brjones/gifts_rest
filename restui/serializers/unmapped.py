@@ -15,8 +15,8 @@
    limitations under the License.
 """
 
-from restui.serializers.mappings import MappingViewSerializer
 from rest_framework import serializers
+from restui.serializers.mappings import MappingViewSerializer
 
 
 class UnmappedEntrySerializer(serializers.Serializer):

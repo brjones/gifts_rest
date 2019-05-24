@@ -19,9 +19,9 @@ from collections import defaultdict
 
 from django.db import models
 from django.db.models import Count
+from django.db.models.deletion import CASCADE
 from psqlextra.models import PostgresModel
 from psqlextra.manager import PostgresManager, PostgresQuerySet
-from django.db.models.deletion import CASCADE
 
 
 class EnsemblSpeciesHistory(PostgresModel):
@@ -37,7 +37,13 @@ class EnsemblSpeciesHistory(PostgresModel):
     alignment_status = models.CharField(max_length=30, blank=True, null=True)
 
     def __str__(self):
-        return "{0} - {1} {2} {3}".format(self.ensembl_species_history_id, self.species, self.assembly_accession, self.ensembl_tax_id, self.ensembl_release)
+        return "{0} - {1} {2} {3} {4}".format(
+            self.ensembl_species_history_id,
+            self.species,
+            self.assembly_accession,
+            self.ensembl_tax_id,
+            self.ensembl_release
+        )
 
     class Meta:
         managed = False

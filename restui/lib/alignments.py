@@ -15,10 +15,10 @@
    limitations under the License.
 """
 
-from restui.lib.external import ensembl_sequence
-from restui.lib.external import ensembl_protein
 from sam_alignment_reconstructor.pairwise import pairwise_alignment
 from sam_alignment_reconstructor.pairwise import cigar_split
+from restui.lib.external import ensembl_sequence
+from restui.lib.external import ensembl_protein
 
 
 def fetch_pairwise(mapping):
@@ -130,7 +130,7 @@ def calculate_difference(cigar):
     diff_count = 0
 
     for c, op in cigar_split(cigar):
-        if op == 'I' or op == 'D' or op == 'X':
+        if op in ('I', 'D', 'X'):
             diff_count += c
 
     return diff_count

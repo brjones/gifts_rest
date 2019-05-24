@@ -19,7 +19,6 @@
 from itertools import chain
 
 from django.utils import timezone
-from django.core.serializers import serialize
 from rest_framework import serializers
 from psqlextra.query import ConflictAction
 
@@ -81,6 +80,8 @@ You want to customize the create or update behaviour of multiple objects.
 For these cases you can modify the class that is used when many=True is passed,
 by using the list_serializer_class option on the serializer Meta class.
 """
+
+
 class EnsemblGeneListSerializer(serializers.ListSerializer):
     """
     The default implementation for multiple object creation is to simply call
@@ -107,7 +108,7 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
                 'ensembl_release'
             ]
 
-            if k in (valid):
+            if k in valid:
                 history_attrs[k] = v
 
         history_attrs['status'] = 'LOAD_STARTED'  # temporary status

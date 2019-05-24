@@ -15,19 +15,19 @@
    limitations under the License.
 """
 
-from restui.models.mappings import Alignment, AlignmentRun
-from restui.serializers.alignments import AlignmentSerializer
-from restui.serializers.alignments import AlignmentRunSerializer
-
 from django.http import Http404
 
-from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.schemas import ManualSchema
 
 import coreapi
 import coreschema
+
+from restui.models.mappings import Alignment
+from restui.models.mappings import AlignmentRun
+from restui.serializers.alignments import AlignmentSerializer
+from restui.serializers.alignments import AlignmentRunSerializer
 
 
 class AlignmentRunCreate(generics.CreateAPIView):
@@ -120,7 +120,10 @@ class LatestAlignmentsFetch(generics.ListAPIView):
                 name="type",
                 location="query",
                 schema=coreschema.String(),
-                description="Type of the alignments to retrieve, either 'perfect_match' or 'identity' (default: perfect_match)"
+                description=(
+                    "Type of the alignments to retrieve, either 'perfect_match' "
+                    "or 'identity' (default: perfect_match)"
+                )
             )
         ]
     )
@@ -135,7 +138,7 @@ class LatestAlignmentsFetch(generics.ListAPIView):
 
         try:
             alignment_run = AlignmentRun.objects.filter(
-                release_mapping_history__ensembl_species_history__assembly_accession__iexact=assembly_accession,
+                release_mapping_history__ensembl_species_history__assembly_accession__iexact=assembly_accession,  # pylint: disable=line-too-long
                 score1_type=alignment_type
             ).latest('alignment_run_id')
         except (AlignmentRun.DoesNotExist, IndexError):

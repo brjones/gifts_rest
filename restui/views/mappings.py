@@ -19,10 +19,21 @@ import pprint
 import re
 import urllib.parse
 
-import requests
+from django.http import Http404
+from django.utils import timezone
+from django.core.exceptions import MultipleObjectsReturned
+from django.db.models import Q
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework import generics
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.schemas import ManualSchema
 
-from restui.models.ensembl import EnsemblGene
-from restui.models.ensembl import EnsemblTranscript
+import coreapi
+import coreschema
+
 from restui.models.ensembl import EnsemblSpeciesHistory
 from restui.models.ensembl import TranscriptHistory
 from restui.models.mappings import Mapping
@@ -30,9 +41,7 @@ from restui.models.mappings import MappingView
 from restui.models.mappings import MappingHistory
 from restui.models.mappings import ReleaseMappingHistory
 from restui.models.mappings import ReleaseStats
-from restui.models.uniprot import UniprotEntry
 from restui.models.uniprot import UniprotEntryHistory
-from restui.models.annotations import CvEntryType
 from restui.models.annotations import CvUeStatus
 from restui.models.annotations import CvUeLabel
 from restui.models.annotations import UeMappingStatus
@@ -41,7 +50,6 @@ from restui.models.annotations import UeMappingLabel
 from restui.serializers.mappings import MappingByHistorySerializer
 from restui.serializers.mappings import ReleaseMappingHistorySerializer
 from restui.serializers.mappings import EnsemblUniprotMappingSerializer
-from restui.serializers.mappings import MappingHistorySerializer
 from restui.serializers.mappings import MappingSerializer
 from restui.serializers.mappings import MappingCommentsSerializer
 from restui.serializers.mappings import MappingsSerializer
@@ -55,25 +63,8 @@ from restui.serializers.annotations import MappingStatusSerializer
 from restui.serializers.annotations import MappingCommentSerializer
 from restui.serializers.annotations import MappingLabelSerializer
 from restui.serializers.annotations import LabelsSerializer
-from restui.pagination import FacetPagination
 from restui.pagination import MappingViewFacetPagination
-from restui.lib.external import ensembl_sequence
 from restui.lib.alignments import fetch_pairwise
-
-from django.http import Http404
-from django.utils import timezone
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from django.db.models import Max, F, Q, Count
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework import generics
-from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.schemas import ManualSchema
-
-import coreapi
-import coreschema
 
 
 def get_mapping(pk):
@@ -81,48 +72,6 @@ def get_mapping(pk):
         return Mapping.objects.get(pk=pk)
     except Mapping.DoesNotExist:
         raise Http404
-
-
-# def get_mapping_history(mapping):
-#     """
-#     A mapping can have multiple entries in mapping history and it is not clear
-#     which one to go for.
-
-#     The assumption would be that when mapping is curated it is always related
-#     to latest status
-
-#     just pick latest mapping_history entry (the one with the highest id)
-
-#     """
-#     try:
-#         return MappingHistory.objects.filter(
-#             mapping=mapping
-#         ).order_by('-mapping_history_id')[0]
-#     except MappingHistory.DoesNotExist:
-#         raise Http404
-
-
-# def get_status(mapping):
-#     try:
-#         mapping_status = Mapping.status_type(mapping.status)
-#     except (IndexError, CvUeStatus.DoesNotExist):
-#         # TODO: should log this anomaly or do something else
-#         mapping_status = None
-
-#     return mapping_status
-
-
-# def get_label(label):
-#     """
-#     Retrieve the label object associated to the given description
-#     """
-
-#     try:
-#         return CvUeLabel.objects.get(description=label)
-#     except CvUeLabel.DoesNotExist:
-#         raise Http404("Couldn't get label object for {}".format(label))
-#     except MultipleObjectsReturned:
-#         raise Http404("Couldn't get unique label object for {}".format(label))
 
 
 def build_taxonomy_data(mapping):
@@ -139,7 +88,9 @@ def build_taxonomy_data(mapping):
         ).latest('time_loaded')
     except EnsemblSpeciesHistory.DoesNotExist:
         raise Http404(
-            "Couldn't find an ensembl species history associated to mapping {}".format(mapping.mapping_id)
+            (
+                "Couldn't find an ensembl species history associated to mapping {}"
+            ).format(mapping.mapping_id)
         )
 
     try:
@@ -150,7 +101,11 @@ def build_taxonomy_data(mapping):
         }
     except:
         raise Http404(
-            "Couldn't find uniprot tax id as I couldn't find a uniprot entry associated to the mapping")
+            (
+                "Couldn't find uniprot tax id as I couldn't find a uniprot entry "
+                "associated to the mapping"
+            )
+        )
 
 
 def build_related_mappings_data(mapping):
@@ -209,32 +164,31 @@ def build_related_unmapped_entries_data(mapping):
 
     related_unmapped_ue_entries = []
     for ueh in related_unmapped_ue_histories:
-        ue = ueh.uniprot
+        up_entry = ueh.uniprot
         related_unmapped_ue_entries.append({
-            'uniprot_id':ue.uniprot_id,
-            'uniprotAccession': ue.uniprot_acc,
-            'entryType': Mapping.entry_type(ue.entry_type_id),
-            'sequenceVersion': ue.sequence_version,
-            'upi': ue.upi,
-            'md5': ue.md5,
-            'isCanonical': False if ue.canonical_uniprot_id else True,
-            'alias': ue.alias,
-            'ensemblDerived': ue.ensembl_derived,
-            'gene_symbol': ue.gene_symbol,
-            'gene_accession': ue.chromosome_line,
-            'length': ue.length,
-            'protein_existence_id': ue.protein_existence_id
+            'uniprot_id': up_entry.uniprot_id,
+            'uniprotAccession': up_entry.uniprot_acc,
+            'entryType': Mapping.entry_type(up_entry.entry_type_id),
+            'sequenceVersion': up_entry.sequence_version,
+            'upi': up_entry.upi,
+            'md5': up_entry.md5,
+            'isCanonical': not up_entry.canonical_uniprot_id,
+            'alias': up_entry.alias,
+            'ensemblDerived': up_entry.ensembl_derived,
+            'gene_symbol': up_entry.gene_symbol,
+            'gene_accession': up_entry.chromosome_line,
+            'length': up_entry.length,
+            'protein_existence_id': up_entry.protein_existence_id
         })
 
     related_unmapped_transcript_histories = TranscriptHistory.objects.filter(
         ensembl_species_history=mapping_mh_rmh.ensembl_species_history,
         grouping_id=mapping_grouping_id
     )
-    # print("\nrelated_unmapped_transcript_histories:", related_unmapped_transcript_histories)
 
     related_unmapped_transcripts = []
-    for th in related_unmapped_transcript_histories:
-        transcript = th.transcript
+    for t_hist in related_unmapped_transcript_histories:
+        transcript = t_hist.transcript
         related_unmapped_transcripts.append({
             'transcript_id': transcript.transcript_id,
             'enstId': transcript.enst_id,
@@ -408,7 +362,11 @@ class ReleaseMappingStats(APIView):
 
             release_stats = ReleaseStats.objects.get(release_mapping_history=rmh)
         except:
-            raise Http404("Unable to find stats for latest species {} release mapping history".format(taxid))
+            raise Http404(
+                (
+                    "Unable to find stats for latest species {} release mapping history"
+                ).format(taxid)
+            )
 
         serializer = ReleaseStatsSerializer(release_stats)
         return Response(serializer.data)
@@ -462,7 +420,6 @@ class MappingLabelView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         try:
-            label = CvUeLabel.objects.get(pk=label_id)
             serializer = MappingLabelSerializer(
                 data={
                     'time_stamp': timezone.now(),
@@ -527,7 +484,7 @@ class MappingLabelsView(APIView):
             label_map.append({
                 'label': label.description,
                 'id': label.id,
-                'status': True if label.id in mapping_labels else False
+                'status': label.id in mapping_labels
             })
 
         data = {'labels': label_map}
@@ -628,7 +585,10 @@ class MappingCommentsView(APIView):
 
     permission_classes = (IsAuthenticated,)
     schema = ManualSchema(
-        description="Add a comment/Retrieve all comments relative to a given mapping, includes mapping labels.",
+        description=(
+            "Add a comment/Retrieve all comments relative to a given mapping, "
+            "includes mapping labels."
+        ),
         fields=[
             coreapi.Field(
                 name="id",
@@ -651,20 +611,19 @@ class MappingCommentsView(APIView):
         )
 
         # comments are editable if they belong to the requesting user
-        comments = map(
-            lambda c: {
-                'commentId': c.id,
-                'text': c.comment,
-                'timeAdded': c.time_stamp,
-                'user': c.user_stamp.full_name,
-                'editable': True if request.user and request.user == c.user_stamp else False
-            },
-            mapping_comments
-        )
+        comments = []
+        for comment in mapping_comments:
+            comments.append({
+                'commentId': comment.id,
+                'text': comment.comment,
+                'timeAdded': comment.time_stamp,
+                'user': comment.user_stamp.full_name,
+                'editable': request.user and request.user == comment.user_stamp
+            })
 
         data = {
             'mappingId': pk,
-            'comments': list(comments)
+            'comments': comments
         }
 
         serializer = MappingCommentsSerializer(data)
@@ -823,7 +782,9 @@ class MappingAlignmentDifference(APIView):
         mapping.alignment_difference = difference
         mapping.save()
 
-        serializer = EnsemblUniprotMappingSerializer(MappingsSerializer.build_mapping(mapping))
+        serializer = EnsemblUniprotMappingSerializer(
+            MappingsSerializer.build_mapping(mapping)
+        )
 
         return Response(serializer.data)
 
@@ -871,7 +832,10 @@ class MappingDetailed(APIView):
     """
 
     schema = ManualSchema(
-        description="Retrieve a single mapping, includes related mappings/unmapped entries and taxonomy information.",
+        description=(
+            "Retrieve a single mapping, includes related mappings/unmapped "
+            "entries and taxonomy information."
+        ),
         fields=[
             coreapi.Field(
                 name="id",
@@ -908,169 +872,6 @@ class MappingDetailed(APIView):
         return Response(serializer.data)
 
 
-# class MappingsSearch(generics.ListAPIView):
-#     """
-#     Search/retrieve all mappings. Mappings are grouped if they share ENST or UniProt accessions.
-#     'Facets' are used for filtering and returned by the service based on the result set.
-#     """
-
-#     serializer_class = MappingsSerializer
-#     pagination_class = FacetPagination
-#     schema = ManualSchema(
-#         description="Retrieve a single mapping, includes related mappings/unmapped entries and taxonomy information.",
-#         fields=[
-#             coreapi.Field(
-#                 name="searchTerm",
-#                 location="query",
-#                 schema=coreschema.Integer(),
-#                 description="Search term (no wildcards)"
-#             ),
-#             coreapi.Field(
-#                 name="limit",
-#                 location="query",
-#                 schema=coreschema.Integer(),
-#                 description="Number of results to return per page"
-#             ),
-#             coreapi.Field(
-#                 name="offset",
-#                 location="query",
-#                 schema=coreschema.Integer(),
-#                 description="The initial index from which to return the results"
-#             ),
-#             coreapi.Field(
-#                 name="facets",
-#                 location="query",
-#                 schema=coreschema.Integer(),
-#                 description="Filters for the given query, taking the form 'facets=key1:value1,key2:value2...'\nPossible keys (values) are: organism (taxid) , sequence (identical, small, large), status and chromosomes"
-#             ),
-#         ]
-#     )
-
-#     def get_queryset(self):
-#         results = dict()
-
-#         """
-#         The ENSG, ENST, UniProt accession or mapping id. If none are provided
-#         all mappings are returned
-#         """
-#         search_term = self.request.query_params.get('searchTerm', None)
-
-#         """
-#         Filters for the given query, taking the form:
-#             facets=organism:9606,status:unreviewed
-#         """
-#         facets_params = self.request.query_params.get('facets', None)
-
-#         # search the mappings according to the search term 'type'
-#         queryset = None
-#         if search_term:
-#             if search_term.isdigit():  # this is a mapping ID
-#                 # TODO
-#                 # what does it mean to search with a given mapping ID, return just that mapping
-#                 # or all 'related' mappings? We're returning only that mapping at the moment
-#                 queryset = [get_mapping(search_term)]
-#             else:  # this is either an ENSG/ENST or UniProt accession or gene name
-#                 if re.match(r"^ENS[A-Z]*?G[0-9]+?$", search_term, re.I):
-#                     queryset = Mapping.objects.filter(
-#                         transcript__gene__ensg_id__iexact=search_term
-#                     )
-
-#                 elif re.match(r"^ENS[A-Z]*?T[0-9]+?$", search_term, re.I):
-#                     queryset = Mapping.objects.filter(
-#                         transcript__enst_id__iexact=search_term
-#                     )
-
-#                 elif re.match(
-#                         r"^([O,P,Q][0-9][A-Z, 0-9]{3}[0-9]|[A-N,R-Z]([0-9][A-Z][A-Z, 0-9]{2}){1,2}[0-9])(-\d+)*$",
-#                         search_term, re.I
-#                 ):  # looks like a Uniprot accession
-#                     # filter in order to get the isoforms as well
-#                     queryset = Mapping.objects.filter(
-#                         uniprot__uniprot_acc__iregex=r"^"+search_term
-#                     )
-
-#                 else:
-#                     # should be a search request with a gene symbol and possibly name
-#                     query_filter = Q(transcript__gene__gene_symbol__iregex=r"^"+search_term)
-#                     query_filter |= Q(transcript__gene__gene_name__iregex=r"^"+search_term)
-#                     queryset = Mapping.objects.filter(query_filter)
-
-#         else:
-#             """
-#             no search term: return all mappings
-
-#             WARNING!! This is massively hitting the database
-
-#             See Matt's June 19 Matt's comments on slack for a possible direction
-#             e.g. https://github.com/encode/django-rest-framework/issues/1721
-
-#             Can return an iterator, but this is not compatible with pagination, see comments below
-#             queryset = Mapping.objects.all().iterator()
-#             """
-#             queryset = Mapping.objects.all()
-
-#         #
-#         # Apply filters based on facets parameters
-#         #
-#         if facets_params:
-#             queryset = queryset.all()
-#             # create facets dict from e.g. 'organism:9606,status:unreviewed'
-#             facets = {}
-#             for param in facets_params.split(','):
-#                 kv = param.split(':')
-#                 facets[kv[0]] = kv[1]
-
-#             # follow the relationships up to ensembl_species_history to filter based on taxid
-#             if 'organism' in facets:
-#                 queryset = queryset.filter(
-#                     transcript__transcripthistory__ensembl_species_history__ensembl_tax_id=facets['organism']
-#                 )
-
-#             """
-#             Filter on how large a difference between the pairwise aligned
-#             protein sequences, if there is an alignment
-#             """
-#             if 'sequence' in facets:
-#                 if facets['sequence'] == 'identical':
-#                     queryset = queryset.filter(alignment_difference=0)
-
-#                 elif facets['sequence'] == 'small':
-#                     queryset = queryset.filter(
-#                         alignment_difference__gt=0,
-#                         alignment_difference__lte=5
-#                     )
-
-#                 elif facets['sequence'] == 'large':
-#                     queryset = queryset.filter(alignment_difference__gt=5)
-
-#             # filter queryset based on status
-#             # NOTE: cannot directly filter by following relationships,
-#             #       have to fetch latest status associated to each mapping
-#             if 'status' in facets:
-#                 """
-#                 Create closure to be used in filter function to filter queryset
-#                 based on status. Binds to given status so filter can pass each
-#                 mapping which is compared against binding param
-#                 """
-#                 try:
-#                     status_id = CvUeStatus.objects.get(
-#                         description=facets['status'].upper()
-#                     ).id
-#                 except:
-#                     raise Http404("Invalid status type")
-#                     # TODO Should be a 400, how do we make this work with pagination?
-#                     # return Response(status=status.HTTP_400_BAD_REQUEST)
-
-#                 queryset = queryset.filter(status=status_id)
-
-#             if 'chromosomes' in facets:
-#                 queryset = queryset.filter(
-#                     transcript__gene__chromosome=facets['chromosomes']
-#                 )
-
-#         return queryset
-
-
 class MappingViewsSearch(generics.ListAPIView):
     """
     Search/retrieve all mappings views.
@@ -1100,15 +901,18 @@ class MappingViewsSearch(generics.ListAPIView):
             elif re.match(r"^ENS[A-Z]*?T[0-9]+(.[0-9]+)?$", search_term, re.I):
                 queryset = MappingView.objects.filter(enst_id__iexact=search_term)
 
-            elif re.match(r"^([O,P,Q][0-9][A-Z, 0-9]{3}[0-9]|[A-N,R-Z]([0-9][A-Z][A-Z, 0-9]{2}){1,2}[0-9])(-\d+)*$",
-                          search_term, re.I):  # looks like a Uniprot accession
+            elif re.match(
+                    r"^([O,P,Q][0-9][A-Z, 0-9]{3}[0-9]|[A-N,R-Z]([0-9][A-Z][A-Z, 0-9]{2}){1,2}[0-9])(-\d+)*$",  # pylint: disable=line-too-long
+                    search_term, re.I
+            ):  # looks like a Uniprot accession
                 # filter in order to get the isoforms as well
                 queryset = MappingView.objects.filter(
                     uniprot_acc__iregex=r"^"+search_term
                 )
 
             else:
-                # should be a search request with a gene symbol (both Uniprot and Ensembl) and possibly name
+                # should be a search request with a gene symbol (both Uniprot
+                # and Ensembl) and possibly name
                 query_filter = Q(gene_symbol_up__iregex=r"^"+search_term)
                 query_filter |= Q(gene_symbol_eg__iregex=r"^"+search_term)
                 query_filter |= Q(gene_name__iregex=r"^"+search_term)
@@ -1125,18 +929,21 @@ class MappingViewsSearch(generics.ListAPIView):
             # NOTE: must unquote as apparently the browser does not decode
             facets_params = urllib.parse.unquote(facets_params)
 
-            # create facets dict from e.g. 'organism:9606,10090;status:unreviewed;chromosome:10,11,X'
+            # create facets dict from e.g.
+            # 'organism:9606,10090;status:unreviewed;chromosome:10,11,X'
             facets = {}
             for param in facets_params.split(';'):
-                kv = param.split(':')
-                facets[kv[0]] = kv[1]
+                p = param.split(':')
+                facets[p[0]] = p[1]
 
             queryset = queryset.all()
 
             # filter based on species
             if 'organism' in facets:
                 # consider query may request for multiple organisms
-                queryset = queryset.filter(uniprot_tax_id__in=facets['organism'].split(','))
+                queryset = queryset.filter(
+                    uniprot_tax_id__in=facets['organism'].split(',')
+                )
 
             # filter on how large a difference between the pairwise
             # aligned protein sequences is, if there is an alignment

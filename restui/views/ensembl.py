@@ -15,20 +15,7 @@
    limitations under the License.
 """
 
-from restui.models.ensembl import EnsemblGene
-from restui.models.ensembl import EnsemblTranscript
-from restui.models.ensembl import EnspUCigar
-from restui.models.ensembl import EnsemblSpeciesHistory
-from restui.serializers.ensembl import EnsemblGeneSerializer
-from restui.serializers.ensembl import EnspUCigarSerializer
-from restui.serializers.ensembl import EnsemblReleaseSerializer
-from restui.serializers.ensembl import SpeciesHistorySerializer
-from restui.serializers.ensembl import TranscriptSerializer
-from restui.lib.external import ensembl_sequence
-
 from django.http import Http404
-from django.shortcuts import render
-from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework import mixins
 from rest_framework import generics
@@ -38,6 +25,15 @@ from rest_framework.schemas import ManualSchema
 
 import coreapi
 import coreschema
+
+from restui.models.ensembl import EnsemblTranscript
+from restui.models.ensembl import EnspUCigar
+from restui.models.ensembl import EnsemblSpeciesHistory
+from restui.serializers.ensembl import EnsemblGeneSerializer
+from restui.serializers.ensembl import EnspUCigarSerializer
+from restui.serializers.ensembl import EnsemblReleaseSerializer
+from restui.serializers.ensembl import SpeciesHistorySerializer
+from restui.serializers.ensembl import TranscriptSerializer
 
 
 class EnsemblFeature(mixins.CreateModelMixin,
@@ -100,18 +96,9 @@ class EnsemblFeature(mixins.CreateModelMixin,
         """
         this calls self.perform_create(self.get_serializer)
         """
-        objs = self.create(request, *args, **kwargs)
+        self.create(request, *args, **kwargs)
 
-        return Response({'success':1}, status=status.HTTP_201_CREATED)
-
-
-class EnspUCigarAlignmnent(APIView):
-    """
-    Retrieve a protein alignment and return the pairwise alignment strings.
-    """
-
-    def get(self, request, pk):
-        protein_alignment = get_object_or_404(EnspUCigar, pk=pk)
+        return Response({'success': 1}, status=status.HTTP_201_CREATED)
 
 
 class EnspUCigarCreate(generics.CreateAPIView):
@@ -129,7 +116,10 @@ class EnspUCigarFetch(generics.RetrieveAPIView):
 
     serializer_class = EnspUCigarSerializer
     schema = ManualSchema(
-        description="Retrieve a protein alignment for an alignment run by uniprot acc/seq version and transcript id",
+        description=(
+            "Retrieve a protein alignment for an alignment run by uniprot "
+            "acc/seq version and transcript id"
+        ),
         fields=[
             coreapi.Field(
                 name="run",
@@ -254,29 +244,33 @@ class SpeciesHistoryAlignmentStatus(APIView):
     Update a species history's alignment status
     """
 
-    schema = ManualSchema(description="Update a species history's alignment status",
-                          fields=[
-                              coreapi.Field(
-                                  name="id",
-                                  required=True,
-                                  location="path",
-                                  schema=coreschema.Integer(),
-                                  description="A unique integer value identifying the species history"
-                              ),
-                              coreapi.Field(
-                                  name="status",
-                                  required=True,
-                                  location="path",
-                                  schema=coreschema.Integer(),
-                                  description="String representing the updated alignment status"
-                              ),
-                          ])
+    schema = ManualSchema(
+        description="Update a species history's alignment status",
+        fields=[
+            coreapi.Field(
+                name="id",
+                required=True,
+                location="path",
+                schema=coreschema.Integer(),
+                description="A unique integer value identifying the species history"
+            ),
+            coreapi.Field(
+                name="status",
+                required=True,
+                location="path",
+                schema=coreschema.Integer(),
+                description="String representing the updated alignment status"
+            ),
+        ])
 
     def post(self, request, pk, status):
         try:
             history = EnsemblSpeciesHistory.objects.get(pk=pk)
         except EnsemblSpeciesHistory.DoesNotExist:
-            return Response({ "error": "Could not find species history {}".format(pk) }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Could not find species history {}".format(pk)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         else:
             history.alignment_status = status
             history.save()

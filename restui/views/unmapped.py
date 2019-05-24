@@ -15,6 +15,20 @@
    limitations under the License.
 """
 
+from django.utils import timezone
+from django.http import Http404
+from django.core.exceptions import MultipleObjectsReturned
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.schemas import ManualSchema
+
+import coreapi
+import coreschema
+
 from restui.models.ensembl import EnsemblTranscript
 from restui.models.uniprot import UniprotEntry
 from restui.models.mappings import MappingView
@@ -34,19 +48,6 @@ from restui.serializers.annotations import UnmappedEntryLabelSerializer
 from restui.serializers.annotations import UnmappedEntryCommentSerializer
 from restui.serializers.annotations import UnmappedEntryStatusSerializer
 from restui.pagination import UnmappedEnsemblEntryPagination
-
-from django.utils import timezone
-from django.http import Http404
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.schemas import ManualSchema
-
-import coreapi
-import coreschema
 
 
 def get_uniprot_entry(mapping_view_id):
@@ -115,7 +116,10 @@ class UnmappedEntries(APIView):
 
     # pagination_class = PageNumberPagination # settings.DEFAULT_PAGINATION_CLASS
     schema = ManualSchema(
-        description="Present the details for Swissprot/Ensembl unmapped entities for the latest release for a given species",
+        description=(
+            "Present the details for Swissprot/Ensembl unmapped entities for the "
+            "latest release for a given species"
+        ),
         fields=[
             coreapi.Field(
                 name="taxid",
@@ -142,7 +146,6 @@ class UnmappedEntries(APIView):
             # that all can be filtered by entry type
 
             # find the latest uniprot release corresponding to the species
-            # release = UniprotEntryHistory.objects.aggregate(Max('release_version'))['release_version__max']
             release_mapping_history = ReleaseMappingHistory.objects.filter(
                 uniprot_taxid=taxid
             ).latest(
@@ -167,18 +170,19 @@ class UnmappedEntries(APIView):
             ).distinct()
 
             # the unmapped swiss-prot entries
-            # NOTE: using select_related('entry_type') to speed up query generates 'Index out of range' error, using it in the two sets above works
+            # NOTE: using select_related('entry_type') to speed up query
+            # generates 'Index out of range' error, using it in the two sets
+            # above works
             release_unmapped_sp_entries = release_uniprot_entries.difference(
                 release_mapped_uniprot_entries
             )
-            # release_unmapped_sp_entries = release_uniprot_entries.exclude(uniprot_id__in=release_mapped_uniprot_entries.values_list('uniprot_id',flat=True))
 
             data = list(
                 map(
                     lambda ue: {
                         'uniprotAccession': ue.uniprot_acc,
                         "entryType": ue.entry_type.description,
-                        "isCanonical": False if ue.canonical_uniprot_id else True,
+                        "isCanonical": not ue.canonical_uniprot_id,
                         "alias": ue.alias if ue.alias else None,
                         "gene_symbol": ue.gene_symbol,
                         "gene_accession": ue.chromosome_line,
@@ -198,17 +202,11 @@ class UnmappedEntries(APIView):
             serializer = UnmappedSwissprotEntrySerializer(data, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        elif source == 'ensembl':
+        if source == 'ensembl':
             release_mapping_history = ReleaseMappingHistory.objects.filter(
                 ensembl_species_history__ensembl_tax_id=taxid
             ).latest(
                 'release_mapping_history_id'
-            )
-
-            release_transcripts = EnsemblTranscript.objects.select_related(
-                'gene'
-            ).filter(
-                transcripthistory__ensembl_species_history=release_mapping_history.ensembl_species_history
             )
 
             release_mapped_transcripts = EnsemblTranscript.objects.select_related(
@@ -238,8 +236,7 @@ class UnmappedEntries(APIView):
             serializer = UnmappedEnsemblEntrySerializer(data, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        else:
-            raise Http404('Unknown source')
+        raise Http404('Unknown source')
 
     @property
     def paginator(self):
@@ -249,9 +246,9 @@ class UnmappedEntries(APIView):
         if not hasattr(self, '_paginator'):
             source = self.kwargs['source']
             if source == 'ensembl':
-                self._paginator = UnmappedEnsemblEntryPagination()
+                self._paginator = UnmappedEnsemblEntryPagination()  # pylint: disable=attribute-defined-outside-init
             elif source == 'swissprot':
-                self._paginator = LimitOffsetPagination()
+                self._paginator = LimitOffsetPagination()  # pylint: disable=attribute-defined-outside-init
             else:
                 raise Exception('Unknown source')
 
@@ -317,7 +314,6 @@ class AddDeleteLabel(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         try:
-            label = CvUeLabel.objects.get(pk=label_id)
             serializer = UnmappedEntryLabelSerializer(
                 data={
                     'time_stamp': timezone.now(),
@@ -340,13 +336,17 @@ class AddDeleteLabel(APIView):
 
         # delete all labels with the given description attached to the mapping
         # TODO: only those associated to the given user
-        entry_labels = UeUnmappedEntryLabel.objects.filter(uniprot=uniprot_entry,label=label_id)
+        entry_labels = UeUnmappedEntryLabel.objects.filter(
+            uniprot=uniprot_entry,
+            label=label_id
+        )
         if entry_labels:
             entry_labels.delete()
 
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         raise Http404
+
 
 class GetLabels(APIView):
     """
@@ -377,7 +377,7 @@ class GetLabels(APIView):
             label_map.append({
                 'label': label.description,
                 'id': label.id,
-                'status': True if label.id in entry_labels else False
+                'status': label.id in entry_labels
             })
 
         data = {'labels': label_map}
@@ -418,7 +418,7 @@ class AddGetComments(APIView):
                 'text': c.comment,
                 'timeAdded': c.time_stamp,
                 'user': c.user_stamp.full_name,
-                'editable': True if request.user and request.user == c.user_stamp else False
+                'editable': request.user and request.user == c.user_stamp
             },
             entry_comments
         )
@@ -512,7 +512,7 @@ class EditDeleteComment(APIView):
             'text': comment.comment,
             'timeAdded': comment.time_stamp,
             'user': comment.user_stamp.full_name,
-            'editable': True if request.user and request.user == comment.user_stamp else False
+            'editable': request.user and request.user == comment.user_stamp
         })
 
         return Response(serializer.data)
@@ -616,14 +616,16 @@ class StatusChange(APIView):
         otherwise search won't reflect the status change
         """
         try:
-            mv = MappingView.objects.get(pk=mapping_view_id)
+            map_view = MappingView.objects.get(pk=mapping_view_id)
         except MappingView.DoesNotExist:
             return Response(
-                {"error": "Could not find mapping_view {} in search table.".format(mapping_view_id)},
+                {"error": "Could not find mapping_view {} in search table.".format(
+                    mapping_view_id
+                )},
                 status=status.HTTP_400_BAD_REQUEST
             )
         else:
-            mv.status = s.id
-            mv.save()
+            map_view.status = s.id
+            map_view.save()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)

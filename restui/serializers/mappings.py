@@ -21,8 +21,6 @@ from rest_framework import serializers
 from django.http import Http404
 
 from restui.lib.external import ensembl_sequence
-from restui.models.annotations import CvEntryType
-from restui.models.annotations import CvUeStatus
 from restui.models.mappings import Mapping
 from restui.models.mappings import MappingView
 from restui.models.mappings import ReleaseMappingHistory
@@ -199,7 +197,6 @@ class MappingsSerializer(serializers.Serializer):
                     ensembl_history.ensembl_release
                 )
             except Exception as e:
-                # TODO: log
                 print(e)
                 sequence = None
 
@@ -215,7 +212,7 @@ class MappingsSerializer(serializers.Serializer):
                 'sequenceVersion': mapping.uniprot.sequence_version,
                 'upi': mapping.uniprot.upi,
                 'md5': mapping.uniprot.md5,
-                'isCanonical': False if mapping.uniprot.canonical_uniprot_id else True,
+                'isCanonical': not mapping.uniprot.canonical_uniprot_id,
                 'alias': mapping.uniprot.alias,
                 'ensemblDerived': mapping.uniprot.ensembl_derived,
                 'gene_symbol': mapping.uniprot.gene_symbol,
@@ -312,7 +309,10 @@ class MappingsSerializer(serializers.Serializer):
                 'uniprotTaxId': uniprot_tax_id
             }
         except:
-            raise Http404("Couldn't find uniprot tax id as I couldn't find a uniprot entry associated to the mapping")
+            raise Http404((
+                "Couldn't find uniprot tax id as I couldn't find a uniprot "
+                "entry associated to the mapping"
+            ))
 
 
 class MappingViewSerializer(serializers.ModelSerializer):
@@ -345,7 +345,7 @@ class MappingViewsSerializer(serializers.Serializer):
                     mapping_view.ensembl_release
                 )
             except Exception as e:
-                print(e) # TODO: log
+                print(e)
                 sequence = None
 
         mapping_obj = {
@@ -362,7 +362,7 @@ class MappingViewsSerializer(serializers.Serializer):
                 'sequenceVersion': mapping_view.sequence_version,
                 'upi': mapping_view.upi,
                 'md5': mapping_view.md5,
-                'isCanonical': False if mapping_view.canonical_uniprot_id else True,
+                'isCanonical': not mapping_view.canonical_uniprot_id,
                 'alias': mapping_view.alias,
                 'ensemblDerived': mapping_view.ensembl_derived,
                 'gene_symbol': mapping_view.gene_symbol_up,
@@ -447,11 +447,9 @@ class MappingViewsSerializer(serializers.Serializer):
                 'uniprotTaxId': mapping_view.uniprot_tax_id
             }
 
-        """
-        the group just contains unmapped data, but the entries can belong
-        to multiple species
-        return information only if the group refers to the same tax id
-        """
+        # The group just contains unmapped data, but the entries can belong
+        # to multiple species. Return information only if the group refers to
+        # the same tax id.
         tax_ids = []
         for mapping_view in group:
             tax_ids.append(mapping_view.uniprot_tax_id)
