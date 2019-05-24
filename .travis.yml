@@ -32,7 +32,7 @@ addons:
 
 env:
   global:
-  - PGPORT=5433
+  - PGPORT=5432
 
 env:
     matrix:
@@ -51,8 +51,8 @@ install:
 # command to run tests
 script:
     - if [[ "$TESTENV" == "code" ]]; then coverage run --source=. manage.py test --settings=gifts_rest.settings.test; fi
-    # - if [[ "$TESTENV" == "docs" ]]; then ./scripts/travis/docs_harness.sh; fi
-    # - if [[ "$TESTENV" == "pylint" ]]; then ./scripts/travis/pylint_harness.sh; fi
+    - if [[ "$TESTENV" == "docs" ]]; then ./scripts/travis/docs_harness.sh; fi
+    - if [[ "$TESTENV" == "pylint" ]]; then ./scripts/travis/pylint_harness.sh; fi
 
 after_success:
     coveralls
