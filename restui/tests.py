@@ -15,6 +15,8 @@
    limitations under the License.
 """
 
+import os
+import json
 import mock
 
 from rest_framework.test import APIClient
@@ -239,6 +241,23 @@ class EnsemblTest(APITestCase):
     #     response = client.get('/ensembl/cigar/alignment/1/')
     #     self.assertEqual(response.status_code, 200)
     #     self.assertEqual(response.data['alignment'], 1)
+
+    def test_ensembl_feature_request(self):
+        resource_path = os.path.join(
+            os.path.dirname(__file__),
+            'fixtures/demo_bulk_load.json'
+        )
+        with open(resource_path, 'r') as json_file:
+            json_block = json.loads(json_file.read())
+
+        client = APIClient()
+        response = client.post(
+            '/ensembl/load/homo_sapiens/GRCh38/9606/97/',
+            json_block,
+            format='json'
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['success'], 1)
 
     def test_latest_assembly_request(self):
         client = APIClient()

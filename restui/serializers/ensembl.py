@@ -98,7 +98,6 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
 
         NOTE: filter is likely to be not necessary
         """
-
         history_attrs = {}
         for (k, v) in self.context['view'].kwargs.items():
             valid = [
@@ -224,6 +223,7 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
         history.save()
 
         return genes
+
 
 class EnsemblGeneSerializer(serializers.Serializer):
     gene_id = serializers.IntegerField(required=False)

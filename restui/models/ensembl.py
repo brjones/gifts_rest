@@ -193,8 +193,7 @@ class GeneHistory(PostgresModel):
 
     ensembl_species_history = models.ForeignKey(
         EnsemblSpeciesHistory,
-        models.DO_NOTHING,
-        primary_key=True
+        models.DO_NOTHING
     )
     gene = models.ForeignKey(EnsemblGene, models.DO_NOTHING)
 

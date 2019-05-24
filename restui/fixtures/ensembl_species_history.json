@@ -3,7 +3,7 @@
         "model": "restui.ensemblspecieshistory",
         "pk": 1,
         "fields": {
-            "species": "Homo sapiens",
+            "species": "homo_sapiens",
             "assembly_accession": "GRCh37",
             "ensembl_tax_id": "9606",
             "ensembl_release": "87",
@@ -16,7 +16,7 @@
         "model": "restui.ensemblspecieshistory",
         "pk": 2,
         "fields": {
-            "species": "Homo sapiens",
+            "species": "homo_sapiens",
             "assembly_accession": "GRCh38",
             "ensembl_tax_id": "9606",
             "ensembl_release": "95",
