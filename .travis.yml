@@ -39,7 +39,7 @@ env:
     matrix:
         # - TESTENV=docs
         - TESTENV=code
-        # - TESTENV=pylint
+        - TESTENV=pylint
 
 # command to install dependencies
 install:
