@@ -258,6 +258,10 @@ class EnsemblTest(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['success'], 1)
+        gene = EnsemblGene.objects.all()
+        print("\nGENE COUNT:", gene.count()
+        # self.assertEqual(gene[0]['gene_name'], 'RAD1')
+
 
     def test_latest_assembly_request(self):
         client = APIClient()
