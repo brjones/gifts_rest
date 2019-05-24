@@ -23,9 +23,7 @@ from rest_framework.test import APIClient
 from rest_framework.test import APITestCase
 
 from django.http import Http404
-# from django.db import connection
 
-from aap_auth.models import AAPUser
 from restui.models.ensembl import EnsemblGene
 from restui.models.ensembl import EnsemblTranscript
 from restui.models.ensembl import EnsemblSpeciesHistory
@@ -37,18 +35,23 @@ from restui.views import mappings
 from restui.views import unmapped
 
 
-class EnsemblTest(APITestCase):
-    fixtures = [
-        'ensembl_gene', 'ensembl_transcript', 'uniprot_entry',
-        'cv_ue_status', 'mapping', 'ensembl_species_history',
-        'release_mapping_history', 'alignment_run', 'alignment',
-        'ensp_u_cigar', 'transcript_history', 'cv_entry_type',
-        'mapping_view', 'mapping_history', 'release_stats', 'cv_ue_label',
-        'aapuser', 'ue_mapping_label', 'ue_unmapped_entry_label',
-        'uniprot_entry_history'
-    ]
+FIXTURES = [
+    'ensembl_gene', 'ensembl_transcript', 'uniprot_entry',
+    'cv_ue_status', 'mapping', 'ensembl_species_history',
+    'release_mapping_history', 'alignment_run', 'alignment',
+    'ensp_u_cigar', 'transcript_history', 'cv_entry_type',
+    'mapping_view', 'mapping_history', 'release_stats', 'cv_ue_label',
+    'aapuser', 'ue_mapping_label', 'ue_unmapped_entry_label',
+    'uniprot_entry_history'
+]
 
-    # Test that data is present in the test db
+
+class EnsemblTest(APITestCase):
+    """
+    Test that data is present in the test db
+    """
+
+    fixtures = FIXTURES
 
     def test_ensemblgene_request(self):
         gene = EnsemblGene.objects.filter(pk=2).values()
@@ -92,10 +95,12 @@ class EnsemblTest(APITestCase):
         self.assertEqual(ensembl_species_history.assembly_accession, 'GRCh38')
 
 
+class EnsemblAlignment(APITestCase):
+    """
+    endpoints of /alignments
+    """
 
-    ###############
-    # /alignments #
-    ###############
+    fixtures = FIXTURES
 
     def test_alignment_alignments_run_request(self):
         client = APIClient()
@@ -162,9 +167,13 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['alignment_id'], 4)
 
-    ############
-    # /ensembl #
-    ############
+
+class EnsemblEnsembl(APITestCase):
+    """
+    Endpoints of /ensembl
+    """
+
+    fixtures = FIXTURES
 
     def test_cigar_post(self):
         client = APIClient()
@@ -230,18 +239,6 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['alignment'], 1)
 
-    # def test_cigar_alignment_put_request(self):
-    #     client = APIClient()
-    #     response = client.get('/ensembl/cigar/alignment/1/')
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(response.data['alignment'], 1)
-
-    # def test_cigar_alignment_patch_request(self):
-    #     client = APIClient()
-    #     response = client.get('/ensembl/cigar/alignment/1/')
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(response.data['alignment'], 1)
-
     def test_ensembl_feature_request(self):
         resource_path = os.path.join(
             os.path.dirname(__file__),
@@ -261,7 +258,6 @@ class EnsemblTest(APITestCase):
 
         gene = EnsemblGene.objects.all()
         self.assertEqual(gene.count(), 8)
-
 
     def test_latest_assembly_request(self):
         client = APIClient()
@@ -290,9 +286,13 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['enst_id'], 'ENST00000380152.7')
 
-    ############
-    # /mapping #
-    ############
+
+class EnsemblMapping(APITestCase):
+    """
+    Endpoints of /mapping
+    """
+
+    fixtures = FIXTURES
 
     def test_mapping_functions(self):
         with self.assertRaises(Http404):
@@ -312,22 +312,22 @@ class EnsemblTest(APITestCase):
         tax = mappings.build_taxonomy_data(mapping)
         self.assertEqual(tax['ensemblTaxId'], 9606)
 
-        related_mappings = mappings.build_related_mappings_data(mapping),
-        self.assertEqual(related_mappings[0][0]['mappingId'], 4)
+        related_mappings = mappings.build_related_mappings_data(mapping)
+        self.assertEqual(related_mappings[0]['mappingId'], 4)
         self.assertEqual(
-            related_mappings[0][0]['ensemblTranscript']['ensgId'],
+            related_mappings[0]['ensemblTranscript']['ensgId'],
             'ENSG00000139618'
         )
         self.assertEqual(
-            related_mappings[0][0]['ensemblTranscript']['ensgName'],
+            related_mappings[0]['ensemblTranscript']['ensgName'],
             'BRCA2'
         )
         self.assertEqual(
-            related_mappings[0][0]['ensemblTranscript']['enstId'],
+            related_mappings[0]['ensemblTranscript']['enstId'],
             'ENST00000380152.7'
         )
         self.assertEqual(
-            related_mappings[0][0]['uniprotEntry']['uniprotAccession'],
+            related_mappings[0]['uniprotEntry']['uniprotAccession'],
             'O60671'
         )
 
@@ -518,9 +518,13 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.status_code, 204)
         self.assertEqual(response.data, None)
 
-    #############
-    # /mappings #
-    #############
+
+class EnsemblMappings(APITestCase):
+    """
+    Endpoints of /mappings
+    """
+
+    fixtures = FIXTURES
 
     def test_mappings_request(self):
         client = APIClient()
@@ -625,9 +629,13 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.data[0]['id'], 1)
         self.assertEqual(response.data[0]['description'], 'TESTING')
 
-    ############
-    # /service #
-    ############
+
+class EnsemblService(APITestCase):
+    """
+    Endpoints of /service
+    """
+
+    fixtures = FIXTURES
 
     def test_service_ping(self):
         client = APIClient()
@@ -635,9 +643,13 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['ping'], 0)
 
-    ############
-    # /uniprot #
-    ############
+
+class EnsemblUniProt(APITestCase):
+    """
+    Endpoints of /uniprot
+    """
+
+    fixtures = FIXTURES
 
     def test_uniprot_request(self):
         client = APIClient()
@@ -645,9 +657,13 @@ class EnsemblTest(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['uniprot_acc'], 'O60671')
 
-    #############
-    # /unmapped #
-    #############
+
+class EnsemblUnmapped(APITestCase):
+    """
+    Endpoints of /unmapped
+    """
+
+    fixtures = FIXTURES
 
     def test_get_uniprot_entry(self):
         uniprot_entry = unmapped.get_uniprot_entry(1)
@@ -699,15 +715,6 @@ class EnsemblTest(APITestCase):
         self.assertEqual(
             response.data['results'][0]['transcripts'][0]['enstId'],
             'ENST00000544455.5'
-        )
-
-    def test_unmapped_comment_lifecycle(self):
-        client = APIClient()
-        response = client.post(
-            '/mapping/2/comments',
-            data={
-                'text': 'This is a test comment for the mapping',
-            }
         )
 
     def test_unmapped_comment_requests(self):
@@ -854,6 +861,9 @@ class EnsemblTest(APITestCase):
 
 
 class LibAlignment(APITestCase):
+    """
+    Tests for the /lib/alignment functions
+    """
 
     fixtures = [
         'ensembl_gene', 'ensembl_transcript', 'uniprot_entry',
@@ -896,7 +906,9 @@ class LibAlignment(APITestCase):
         uniprot_id = mapping.uniprot.uniprot_acc
         mapped_aln = mapping.alignments.all()
 
-        aln = alignments._fetch_alignment(mapped_aln[0], enst, uniprot_id)
+        aln = alignments._fetch_alignment(  # pylint: disable=protected-access
+            mapped_aln[0], enst, uniprot_id
+        )
         self.assertEqual(aln['uniprot_alignment'][0:7], 'MPIGSKE')
 
     def test_calculate_difference(self):
@@ -905,6 +917,9 @@ class LibAlignment(APITestCase):
 
 
 class LibExternal(APITestCase):
+    """
+    Tests for the /lib/external functions
+    """
 
     def test_tark_transcript(self):
         tark_entry = external.tark_transcript('ENST00000382038', 95)
@@ -912,7 +927,7 @@ class LibExternal(APITestCase):
 
     def test_ensembl_current_release(self):
         e_release = external.ensembl_current_release()
-        self.assertEqual(isinstance(e_release,int), True)
+        self.assertEqual(isinstance(e_release, int), True)
 
     def test_ensembl_sequence(self):
         seq = external.ensembl_sequence('ENST00000382038', 95)

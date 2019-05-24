@@ -18,18 +18,24 @@
 from django.urls import path
 from django.http import Http404
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 from restui.views import alignments
 from restui.views import ensembl
 from restui.views import mappings
 from restui.views import uniprot
 from restui.views import unmapped
 from restui.views import service
-from restui.exceptions import FalloverROException
-from django.conf import settings
 
 
 @csrf_exempt
 def method_router(request, *args, **kwargs):
+    """
+    Handler for method routing in the module
+
+    Parameters
+    ----------
+    request : request object
+    """
     if settings.FALLOVER and (request.method == 'POST' or request.method == 'PUT'):
         raise Http404
         # This doesn't work for some reason, maybe Alessandro can figure it out.
@@ -128,7 +134,6 @@ urlpatterns = [
          {'VIEW': mappings.MappingStatusView.as_view()}),
 
     # retrieve pairwise alignments for a mapping
-    # TODO?
     path('mapping/<int:pk>/pairwise/', mappings.MappingPairwiseAlignment.as_view()),
 
     # update mapping alignment_difference
@@ -175,30 +180,35 @@ urlpatterns = [
     path('service/ping/', service.PingService.as_view())
 ]
 
-#
-# DO NOT EDIT
-#
-# This is used to note down the endpoints needed for the pipelines scripts used by Ensembl
-#
-# eu_alignment_perfect_match
-#
-# X mappings/release_history/latest/assembly/<assembly_accession> # fetch latest (by ensembl species history time loaded) release_mapping_history for a given assembly
-#   - optional param: ensembl release: fetch latest by release as well
-#   - return ensembl species history as nested element
-# - mapping/history/<int:pk>/ # fetch the mappings for a given release mapping history (includes mapping type from corresponding mapping history)
-# X fetch transcripts by id
-# X fetch uniprot entries by id
-# X alignments/alignment_run/ # create alignment run
-# X alignments/alignment/ # create alignment
+"""
+DO NOT EDIT
 
-#
-# eu_alignment_blast_cigar
-#
-# X fetch alignment run by ID
-# X fetch latest release mapping history ... (same as before) -> access ensembl species history
-# X fetch latest alignments by type and assembly accession
-# X create new alignment run
-# X fetch transcripts
-# X create alignment
-# X create cigar
-#
+This is used to note down the endpoints needed for the pipelines scripts used
+by Ensembl
+
+eu_alignment_perfect_match
+
+X mappings/release_history/latest/assembly/<assembly_accession> # fetch latest
+(by ensembl species history time loaded) release_mapping_history for a given
+assembly:
+  - optional param: ensembl release: fetch latest by release as well
+  - return ensembl species history as nested element
+  - mapping/history/<int:pk>/ # fetch the mappings for a given release mapping
+    history (includes mapping type from corresponding mapping history)
+X fetch transcripts by id
+X fetch uniprot entries by id
+X alignments/alignment_run/ # create alignment run
+X alignments/alignment/ # create alignment
+
+
+eu_alignment_blast_cigar
+
+X fetch alignment run by ID
+X fetch latest release mapping history ... (same as before) -> access ensembl
+  species history
+X fetch latest alignments by type and assembly accession
+X create new alignment run
+X fetch transcripts
+X create alignment
+X create cigar
+"""
