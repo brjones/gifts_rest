@@ -20,6 +20,9 @@ language: python
 python:
     - "3.6"
 
+services:
+  - postgresql
+
 addons:
   postgresql: "10"
   apt:
@@ -39,6 +42,7 @@ env:
 
 # command to install dependencies
 install:
+    - postgres --version
     - pip install .
     - pip install -r requirements.txt
     - if [[ "$TESTENV" == "docs" ]]; then pip install sphinx;fi
