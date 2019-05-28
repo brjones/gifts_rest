@@ -28,6 +28,7 @@ from restui.models.ensembl import EnsemblGene
 from restui.models.ensembl import EnsemblTranscript
 from restui.models.ensembl import EnsemblSpeciesHistory
 from restui.models.mappings import Mapping
+from restui.models.uniprot import UniprotEntry
 
 from restui.exceptions import FalloverROException
 from restui.lib import alignments
@@ -61,6 +62,16 @@ class EnsemblTest(APITestCase):
     def test_ensembltranscript_request(self):
         transcript = EnsemblTranscript.objects.filter(pk=2).values()
         self.assertEqual(transcript[0]['gene_id'], 1)
+
+    def test_uniprot_entry_request(self):
+        uniprot_entry = UniprotEntry.objects.filter(pk=1)
+        self.assertEqual(
+            str(uniprot_entry[0]),
+            "{0} - {1}".format(
+                uniprot_entry[0].uniprot_id,
+                uniprot_entry[0].uniprot_acc
+            )
+        )
 
     def test_ensembl_species_history_request(self):
         mapping = mappings.get_mapping(1)
@@ -862,8 +873,14 @@ class EnsemblUnmapped(APITestCase):
 
 
 class RestExceptions(APITestCase):
+    """
+    Tests to ensure that the custom exceptions can be raised
+    """
 
     def test_falloverroeexception(self):
+        """
+        Exception to be raised when the service is in a read-only mode
+        """
         with self.assertRaises(FalloverROException):
             raise FalloverROException
 
