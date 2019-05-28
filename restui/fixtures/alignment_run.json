@@ -25,7 +25,7 @@
         "fields": {
             "userstamp": "test_userstamp",
             "time_run": "2019-05-01T00:00:00Z",
-            "score1_type": "perfect_match",
+            "score1_type": "identity",
             "report_type": "sp mapping value",
             "pipeline_name": "test_loading",
             "pipeline_comment": "test",

@@ -116,7 +116,7 @@ class EnsemblAlignment(APITestCase):
 
     def test_alignments_assembly_request(self):
         client = APIClient()
-        response = client.get('/alignments/alignment/latest/assembly/GRCh38/')
+        response = client.get('/alignments/alignment/latest/assembly/GRCh38/?type=identity')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['results'][0]['alignment_id'], 2)
 
@@ -257,7 +257,7 @@ class EnsemblEnsembl(APITestCase):
         self.assertEqual(response.data['success'], 1)
 
         gene = EnsemblGene.objects.all()
-        self.assertEqual(gene.count(), 8)
+        self.assertEqual(gene.count(), 9)
 
     def test_latest_assembly_request(self):
         client = APIClient()
@@ -910,6 +910,47 @@ class LibAlignment(APITestCase):
             mapped_aln[0], enst, uniprot_id
         )
         self.assertEqual(aln['uniprot_alignment'][0:7], 'MPIGSKE')
+
+    def test_fetch_alignment_identity(self):
+        client = APIClient()
+        response = client.post(
+            '/alignments/alignment_run/',
+            data={
+                'userstamp': 'test_userstamp',
+                'time_run': '2019-05-01 00:00:00',
+                'score1_type': 'identity',
+                'report_type': 'sp mapping value',
+                'pipeline_name': 'test_loading',
+                'pipeline_comment': 'test',
+                'ensembl_release': 0,
+                'uniprot_file_swissprot': '/test/location/sp.txt',
+                'uniprot_file_isoform': '/test/location/iso.txt',
+                'uniprot_dir_trembl': '/test/location/trembl',
+                'logfile_dir': '/test/location/log.txt',
+                'pipeline_script': 'testing_testing.sh',
+                'score2_type': 'coverage',
+                'release_mapping_history': 1
+            }
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['alignment_run_id'], 3)
+
+        client = APIClient()
+        response = client.post(
+            '/alignments/alignment/',
+            data={
+                'uniprot_id': 3,
+                'score1': 1,
+                'report': 'Alignment',
+                'is_current': True,
+                'score2': 1,
+                'alignment_run': 3,
+                'transcript': 2,
+                'mapping': 2
+            }
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['alignment_id'], 4)
 
     def test_calculate_difference(self):
         diff = alignments.calculate_difference('3M1I3M1D5M')
