@@ -10,7 +10,7 @@
     },
     {
         "model": "restui.uniprotentryhistory",
-        "pk": 1,
+        "pk": 2,
         "fields": {
             "release_version": "2019_05",
             "uniprot": 2,
@@ -19,7 +19,7 @@
     },
     {
         "model": "restui.uniprotentryhistory",
-        "pk": 1,
+        "pk": 3,
         "fields": {
             "release_version": "2019_05",
             "uniprot": 4,

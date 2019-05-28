@@ -416,7 +416,7 @@ class MappingLabelView(APIView):
         )
 
         if mapping_labels:
-            # mapping has already label, ignore
+            # mapping already has a label, ignore
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         try:

@@ -166,7 +166,7 @@ class UnmappedEntries(APIView):
                 'entry_type'
             ).filter(
                 mapping__mapping_history__release_mapping_history=release_mapping_history,
-                ntry_type__description__icontains='swiss'
+                entry_type__description__icontains='swiss'
             ).distinct()
 
             # the unmapped swiss-prot entries

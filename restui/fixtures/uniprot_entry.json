@@ -67,7 +67,7 @@
         "pk": 4,
         "fields": {
             "uniprot_acc": "PUNM4P",
-            "uniprot_tax_id": null,
+            "uniprot_tax_id": 9606,
             "userstamp": null,
             "timestamp": null,
             "sequence_version": 1,

@@ -720,13 +720,22 @@ class EnsemblUnmapped(APITestCase):
         response = client.delete('/unmapped/4/labels/4/')
         self.assertEqual(response.status_code, 404)
 
-    def test_unmapped_tax_source_request(self):
+    def test_unmapped_tax_source_ensembl_request(self):
         client = APIClient()
         response = client.get('/unmapped/9606/ensembl/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.data['results'][0]['transcripts'][0]['enstId'],
             'ENST00000544455.5'
+        )
+
+    def test_unmapped_tax_source_swissprot_request(self):
+        client = APIClient()
+        response = client.get('/unmapped/9606/swissprot/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data['results'][0]['uniprotAccession'],
+            'PUNM4P'
         )
 
     def test_unmapped_comment_requests(self):

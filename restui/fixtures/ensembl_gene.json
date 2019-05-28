@@ -58,5 +58,25 @@
             "gene_accession": null,
             "source": null
         }
+    },
+    {
+        "model": "restui.ensemblgene",
+        "pk": 4,
+        "fields": {
+            "ensg_id": "ENSG0004.1",
+            "gene_name": "IDN8",
+            "chromosome": "1",
+            "region_accession": null,
+            "mod_id": null,
+            "deleted": null,
+            "seq_region_start": "20000",
+            "seq_region_end": "30000",
+            "seq_region_strand": "-1",
+            "biotype": "protein_coding",
+            "time_loaded": null,
+            "gene_symbol": null,
+            "gene_accession": null,
+            "source": null
+        }
     }
 ]
