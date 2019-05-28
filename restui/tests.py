@@ -29,6 +29,7 @@ from restui.models.ensembl import EnsemblTranscript
 from restui.models.ensembl import EnsemblSpeciesHistory
 from restui.models.mappings import Mapping
 
+from restui.exceptions import FalloverROException
 from restui.lib import alignments
 from restui.lib import external
 from restui.views import mappings
@@ -858,6 +859,13 @@ class EnsemblUnmapped(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['uniprot'], 3)
+
+
+class RestExceptions(APITestCase):
+
+    def test_falloverroeexception(self):
+        with self.assertRaises(FalloverROException):
+            raise FalloverROException
 
 
 class LibAlignment(APITestCase):
