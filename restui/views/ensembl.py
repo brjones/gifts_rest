@@ -19,6 +19,7 @@ from django.http import Http404
 from rest_framework import status
 from rest_framework import mixins
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
@@ -39,6 +40,7 @@ from restui.serializers.ensembl import TranscriptSerializer
 class EnsemblFeature(mixins.CreateModelMixin,
                      generics.GenericAPIView):
 
+    permission_classes = (IsAuthenticated,)
     serializer_class = EnsemblGeneSerializer
     schema = ManualSchema(
         description="Bulk load/update of genes and their transcript from an Ensembl release",
@@ -244,6 +246,7 @@ class SpeciesHistoryAlignmentStatus(APIView):
     Update a species history's alignment status
     """
 
+    permission_classes = (IsAuthenticated,)
     schema = ManualSchema(
         description="Update a species history's alignment status",
         fields=[
