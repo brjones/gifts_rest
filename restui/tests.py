@@ -73,6 +73,11 @@ class EnsemblTest(APITestCase):
             )
         )
 
+    def test_mapping_tables(self):
+        maps = Mapping.objects.all()
+        mapped_sets = maps.grouped_counts()
+        self.assertEqual(mapped_sets[0]['total'], 2)
+
     def test_ensembl_species_history_request(self):
         mapping = mappings.get_mapping(1)
         ensembl_species_history = EnsemblSpeciesHistory.objects.filter(

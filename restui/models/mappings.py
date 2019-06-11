@@ -124,6 +124,15 @@ class MappingQuerySet(models.query.QuerySet):
         Finally return the groups all nicely packaged up in a dict of lists,
         where the dict key is the unique grouping_id and the value is a list of
         Mapping objects associated with that grouping_id
+
+        Parameters
+        ----------
+        offset : int
+        limit  : int
+
+        Returns
+        -------
+        grouped_results : dict
         """
         counts = self.grouped_counts()
 
