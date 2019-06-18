@@ -40,6 +40,7 @@ from restui.serializers.ensembl import TranscriptSerializer
 class EnsemblFeature(mixins.CreateModelMixin,
                      generics.GenericAPIView):
 
+    queryset = ''
     permission_classes = (IsAuthenticated,)
     serializer_class = EnsemblGeneSerializer
     schema = ManualSchema(
@@ -169,22 +170,25 @@ class EnspUCigarFetch(generics.RetrieveAPIView):
 
         return obj
 
+
 class EnspUCigarFetchUpdateByAlignment(generics.RetrieveUpdateAPIView):
     """
     Fetch/Update cigar/mdz by alignment id
     """
 
+    queryset = ''
     serializer_class = EnspUCigarSerializer
-    schema = ManualSchema(description="Fetch/Update cigar/mdz by alignment id",
-                          fields=[
-                              coreapi.Field(
-                                  name="id",
-                                  required=True,
-                                  location="path",
-                                  schema=coreschema.Integer(),
-                                  description="Alignmet id"
-                              ),
-                          ])
+    schema = ManualSchema(
+        description="Fetch/Update cigar/mdz by alignment id",
+        fields=[
+            coreapi.Field(
+                name="id",
+                required=True,
+                location="path",
+                schema=coreschema.Integer(),
+                description="Alignmet id"
+            ),
+        ])
 
     def get_object(self):
         try:
@@ -193,7 +197,6 @@ class EnspUCigarFetchUpdateByAlignment(generics.RetrieveUpdateAPIView):
             raise Http404
 
         self.check_object_permissions(self.request, obj)
-
         return obj
 
 

@@ -244,13 +244,14 @@ class UnmappedEntries(APIView):
         The paginator instance associated with the view, or `None`.
         """
         if not hasattr(self, '_paginator'):
-            source = self.kwargs['source']
-            if source == 'ensembl':
-                self._paginator = UnmappedEnsemblEntryPagination()  # pylint: disable=attribute-defined-outside-init
-            elif source == 'swissprot':
-                self._paginator = LimitOffsetPagination()  # pylint: disable=attribute-defined-outside-init
-            else:
-                raise Exception('Unknown source')
+            if 'source' in self.kwargs:
+                source = self.kwargs['source']
+                if source == 'ensembl':
+                    self._paginator = UnmappedEnsemblEntryPagination()  # pylint: disable=attribute-defined-outside-init
+                elif source == 'swissprot':
+                    self._paginator = LimitOffsetPagination()  # pylint: disable=attribute-defined-outside-init
+                else:
+                    raise Exception('Unknown source')
 
         return self._paginator
 

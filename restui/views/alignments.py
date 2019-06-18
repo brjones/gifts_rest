@@ -85,6 +85,10 @@ class AlignmentByAlignmentRunFetch(generics.ListAPIView):
     )
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            # queryset just for schema generation metadata
+            return AlignmentRun.objects.none()
+
         try:
             alignment_run = AlignmentRun.objects.get(pk=self.kwargs["pk"])
         except (AlignmentRun.DoesNotExist, IndexError):

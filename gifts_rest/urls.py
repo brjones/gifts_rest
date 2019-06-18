@@ -34,18 +34,39 @@ from django.contrib import admin
 from django.urls import path
 from django.conf.urls import url, include
 
-from rest_framework_swagger.views import get_swagger_view
+# from rest_framework_swagger.views import get_swagger_view
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
 
 from . import settings
 
 
-schema_view = get_swagger_view(title='GIFTs API Documentation')
-
+schema_view = get_schema_view(
+    openapi.Info(
+        title="GIFTS API",
+        default_version='v1',
+        # description="Swagger documentation",
+        # terms_of_service="",
+        # contact=openapi.Contact(email=""),
+        # license=openapi.License(name="Apache v2.0"),
+    ),
+    public=True
+    # permission_classes=(permissions.AllowAny,),
+)
 
 if settings.env.DEV_ENV:
 
     urlpatterns = [
-        url(r'^docs/', schema_view),
+        url(
+            r'^swagger/$',
+            schema_view.with_ui('swagger', cache_timeout=0),
+            name='schema-swagger-ui'
+        ),
+        url(
+            r'^redoc/$',
+            schema_view.with_ui('redoc', cache_timeout=0),
+            name='schema-redoc'
+        ),
         path('admin/', admin.site.urls),
         url(r'^', include('restui.urls')),
     ]
@@ -53,6 +74,15 @@ if settings.env.DEV_ENV:
 else:
 
     urlpatterns = [
-        url(r'^docs/', schema_view),
+        url(
+            r'^swagger/$',
+            schema_view.with_ui('swagger/', cache_timeout=0),
+            name='schema-swagger-ui'
+        ),
+        url(
+            r'^redoc/$',
+            schema_view.with_ui('redoc/', cache_timeout=0),
+            name='schema-redoc'
+        ),
         url(r'^', include('restui.urls')),
     ]
