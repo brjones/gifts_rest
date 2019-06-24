@@ -51,7 +51,6 @@ schema_view = get_schema_view(
         # license=openapi.License(name="Apache v2.0"),
     ),
     public=True
-    # permission_classes=(permissions.AllowAny,),
 )
 
 if settings.env.DEV_ENV:
