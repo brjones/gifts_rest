@@ -15,8 +15,27 @@
    limitations under the License.
 """
 
-from .ensembl import EnsemblGene, EnsemblSpeciesHistory, EnsemblTranscript, EnspUCigar, GeneHistory, TranscriptHistory
-from .mappings import Alignment, AlignmentRun, Mapping, MappingHistory, ReleaseMappingHistory
-from .uniprot import Domain, Isoform, Ptm, UniprotEntry, UniprotEntryHistory
-from .annotations import CvEntryType, CvUeLabel, CvUeStatus, UeMappingComment, UeMappingLabel, UeMappingStatus
-from .other import PdbEns, TaxonomyMapping
+from restui.models.ensembl import EnsemblGene
+from restui.models.ensembl import EnsemblSpeciesHistory
+from restui.models.ensembl import EnsemblTranscript
+from restui.models.ensembl import EnspUCigar
+from restui.models.ensembl import GeneHistory
+from restui.models.ensembl import TranscriptHistory
+from restui.models.mappings import Alignment
+from restui.models.mappings import AlignmentRun
+from restui.models.mappings import Mapping
+from restui.models.mappings import MappingHistory
+from restui.models.mappings import ReleaseMappingHistory
+from restui.models.uniprot import Domain
+from restui.models.uniprot import Isoform
+from restui.models.uniprot import Ptm
+from restui.models.uniprot import UniprotEntry
+from restui.models.uniprot import UniprotEntryHistory
+from restui.models.annotations import CvEntryType
+from restui.models.annotations import CvUeLabel
+from restui.models.annotations import CvUeStatus
+from restui.models.annotations import UeMappingComment
+from restui.models.annotations import UeMappingLabel
+from restui.models.annotations import UeMappingStatus
+from restui.models.other import PdbEns
+from restui.models.other import TaxonomyMapping

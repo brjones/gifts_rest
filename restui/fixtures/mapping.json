@@ -1,0 +1,46 @@
+[
+    {
+        "model": "restui.mapping",
+        "pk": 1,
+        "fields": {
+            "uniprot_id": "1",
+            "transcript_id": "1",
+            "alignment_difference": null,
+            "status": "1",
+            "first_release_mapping_history_id": null
+        }
+    },
+    {
+        "model": "restui.mapping",
+        "pk": 2,
+        "fields": {
+            "uniprot_id": "3",
+            "transcript_id": "3",
+            "alignment_difference": null,
+            "status": "1",
+            "first_release_mapping_history_id": null
+        }
+    },
+    {
+        "model": "restui.mapping",
+        "pk": 3,
+        "fields": {
+            "uniprot_id": "1",
+            "transcript_id": "2",
+            "alignment_difference": null,
+            "status": "1",
+            "first_release_mapping_history_id": null
+        }
+    },
+    {
+        "model": "restui.mapping",
+        "pk": 4,
+        "fields": {
+            "uniprot_id": "2",
+            "transcript_id": "2",
+            "alignment_difference": null,
+            "status": "1",
+            "first_release_mapping_history_id": null
+        }
+    }
+]

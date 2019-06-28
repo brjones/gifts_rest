@@ -1,0 +1,107 @@
+[
+    {
+        "model": "restui.cvuelabel",
+        "pk": 1,
+        "fields": {
+            "description": "overlapping locus"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 2,
+        "fields": {
+            "description": "polymorphic pseudogene no stop"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 3,
+        "fields": {
+            "description": "reference genome error"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 4,
+        "fields": {
+            "description": "selenoprotein"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 5,
+        "fields": {
+            "description": "bicistronic"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 6,
+        "fields": {
+            "description": "inferred exon combination"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 7,
+        "fields": {
+            "description": "inferred transcript model"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 8,
+        "fields": {
+            "description": "not best-in-genome evidence"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 9,
+        "fields": {
+            "description": "not organism-supported"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 10,
+        "fields": {
+            "description": "readthrough"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 11,
+        "fields": {
+            "description": "upstream ATG"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 12,
+        "fields": {
+            "description": "non-ATG start"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 13,
+        "fields": {
+            "description": "non canonical conserved"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 14,
+        "fields": {
+            "description": "non canonical polymorphism"
+        }
+    },
+    {
+        "model": "restui.cvuelabel",
+        "pk": 15,
+        "fields": {
+            "description": "non canonical U12"
+        }
+    }
+]

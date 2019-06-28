@@ -15,17 +15,22 @@
    limitations under the License.
 """
 
-from restui.models.annotations import UeMappingStatus, UeMappingComment, UeMappingLabel, CvUeStatus,\
-    UeUnmappedEntryLabel, UeUnmappedEntryComment, UeUnmappedEntryStatus
-
 from rest_framework import serializers
 
-import pprint
+from restui.models.annotations import UeMappingStatus
+from restui.models.annotations import UeMappingComment
+from restui.models.annotations import UeMappingLabel
+from restui.models.annotations import CvUeStatus
+from restui.models.annotations import UeUnmappedEntryLabel
+from restui.models.annotations import UeUnmappedEntryComment
+from restui.models.annotations import UeUnmappedEntryStatus
+
 
 class CvUeStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = CvUeStatus
         fields = '__all__'
+
 
 class StatusHistorySerializer(serializers.Serializer):
     """
@@ -110,6 +115,7 @@ class MappingCommentSerializer(serializers.ModelSerializer):
         model = UeMappingComment
         fields = '__all__'
 
+
 class UnmappedEntryCommentSerializer(serializers.ModelSerializer):
     """
     unmapped/:id/comments endpoint
@@ -151,6 +157,7 @@ class MappingLabelSerializer(serializers.ModelSerializer):
         model = UeMappingLabel
         fields = '__all__'
 
+
 class UnmappedEntryLabelSerializer(serializers.ModelSerializer):
     """
     unmapped/<int:mapping_view_id>/labels/<label_id>/ endpoint
@@ -178,7 +185,8 @@ class LabelSerializer(serializers.Serializer):
 
 class LabelsSerializer(serializers.Serializer):
     """
-    For nested serialization of user label for a mapping in call to (mapping|unmapped)/<id>/labels endpoint.
+    For nested serialization of user label for a mapping in call to
+    (mapping|unmapped)/<id>/labels endpoint.
     """
 
     labels = LabelSerializer(many=True)

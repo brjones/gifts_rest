@@ -132,20 +132,21 @@ if 'TRAVIS' in os.environ:
     SECRET_KEY = "SecretKeyForUseOnTravis"
     DATABASES = {
         'default': {
-            'ENGINE':   'django.db.backends.postgresql_psycopg2',
-            'NAME':     'travisci',
-            'USER':     'travis',
-#            'PASSWORD': '',
-            'HOST':     '127.0.0.1',
-#            'PORT':     '',
+            # 'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'ENGINE': 'psqlextra.backend',
+            'NAME': 'ensembl_gifts',
+            'USER': 'postgres',
+            'PASSWORD': '',
+            'HOST': 'localhost',
+            # 'PORT': '5433',
         },
         'gifts': {
-            'ENGINE':   'psqlextra.backend',
-            'NAME':     'travisci',
-            'USER':     'travis',
-#            'PASSWORD': '',
-            'HOST':     '127.0.0.1',
-#            'PORT':     '',
+            'ENGINE': 'psqlextra.backend',
+            'NAME': 'ensembl_gifts',
+            'USER': 'postgres',
+            'PASSWORD': '',
+            'HOST': 'localhost',
+            # 'PORT': '5433',
         }
     }
 else:

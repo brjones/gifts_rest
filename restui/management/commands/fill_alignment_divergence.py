@@ -15,14 +15,21 @@
    limitations under the License.
 """
 
-from django.core.management.base import BaseCommand
+from __future__ import print_function
 
+from django.core.management.base import BaseCommand
 from restui.models.mappings import Mapping
 
 
 class Command(BaseCommand):
+    """
+    Base commands
+    """
 
     def handle(self, *args, **options):
+        """
+        Back-filling protein alignment divergence
+        """
         print("Back-filling protein alignment divergence")
 
         mappings = Mapping.objects.all()

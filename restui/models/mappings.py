@@ -18,11 +18,12 @@
 from collections import defaultdict
 
 from django.db import models
-from django.db.models import Count, Case, When
-
+from django.db.models import Count
+from django.db.models import Case
+from django.db.models import When
 from restui.lib.alignments import calculate_difference
-from django.template.defaultfilters import default
-from restui.models.annotations import CvEntryType, CvUeStatus
+from restui.models.annotations import CvEntryType
+from restui.models.annotations import CvUeStatus
 from restui.models.ensembl import EnsemblSpeciesHistory
 
 
@@ -30,8 +31,19 @@ class Alignment(models.Model):
     alignment_id = models.BigAutoField(primary_key=True)
     alignment_run = models.ForeignKey('AlignmentRun', models.DO_NOTHING)
     uniprot_id = models.BigIntegerField(blank=True, null=True)
-    transcript = models.ForeignKey('EnsemblTranscript', models.DO_NOTHING, blank=True, null=True)
-    mapping = models.ForeignKey('Mapping', models.DO_NOTHING, blank=True, null=True, related_name='alignments')
+    transcript = models.ForeignKey(
+        'EnsemblTranscript',
+        models.DO_NOTHING,
+        blank=True,
+        null=True
+    )
+    mapping = models.ForeignKey(
+        'Mapping',
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        related_name='alignments'
+    )
     score1 = models.FloatField(blank=True, null=True)
     report = models.CharField(max_length=300, blank=True, null=True)
     is_current = models.NullBooleanField()
@@ -50,7 +62,10 @@ class AlignmentRun(models.Model):
     report_type = models.CharField(max_length=30, blank=True, null=True)
     pipeline_name = models.CharField(max_length=30)
     pipeline_comment = models.CharField(max_length=300)
-    release_mapping_history = models.ForeignKey('ReleaseMappingHistory', models.DO_NOTHING)
+    release_mapping_history = models.ForeignKey(
+        'ReleaseMappingHistory',
+        models.DO_NOTHING
+    )
     ensembl_release = models.BigIntegerField()
     uniprot_file_swissprot = models.CharField(max_length=300, blank=True, null=True)
     uniprot_file_isoform = models.CharField(max_length=300, blank=True, null=True)
@@ -71,17 +86,29 @@ class MappingQuerySet(models.query.QuerySet):
         """
         Retrieve a list of unique grouping_id counts from a queryset.
         eg
-        [{'mapping_history__grouping_id': 1, 'total': 19}, {'mapping_history__grouping_id': 2, 'total': 6}, {'mapping_history__grouping_id': 3, 'total': 4},...]
+        [
+          {'mapping_history__grouping_id': 1, 'total': 19},
+          {'mapping_history__grouping_id': 2, 'total': 6},
+          {'mapping_history__grouping_id': 3, 'total': 4},
+          ...
+        ]
         """
         if self._counts is None:
-            self._counts = self.values('mapping_history__grouping_id').annotate(total=Count('mapping_history__grouping_id')).order_by('mapping_history__grouping_id')
+            self._counts = self.values(
+                'mapping_history__grouping_id'
+            ).annotate(
+                total=Count('mapping_history__grouping_id')
+            ).order_by(
+                'mapping_history__grouping_id'
+            )
 
         return self._counts
 
     @property
     def grouped_count(self):
         """
-        Retrieve the total number of groups based on unique grouping_id from a queryset
+        Retrieve the total number of groups based on unique grouping_id from a
+        queryset
         """
         counts = self.grouped_counts()
 
@@ -97,6 +124,15 @@ class MappingQuerySet(models.query.QuerySet):
         Finally return the groups all nicely packaged up in a dict of lists,
         where the dict key is the unique grouping_id and the value is a list of
         Mapping objects associated with that grouping_id
+
+        Parameters
+        ----------
+        offset : int
+        limit  : int
+
+        Returns
+        -------
+        grouped_results : dict
         """
         counts = self.grouped_counts()
 
@@ -107,13 +143,25 @@ class MappingQuerySet(models.query.QuerySet):
 
         qs_limit = sum(int(row['total']) for row in counts[offset:offset+limit])
 
-        sub_qs = self.select_related('uniprot').select_related('transcript').select_related('transcript__gene').order_by('mapping_history__grouping_id')[qs_offset:qs_offset+qs_limit]
+        sub_qs = self.select_related(
+            'uniprot'
+        ).select_related(
+            'transcript'
+        ).select_related(
+            'transcript__gene'
+        ).order_by(
+            'mapping_history__grouping_id'
+        )[qs_offset:qs_offset+qs_limit]
 
         grouped_results = {}
-        grouped_results_added = defaultdict(set) # there are duplicates in each group, don't know yet why
+
+        # there are duplicates in each group, don't know yet why
+        grouped_results_added = defaultdict(set)
 
         for result in sub_qs:
-            grouping_id = result.mapping_history.latest('release_mapping_history__time_mapped').grouping_id
+            grouping_id = result.mapping_history.latest(
+                'release_mapping_history__time_mapped'
+            ).grouping_id
 
             # skip if the mapping has already been added to the group
             if result.mapping_id in grouped_results_added[grouping_id]:
@@ -121,9 +169,13 @@ class MappingQuerySet(models.query.QuerySet):
 
             # a mapping might refer to an older release mapping history,
             # keep only those relative to the most recent for a certain species
-            result_rmh = result.mapping_history.latest('release_mapping_history__time_mapped').release_mapping_history
+            result_rmh = result.mapping_history.latest(
+                'release_mapping_history__time_mapped'
+            ).release_mapping_history
             result_species = result_rmh.uniprot_taxid
-            species_latest_rmh = ReleaseMappingHistory.objects.filter(uniprot_taxid=result_species).latest('time_mapped')
+            species_latest_rmh = ReleaseMappingHistory.objects.filter(
+                uniprot_taxid=result_species
+            ).latest('time_mapped')
 
             if result_rmh != species_latest_rmh:
                 continue
@@ -131,7 +183,7 @@ class MappingQuerySet(models.query.QuerySet):
             try:
                 grouped_results[grouping_id].append(result)
             except (KeyError, AttributeError):
-                grouped_results[grouping_id] = [ result ]
+                grouped_results[grouping_id] = [result]
             finally:
                 grouped_results_added[grouping_id].add(result.mapping_id)
 
@@ -153,13 +205,17 @@ class MappingQuerySet(models.query.QuerySet):
         """
         Return a list of tuples, of all the tax_id and species in this queryset
         """
-#        species_set = self.values('transcript__history__ensembl_species_history__ensembl_tax_id', 'transcript__transcripthistory__ensembl_species_history__species').distinct()
-        species_set = self.values('transcript__transcripthistory__ensembl_species_history__ensembl_tax_id', 'transcript__transcripthistory__ensembl_species_history__species').distinct()
+        species_set = self.values(
+            'transcript__transcripthistory__ensembl_species_history__ensembl_tax_id',
+            'transcript__transcripthistory__ensembl_species_history__species'
+        ).distinct()
 
         species_list = []
         for species in species_set:
-            species_list.append((species['transcript__transcripthistory__ensembl_species_history__ensembl_tax_id'],
-                                 species['transcript__transcripthistory__ensembl_species_history__species']))
+            species_list.append((
+                species['transcript__transcripthistory__ensembl_species_history__ensembl_tax_id'],
+                species['transcript__transcripthistory__ensembl_species_history__species']
+            ))
 
         return species_list
 
@@ -168,16 +224,25 @@ class MappingQuerySet(models.query.QuerySet):
         Return a list of all the alignment differences levels represented in the queryset
         """
         identical = self.filter(alignment_difference=0).count()
-        small = self.filter(alignment_difference__gt=0, alignment_difference__lte=5).count()
+
+        small = self.filter(
+            alignment_difference__gt=0,
+            alignment_difference__lte=5
+        ).count()
+
         large = self.filter(alignment_difference__gt=5).count()
 
         return [identical, small, large]
 
     def chromosomes(self):
         """
-        Return a list of all chromosomes for the genes represented in the queryset
+        Return a list of all chromosomes for the genes represented in the
+        queryset
         """
-        return sorted( pair['transcript__gene__chromosome'] for pair in self.values('transcript__gene__chromosome').distinct() )
+        chromosomes = []
+        for pair in self.values('transcript__gene__chromosome').distinct():
+            chromosomes.append(pair['transcript__gene__chromosome'])
+        return sorted(chromosomes)
 
 
 class MappingManager(models.Manager):
@@ -189,21 +254,48 @@ class Mapping(models.Model):
     objects = MappingManager()
 
     mapping_id = models.BigAutoField(primary_key=True)
-    uniprot = models.ForeignKey('UniprotEntry', models.DO_NOTHING, blank=True, null=True)
-    transcript = models.ForeignKey('EnsemblTranscript', models.DO_NOTHING, blank=True, null=True)
+
+    uniprot = models.ForeignKey(
+        'UniprotEntry',
+        models.DO_NOTHING,
+        blank=True,
+        null=True
+    )
+
+    transcript = models.ForeignKey(
+        'EnsemblTranscript',
+        models.DO_NOTHING,
+        blank=True,
+        null=True
+    )
+
     alignment_difference = models.IntegerField(blank=True, null=True)
-    status = models.ForeignKey('CvUeStatus', db_column='status', to_field='id', on_delete=models.CASCADE, default=1)
-    first_release_mapping_history_id = models.BigIntegerField(blank=True, null=True)
+
+    status = models.ForeignKey(
+        'CvUeStatus',
+        db_column='status',
+        to_field='id',
+        on_delete=models.CASCADE,
+        default=1
+    )
+
+    first_release_mapping_history_id = models.BigIntegerField(
+        blank=True,
+        null=True
+    )
 
     @property
     def difference(self):
         diff_count = None
 
         for alignment in self.alignments.all():
-            if alignment.alignment_run.score1_type == 'perfect_match' and alignment.score1 == 1:
-                return 0;
+            if (
+                    alignment.alignment_run.score1_type == 'perfect_match' and
+                    alignment.score1 == 1
+            ):
+                return 0
 
-            elif alignment.alignment_run.score1_type == 'identity':
+            if alignment.alignment_run.score1_type == 'identity':
                 diff_count = calculate_difference(alignment.pairwise.cigarplus)
 
         if diff_count:
@@ -224,39 +316,44 @@ class Mapping(models.Model):
             else:
                 user = None
 
-            statuses.append({'status': Mapping.status_type(status.status.id), 'time_stamp': status.time_stamp, 'user': user})
+            statuses.append({
+                'status': Mapping.status_type(status.status.id),
+                'time_stamp': status.time_stamp,
+                'user': user
+            })
 
         return statuses
 
-    '''
-    The goal of these two functions is to reduce the number of database calls. Rather
-    than a lookup per mapping record, we'll cache these constants for the life of
-    the request in the serializer class.
-    '''
-    _entry_type = None
-    _status_type = None
+
+    # The goal of these two functions is to reduce the number of database calls.
+    # Rather than a lookup per mapping record, we'll cache these constants for
+    # the life of the request in the serializer class.
+    _entry_type = {}
+    _status_type = {}
     @classmethod
-    def entry_type(cls, id):
+    def entry_type(cls, identity):
         if not cls._entry_type:
             entries = {}
             for entry in CvEntryType.objects.all():
                 entries[entry.id] = entry.description
             cls._entry_type = entries
 
-        return cls._entry_type[id]
+        return cls._entry_type[identity]
 
     @classmethod
-    def status_type(cls, id):
+    def status_type(cls, identity):
         if not cls._status_type:
             statuses = {}
             for status in CvUeStatus.objects.all():
                 statuses[status.id] = status.description
             cls._status_type = statuses
 
-        return cls._status_type[id]
+        return cls._status_type[identity]
 
     def __str__(self):
-        return "{0} - ({1}, {2})".format(self.mapping_id, self.uniprot, self.transcript)
+        return "{0} - ({1}, {2})".format(
+            self.mapping_id, self.uniprot, self.transcript
+        )
 
     class Meta:
         managed = False
@@ -274,17 +371,32 @@ class MappingViewQuerySet(models.query.QuerySet):
         """
         Retrieve a list of unique grouping_id counts from a queryset.
         eg
-        [{'grouping_id': 1, 'total': 19}, {'grouping_id': 2, 'total': 6}, {'grouping_id': 3, 'total': 4},...]
+        [
+            {'grouping_id': 1, 'total': 19},
+            {'grouping_id': 2, 'total': 6},
+            {'grouping_id': 3, 'total': 4},
+            ...
+        ]
         """
         if self._counts is None:
-            self._counts = self.values('grouping_id').annotate(total=Count(Case(When(grouping_id__isnull=True, then=1), default=1))).order_by('-grouping_id')
+            self._counts = self.values(
+                'grouping_id'
+            ).annotate(
+                total=Count(
+                    Case(
+                        When(grouping_id__isnull=True, then=1),
+                        default=1
+                    )
+                )
+            ).order_by('-grouping_id')
 
         return self._counts
 
     @property
     def grouped_count(self):
         """
-        Retrieve the total number of groups based on unique grouping_id from a queryset
+        Retrieve the total number of groups based on unique grouping_id from a
+        queryset
         """
         counts = self.grouped_counts()
 
@@ -318,7 +430,7 @@ class MappingViewQuerySet(models.query.QuerySet):
             try:
                 grouped_results[result.grouping_id].append(result)
             except (KeyError, AttributeError):
-                grouped_results[result.grouping_id] = [ result ]
+                grouped_results[result.grouping_id] = [result]
 
         return grouped_results
 
@@ -334,7 +446,6 @@ class MappingViewQuerySet(models.query.QuerySet):
 
         return status_list
 
-    # TODO: ask to include species or extract from ensembl_species_history
     def species(self):
         """
         Return a list of all the unique (tax_id, species name) tuples in this queryset
@@ -343,7 +454,11 @@ class MappingViewQuerySet(models.query.QuerySet):
 
         species_list = []
         for species in species_set:
-            species_name = EnsemblSpeciesHistory.objects.filter(ensembl_tax_id=species['uniprot_tax_id']).latest('time_loaded').species
+            species_name = EnsemblSpeciesHistory.objects.filter(
+                ensembl_tax_id=species['uniprot_tax_id']
+            ).latest(
+                'time_loaded'
+            ).species
             species_list.append((species['uniprot_tax_id'], species_name))
 
         return species_list
@@ -353,23 +468,38 @@ class MappingViewQuerySet(models.query.QuerySet):
         Return a list of all the alignment differences levels represented in the queryset
         """
         identical = self.filter(alignment_difference=0).count()
-        small = self.filter(alignment_difference__gt=0, alignment_difference__lte=5).count()
+
+        small = self.filter(
+            alignment_difference__gt=0,
+            alignment_difference__lte=5
+        ).count()
+
         large = self.filter(alignment_difference__gt=5).count()
 
-        return [ identical, small, large ]
+        return [identical, small, large]
 
     def chromosomes(self):
         """
         Return a list of all chromosomes for the genes represented in the queryset
         """
-        return sorted( pair['chromosome'] for pair in self.values('chromosome').distinct() if pair['chromosome'] )
+        chromosomes = []
+
+        for pair in self.values('chromosome').distinct():
+            if pair['chromosome']:
+                chromosomes.append(pair['chromosome'])
+
+        return sorted(chromosomes)
 
     def types(self):
         """
         Return a list of all mapping types
         """
+        mappings = []
 
-        return ( pair['uniprot_mapping_status'] for pair in self.values('uniprot_mapping_status').distinct() )
+        for pair in self.values('uniprot_mapping_status').distinct():
+            mappings.append(pair['uniprot_mapping_status'])
+
+        return mappings
 
     def has_patches(self):
         """
@@ -383,6 +513,73 @@ class MappingViewManager(models.Manager):
     def get_queryset(self):
         return MappingViewQuerySet(self.model, using=self._db)
 
+
+#######################################################################################
+
+class ReleaseMappingHistory(models.Model):
+    release_mapping_history_id = models.BigAutoField(primary_key=True)
+
+    ensembl_species_history = models.ForeignKey(
+        'EnsemblSpeciesHistory',
+        models.DO_NOTHING,
+        related_name='release_mapping_history',
+        blank=True,
+        null=True
+    )
+
+    time_mapped = models.DateTimeField()
+    uniprot_release = models.CharField(max_length=7, blank=True, null=True)
+    uniprot_taxid = models.BigIntegerField(blank=True, null=True)
+    status = models.CharField(max_length=20, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'release_mapping_history'
+
+
+class MappingHistory(models.Model):
+
+    mapping_history_id = models.BigAutoField(primary_key=True)
+
+    release_mapping_history = models.ForeignKey(
+        'ReleaseMappingHistory',
+        models.DO_NOTHING,
+        related_name='mapping_history'
+    )
+
+    sequence_version = models.SmallIntegerField()
+
+    entry_type = models.ForeignKey(
+        'CvEntryType',
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        db_column="entry_type"
+    )
+
+    entry_version = models.IntegerField()
+    enst_version = models.SmallIntegerField()
+
+    mapping = models.ForeignKey(
+        Mapping,
+        models.DO_NOTHING,
+        related_name='mapping_history'
+    )
+
+    sp_ensembl_mapping_type = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True
+    )
+
+    grouping_id = models.BigIntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'mapping_history'
+
+
+#######################################################################################
 
 class MappingView(models.Model):
     """
@@ -426,8 +623,10 @@ class MappingView(models.Model):
     ensp_id = models.CharField(max_length=30, blank=True, null=True)
     ensp_len = models.IntegerField(blank=True, null=True)
     source = models.CharField(max_length=30, blank=True, null=True)
+
     mapping_history_id = models.BigIntegerField(blank=True, null=True)
     release_mapping_history_id = models.BigIntegerField(blank=True, null=True)
+
     entry_version = models.IntegerField(blank=True, null=True)
     sp_ensembl_mapping_type = models.CharField(max_length=50, blank=True, null=True)
     grouping_id = models.BigIntegerField(blank=True, null=True)
@@ -451,13 +650,16 @@ class MappingView(models.Model):
             mapping = Mapping.objects.get(pk=self.mapping_id)
 
             for alignment in mapping.alignments.all():
-                if alignment.alignment_run.score1_type == 'perfect_match' and alignment.score1 == 1:
-                    return 0;
+                if (
+                        alignment.alignment_run.score1_type == 'perfect_match' and
+                        alignment.score1 == 1
+                ):
+                    return 0
 
-                elif alignment.alignment_run.score1_type == 'identity':
+                if alignment.alignment_run.score1_type == 'identity':
                     diff_count = calculate_difference(alignment.pairwise.cigarplus)
         except:
-            pass # No mapping ID: cannot get difference
+            pass  # No mapping ID: cannot get difference
 
         return diff_count
 
@@ -478,22 +680,24 @@ class MappingView(models.Model):
                 else:
                     user = None
 
-                    statuses.append({'status': MappingView.status_type(status.status.id), 'time_stamp': status.time_stamp, 'user': user})
+                    statuses.append({
+                        'status': MappingView.status_type(status.status.id),
+                        'time_stamp': status.time_stamp,
+                        'user': user
+                    })
         except:
-            pass # no mapping ID: cannot get status
+            pass  # no mapping ID: cannot get status
 
         return statuses
 
-    '''
-    The goal of these two functions is to reduce the number of database calls. Rather
-    than a lookup per mapping record, we'll cache these constants for the life of
-    the request in the serializer class.
-    '''
-    _entry_type = None
-    _status_type = None
+    # The goal of these two functions is to reduce the number of database calls.
+    # Rather than a lookup per mapping record, we'll cache these constants for
+    # the life of the request in the serializer class.
+    _entry_type = {}
+    _status_type = {}
 
     @classmethod
-    def entry_description(cls, id):
+    def entry_description(cls, identity):
         if not cls._entry_type:
             entries = {}
             for entry in CvEntryType.objects.all():
@@ -501,14 +705,14 @@ class MappingView(models.Model):
             cls._entry_type = entries
 
         try:
-            return cls._entry_type[id]
+            return cls._entry_type[identity]
         except KeyError:
             pass
 
         return None
 
     @classmethod
-    def status_description(cls, id):
+    def status_description(cls, identity):
         if not cls._status_type:
             statuses = {}
             for status in CvUeStatus.objects.all():
@@ -516,7 +720,7 @@ class MappingView(models.Model):
             cls._status_type = statuses
 
         try:
-            return cls._status_type[id]
+            return cls._status_type[identity]
         except KeyError:
             pass
 
@@ -529,37 +733,14 @@ class MappingView(models.Model):
 
 #######################################################################################
 
-class MappingHistory(models.Model):
-    mapping_history_id = models.BigAutoField(primary_key=True)
-    release_mapping_history = models.ForeignKey('ReleaseMappingHistory', models.DO_NOTHING, related_name='mapping_history')
-    sequence_version = models.SmallIntegerField()
-    entry_type = models.ForeignKey('CvEntryType', models.DO_NOTHING, blank=True, null=True, db_column="entry_type")
-    entry_version = models.IntegerField()
-    enst_version = models.SmallIntegerField()
-    mapping = models.ForeignKey(Mapping, models.DO_NOTHING, related_name='mapping_history')
-    sp_ensembl_mapping_type = models.CharField(max_length=50, blank=True, null=True)
-    grouping_id = models.BigIntegerField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'mapping_history'
-
-
-class ReleaseMappingHistory(models.Model):
-    release_mapping_history_id = models.BigAutoField(primary_key=True)
-    ensembl_species_history = models.ForeignKey('EnsemblSpeciesHistory', models.DO_NOTHING, related_name='release_mapping_history', blank=True, null=True)
-    time_mapped = models.DateTimeField()
-    uniprot_release = models.CharField(max_length=7, blank=True, null=True)
-    uniprot_taxid = models.BigIntegerField(blank=True, null=True)
-    status = models.CharField(max_length=20, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'release_mapping_history'
-
-
 class ReleaseStats(models.Model):
-    release_mapping_history = models.ForeignKey(ReleaseMappingHistory, models.DO_NOTHING, primary_key=True)
+
+    release_mapping_history = models.ForeignKey(
+        ReleaseMappingHistory,
+        models.DO_NOTHING,
+        primary_key=True
+    )
+
     transcripts_total = models.BigIntegerField(blank=True, null=True)
     uniprot_entries_total = models.BigIntegerField(blank=True, null=True)
     uniprot_entries_unmapped = models.BigIntegerField(blank=True, null=True)

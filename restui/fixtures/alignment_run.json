@@ -1,0 +1,42 @@
+[
+    {
+        "model": "restui.alignmentrun",
+        "pk": 1,
+        "fields": {
+            "userstamp": "test_userstamp",
+            "time_run": "2012-01-01T00:00:00Z",
+            "score1_type": "perfect_match",
+            "report_type": "sp mapping value",
+            "pipeline_name": "test_loading",
+            "pipeline_comment": "test",
+            "ensembl_release": "87",
+            "uniprot_file_swissprot": "/test/location/sp.txt",
+            "uniprot_file_isoform": "/test/location/iso.txt",
+            "uniprot_dir_trembl": "/test/location/trembl",
+            "logfile_dir": "/test/location/log.txt",
+            "pipeline_script": "test.sh",
+            "score2_type": "coverage",
+            "release_mapping_history": "1"
+        }
+    },
+    {
+        "model": "restui.alignmentrun",
+        "pk": 2,
+        "fields": {
+            "userstamp": "test_userstamp",
+            "time_run": "2019-05-01T00:00:00Z",
+            "score1_type": "identity",
+            "report_type": "sp mapping value",
+            "pipeline_name": "test_loading",
+            "pipeline_comment": "test",
+            "ensembl_release": "95",
+            "uniprot_file_swissprot": "/test/location/sp.txt",
+            "uniprot_file_isoform": "/test/location/iso.txt",
+            "uniprot_dir_trembl": "/test/location/trembl",
+            "logfile_dir": "/test/location/log.txt",
+            "pipeline_script": "test.sh",
+            "score2_type": "coverage",
+            "release_mapping_history": "2"
+        }
+    }
+]

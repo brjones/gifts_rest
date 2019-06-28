@@ -19,9 +19,9 @@ from collections import defaultdict
 
 from django.db import models
 from django.db.models import Count
+from django.db.models.deletion import CASCADE
 from psqlextra.models import PostgresModel
 from psqlextra.manager import PostgresManager, PostgresQuerySet
-from django.db.models.deletion import CASCADE
 
 
 class EnsemblSpeciesHistory(PostgresModel):
@@ -37,7 +37,13 @@ class EnsemblSpeciesHistory(PostgresModel):
     alignment_status = models.CharField(max_length=30, blank=True, null=True)
 
     def __str__(self):
-        return "{0} - {1} {2} {3}".format(self.ensembl_species_history_id, self.species, self.assembly_accession, self.ensembl_tax_id, self.ensembl_release)
+        return "{0} - {1} {2} {3} {4}".format(
+            self.ensembl_species_history_id,
+            self.species,
+            self.assembly_accession,
+            self.ensembl_tax_id,
+            self.ensembl_release
+        )
 
     class Meta:
         managed = False
@@ -60,21 +66,25 @@ class EnsemblGene(PostgresModel):
     seq_region_strand = models.BigIntegerField(blank=True, null=True)
     biotype = models.CharField(max_length=40, blank=True, null=True)
     time_loaded = models.DateTimeField(blank=True, null=True)
-    history = models.ManyToManyField(EnsemblSpeciesHistory, through='GeneHistory')
     gene_symbol = models.CharField(max_length=30, blank=True, null=True)
     gene_accession = models.CharField(max_length=30, blank=True, null=True)
     source = models.CharField(max_length=30, blank=True, null=True)
 
+    # history is not a column
+    history = models.ManyToManyField(
+        EnsemblSpeciesHistory,
+        through='GeneHistory'
+    )
+
     def __str__(self):
         return "{0} - {1} ({2})".format(self.gene_id, self.ensg_id, self.gene_name)
-
 
     class Meta:
         managed = False
         db_table = 'ensembl_gene'
 
 
-class EnsemblTranscriptQuerySet(PostgresQuerySet): # models.query.QuerySet
+class EnsemblTranscriptQuerySet(PostgresQuerySet):  # models.query.QuerySet
     """
     A specialised query set to be able to deal with groupings
     of transcripts based on their corresponding gene.
@@ -90,7 +100,11 @@ class EnsemblTranscriptQuerySet(PostgresQuerySet): # models.query.QuerySet
         """
 
         if self._counts is None:
-            self._counts = self.values('gene').annotate(total=Count('gene')).order_by('gene')
+            self._counts = self.values(
+                'gene'
+            ).annotate(
+                total=Count('gene')
+            ).order_by('gene')
 
         return self._counts
 
@@ -150,7 +164,12 @@ class EnsemblTranscript(PostgresModel):
     ensp_id = models.CharField(max_length=30, blank=True, null=True)
     ensp_len = models.IntegerField(blank=True, null=True)
     source = models.CharField(max_length=30, blank=True, null=True)
-    history = models.ManyToManyField(EnsemblSpeciesHistory, through='TranscriptHistory')
+
+    # history is not a column
+    history = models.ManyToManyField(
+        EnsemblSpeciesHistory,
+        through='TranscriptHistory'
+    )
 
     def __str__(self):
         return "{0} - {1} ({2})".format(self.transcript_id, self.enst_id, self.gene)
@@ -161,7 +180,12 @@ class EnsemblTranscript(PostgresModel):
 
 
 class EnspUCigar(models.Model):
-    alignment = models.OneToOneField('Alignment', primary_key=True, on_delete=CASCADE, related_name='pairwise')
+    alignment = models.OneToOneField(
+        'Alignment',
+        primary_key=True,
+        on_delete=CASCADE,
+        related_name='pairwise'
+    )
     cigarplus = models.TextField(blank=True, null=True)
     mdz = models.TextField(blank=True, null=True)
 
@@ -173,7 +197,10 @@ class EnspUCigar(models.Model):
 class GeneHistory(PostgresModel):
     objects = PostgresManager()
 
-    ensembl_species_history = models.ForeignKey(EnsemblSpeciesHistory, models.DO_NOTHING, primary_key=True)
+    ensembl_species_history = models.ForeignKey(
+        EnsemblSpeciesHistory,
+        models.DO_NOTHING
+    )
     gene = models.ForeignKey(EnsemblGene, models.DO_NOTHING)
 
     class Meta:
@@ -185,8 +212,15 @@ class GeneHistory(PostgresModel):
 class TranscriptHistory(PostgresModel):
     objects = PostgresManager()
 
-    ensembl_species_history = models.ForeignKey(EnsemblSpeciesHistory, models.DO_NOTHING, primary_key=True)
-    transcript = models.ForeignKey(EnsemblTranscript, models.DO_NOTHING)
+    ensembl_species_history = models.ForeignKey(
+        EnsemblSpeciesHistory,
+        models.DO_NOTHING
+        # primary_key=True
+    )
+    transcript = models.ForeignKey(
+        EnsemblTranscript,
+        models.DO_NOTHING
+    )
     grouping_id = models.BigIntegerField(blank=True, null=True)
 
     class Meta:

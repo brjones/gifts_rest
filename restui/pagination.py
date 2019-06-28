@@ -15,52 +15,101 @@
    limitations under the License.
 """
 
-import pprint
 from collections import OrderedDict
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 
-from restui.serializers.mappings import MappingsSerializer, MappingViewsSerializer
+from restui.serializers.mappings import MappingsSerializer
+from restui.serializers.mappings import MappingViewsSerializer
 from restui.serializers.unmapped import UnmappedEnsemblEntrySerializer
-from restui.models.mappings import Mapping, MappingView
-from rest_framework import status
+from restui.models.mappings import Mapping
+from restui.models.mappings import MappingView
 
 
-#
-# TODO
-# chromosome and mappings facets
-#
 class FacetPagination(LimitOffsetPagination):
+    def __init__(self):
+        self.count = None
+        self.limit = None
+        self.offset = None
+        self.request = None
+        self.facets = None
+        self.display_page_controls = None
+
     def create_facets(self, queryset):
-        statuses = OrderedDict([('name','status'),('label','Status'),('items',[])])
-        organism = OrderedDict([('name','organism'),('label','Organism'),('items',[])])
-        sequence = OrderedDict([('name','divergence'),('label','Divergence'),('items',[])])
+        statuses = OrderedDict([
+            ('name', 'status'),
+            ('label', 'Status'),
+            ('items', [])
+        ])
+
+        organism = OrderedDict([
+            ('name', 'organism'),
+            ('label', 'Organism'),
+            ('items', [])
+        ])
+
+        sequence = OrderedDict([
+            ('name', 'divergence'),
+            ('label', 'Divergence'),
+            ('items', [])
+        ])
 
         species_set = queryset.species()
         for species in species_set:
-            organism["items"].append({ "name":species[0], "label":species[1] })
+            organism["items"].append({
+                "name": species[0],
+                "label": species[1]
+            })
 
-        for status in queryset.statuses():
-            statuses["items"].append({ "name":Mapping.status_type(status), "label":Mapping.status_type(status).replace("_"," ").capitalize() })
+        for query_status in queryset.statuses():
+            statuses["items"].append({
+                "name": Mapping.status_type(query_status),
+                "label": Mapping.status_type(
+                    query_status
+                ).replace(
+                    "_", " "
+                ).capitalize()
+            })
 
         differences = queryset.divergences()
         if differences[0]:
-            sequence["items"].append({ "label": "identical", "name": "identical", "count": differences[0] })
+            sequence["items"].append({
+                "label": "identical",
+                "name": "identical",
+                "count": differences[0]
+            })
+
         if differences[1]:
-            sequence["items"].append({ "label": "small", "name": "small", "count": differences[1] })
+            sequence["items"].append({
+                "label": "small",
+                "name": "small",
+                "count": differences[1]
+            })
+
         if differences[2]:
-            sequence["items"].append({ "label": "large", "name": "large", "count": differences[2] })
+            sequence["items"].append({
+                "label": "large",
+                "name": "large",
+                "count": differences[2]
+            })
 
         if len(species_set) == 1:
-            chromosomes = OrderedDict([('name','chromosomes'),('label','Chromosomes'),('items',[])])
+            chromosomes = OrderedDict([
+                ('name', 'chromosomes'),
+                ('label', 'Chromosomes'),
+                ('items', [])
+            ])
 
             for chromosome in queryset.chromosomes():
-                chromosomes["items"].append({ 'name':chromosome.lower(), 'label':chromosome.upper() })
+                chromosomes["items"].append({
+                    'name': chromosome.lower(),
+                    'label': chromosome.upper()
+                })
 
-            return [ statuses, organism, sequence, chromosomes ]
+            return [statuses, organism, sequence, chromosomes]
 
-        return [ statuses, organism, sequence ]
-
+        return [statuses, organism, sequence]
 
     def paginate_queryset(self, queryset, request, view=None):
         self.count = queryset.grouped_count
@@ -99,50 +148,115 @@ class FacetPagination(LimitOffsetPagination):
         ]))
 
 class MappingViewFacetPagination(LimitOffsetPagination):
+    def __init__(self):
+        self.count = None
+        self.limit = None
+        self.offset = None
+        self.request = None
+        self.facets = None
+        self.display_page_controls = None
+
     def create_facets(self, queryset):
-        statuses = OrderedDict([('name','status'),('label','Status'),('items',[])])
-        organism = OrderedDict([('name','organism'),('label','Organism'),('items',[])])
-        sequence = OrderedDict([('name','alignment'),('label','Alignment'),('items',[])])
-        types = OrderedDict([('name','type'),('label','Type'),('items',[])])
-        patches = OrderedDict([('name','patches'),('label','Patches'),('items',[])])
+        statuses = OrderedDict([
+            ('name', 'status'),
+            ('label', 'Status'),
+            ('items', [])
+        ])
+
+        organism = OrderedDict([
+            ('name', 'organism'),
+            ('label', 'Organism'),
+            ('items', [])
+        ])
+
+        sequence = OrderedDict([
+            ('name', 'alignment'),
+            ('label', 'Alignment'),
+            ('items', [])
+        ])
+
+        types = OrderedDict([
+            ('name', 'type'),
+            ('label', 'Type'),
+            ('items', [])
+        ])
+
+        patches = OrderedDict([
+            ('name', 'patches'),
+            ('label', 'Patches'),
+            ('items', [])
+        ])
 
         if queryset.has_patches():
-            patches["items"].append({'name':'include', 'label':'Include'})
-            patches["items"].append({'name':'exclude', 'label':'Exclude'})
-            patches["items"].append({'name':'only', 'label':'Only patches'})
+            patches["items"].append({'name': 'include', 'label': 'Include'})
+            patches["items"].append({'name': 'exclude', 'label': 'Exclude'})
+            patches["items"].append({'name': 'only', 'label': 'Only patches'})
 
         species_set = queryset.species()
         for species in species_set:
-            organism["items"].append({ "name":species[0], "label":species[1] })
+            organism["items"].append({
+                "name": species[0],
+                "label": species[1]
+            })
 
-        for status in queryset.statuses():
+        for query_status in queryset.statuses():
             try:
-                description = MappingView.status_description(status)
-                statuses["items"].append({ "name":description, "label":description.replace("_"," ").capitalize() })
+                description = MappingView.status_description(query_status)
+                statuses["items"].append({
+                    "name": description,
+                    "label": description.replace(
+                        "_", " "
+                    ).capitalize()
+                })
             except:
                 pass
 
         differences = queryset.divergences()
         if differences[0]:
-            sequence["items"].append({ "label": "Identical", "name": "identical", "count": differences[0] })
+            sequence["items"].append({
+                "label": "Identical",
+                "name": "identical",
+                "count": differences[0]
+            })
+
         if differences[1]:
-            sequence["items"].append({ "label": "Small diff", "name": "small", "count": differences[1] })
+            sequence["items"].append({
+                "label": "Small diff",
+                "name": "small",
+                "count": differences[1]
+            })
+
         if differences[2]:
-            sequence["items"].append({ "label": "Large diff", "name": "large", "count": differences[2] })
+            sequence["items"].append({
+                "label": "Large diff",
+                "name": "large",
+                "count": differences[2]
+            })
 
         for mapping_type in queryset.types():
-            types["items"].append({ 'name':mapping_type, 'label':mapping_type.replace("_"," ").capitalize() })
+            types["items"].append({
+                'name': mapping_type,
+                'label': mapping_type.replace(
+                    "_", " "
+                ).capitalize()
+            })
 
         if len(species_set) == 1:
-            chromosomes = OrderedDict([('name','chromosomes'),('label','Chromosomes'),('items',[])])
+            chromosomes = OrderedDict([
+                ('name', 'chromosomes'),
+                ('label', 'Chromosomes'),
+                ('items', [])
+            ])
 
             for chromosome in queryset.chromosomes():
-                chromosomes["items"].append({ 'name':chromosome.lower(), 'label':chromosome.upper() })
+                chromosomes["items"].append({
+                    'name': chromosome.lower(),
+                    'label': chromosome.upper()
+                })
 
-            return [ statuses, organism, sequence, chromosomes, types, patches ]
+            return [statuses, organism, sequence, chromosomes, types, patches]
 
-        return [ statuses, organism, sequence, types, patches ]
-
+        return [statuses, organism, sequence, types, patches]
 
     def paginate_queryset(self, queryset, request, view=None):
         self.count = queryset.grouped_count
@@ -163,7 +277,11 @@ class MappingViewFacetPagination(LimitOffsetPagination):
         mapping_groups = []
         self.facets = self.create_facets(queryset)
         for _, group in queryset.grouped_slice(self.offset, self.limit).items():
-            mapping_groups.append(MappingViewsSerializer.build_mapping_group(group))
+            mapping_groups.append(
+                MappingViewsSerializer.build_mapping_group(
+                    group
+                )
+            )
 
         return mapping_groups
 
@@ -180,10 +298,19 @@ class MappingViewFacetPagination(LimitOffsetPagination):
             ('facets', self.facets)
         ]))
 
+
 class UnmappedEnsemblEntryPagination(LimitOffsetPagination):
     """
     Paginate unmapped ensembl transcripts
     """
+
+    def __init__(self):
+        self.count = None
+        self.limit = None
+        self.offset = None
+        self.request = None
+        self.facets = None
+        self.display_page_controls = None
 
     def paginate_queryset(self, queryset, request, view=None):
         self.count = queryset.grouped_count
@@ -203,7 +330,9 @@ class UnmappedEnsemblEntryPagination(LimitOffsetPagination):
 
         unmapped_groups = []
         for ensg_id, group in queryset.grouped_slice(self.offset, self.limit).items():
-            unmapped_groups.append( UnmappedEnsemblEntrySerializer.build_group(ensg_id, group) )
+            unmapped_groups.append(
+                UnmappedEnsemblEntrySerializer.build_group(ensg_id, group)
+            )
 
         unmapped_groups.sort(key=lambda e: e['gene']['ensgName'])
 

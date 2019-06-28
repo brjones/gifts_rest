@@ -15,16 +15,17 @@
    limitations under the License.
 """
 
-from rest_framework import serializers
-
-from restui.models.mappings import ReleaseStats
+# import pytest
 
 
-class ReleaseStatsSerializer(serializers.ModelSerializer):
-    """
-    Serializer for ReleaseStats instances
-    """
+# @pytest.fixture
+# def schema(postgresql_db):
+#     print("\nPreparing the Schema")
+#     postgresql_db.session.execute(
+#         "CREATE USER ensrw CREATEDB"
+#     )
+#     postgresql_db.session.execute(
+#         open("schema/schema.sql", "r").read()
+#     )
 
-    class Meta:
-        model = ReleaseStats
-        fields = '__all__'
+#     return

@@ -15,61 +15,129 @@
    limitations under the License.
 """
 
-from django.http import Http404
 import requests
-
-from gifts_rest.settings.base import TARK_SERVER, ENSEMBL_REST_SERVER
+from django.http import Http404
+from gifts_rest.settings.base import TARK_SERVER
+from gifts_rest.settings.base import ENSEMBL_REST_SERVER
 
 
 def tark_transcript(enst_id, release):
+    """
+    Retrieve the TARK entry for a given ensembl id and release number
+
+    Parameters
+    ----------
+    enst_id : str
+        This needs to be the e! stable ID (eg ENST...)
+    release : int
+
+    Returns
+    -------
+    dict
+    """
     url = "{}/api/transcript/?stable_id={}&release_short_name={}&expand=sequence"
 
-    r = requests.get(url.format(TARK_SERVER, enst_id, release))
-    if not r.ok:
+    result = requests.get(url.format(TARK_SERVER, enst_id, release))
+    if not result.ok:
         raise Http404
 
-    response = r.json()
+    response = result.json()
     if not response:
-        raise Exception("Couldn't get a response from TaRK for {}".format(enst_id))
+        raise Exception(
+            "Couldn't get a response from TaRK for {}".format(enst_id)
+        )
+
     if response['count'] > 1:
-        raise Exception("Couldn't get a/or unique answer from TaRK for {}".format(enst_id))
-    if not 'results' in response or not response['results']:
-        raise Exception("Empty result set from TaRK for {}".format(enst_id))
+        raise Exception(
+            "Couldn't get a/or unique answer from TaRK for {}".format(enst_id)
+        )
+
+    if 'results' not in response or not response['results']:
+        raise Exception(
+            "Empty result set from TaRK for {}".format(enst_id)
+        )
 
     return response['results'][0]
 
 
 def ensembl_current_release():
     """
-    Return current Ensembl release number.
+    Get the current Ensembl release number.
+
+    Returns
+    -------
+    release : int
     """
 
-    r = requests.get("{}/info/software".format(ENSEMBL_REST_SERVER), headers={ "Content-Type" : "application/json"})
-    if not r.ok:
-        r.raise_for_status()
+    result = requests.get(
+        "{}/info/software".format(ENSEMBL_REST_SERVER),
+        headers={
+            "Content-Type": "application/json"
+        }
+    )
+    if not result.ok:
+        result.raise_for_status()
 
-    return r.json()['release']
+    return result.json()['release']
 
 
 def ensembl_sequence(enst_id, release):
+    """
+    Get the sequence for an ensembl ID in a given release
+
+    Parameters
+    ----------
+    enst_id : str
+        This needs to be the e! stable ID (eg ENST...)
+    release : int
+
+    Returns
+    -------
+    sequence : str
+    """
+
     e_current_release = ensembl_current_release()
-    server = ENSEMBL_REST_SERVER if release == e_current_release else "http://e{}.rest.ensembl.org".format(release)
 
-    r = requests.get("{}/sequence/id/{}?content-type=text/plain".format(server, enst_id))
-    if not r.ok:
-        r.raise_for_status()
+    server = "http://e{}.rest.ensembl.org".format(release)
+    if release == e_current_release:
+        server = ENSEMBL_REST_SERVER
 
-    return r.text
+    result = requests.get(
+        "{}/sequence/id/{}?content-type=text/plain".format(server, enst_id)
+    )
+    if not result.ok:
+        result.raise_for_status()
+
+    return result.text
 
 
 def ensembl_protein(enst_id, release):
+    """
+    Get the protein ensembl ID in a given transcript id and release number
+
+    Parameters
+    ----------
+    enst_id : str
+        This needs to be the e! stable ID (eg ENST...)
+    release : int
+
+    Returns
+    -------
+    protein_id : str
+    """
+
     e_current_release = ensembl_current_release()
-    server = ENSEMBL_REST_SERVER if release == e_current_release else "http://e{}.rest.ensembl.org".format(release)
 
-    r = requests.get("{}/lookup/id/{}?expand=1&content-type=application/json".format(server, enst_id))
-    if not r.ok:
-        r.raise_for_status()
+    server = "http://e{}.rest.ensembl.org".format(release)
+    if release == e_current_release:
+        server = ENSEMBL_REST_SERVER
 
-    ensembl_json = r.json()
+    result = requests.get(
+        "{}/lookup/id/{}?expand=1&content-type=application/json".format(server, enst_id)
+    )
 
+    if not result.ok:
+        result.raise_for_status()
+
+    ensembl_json = result.json()
     return ensembl_json['Translation']['id']
