@@ -25,6 +25,7 @@ from restui.views import mappings
 from restui.views import uniprot
 from restui.views import unmapped
 from restui.views import service
+from restui.views import version
 
 
 @csrf_exempt
@@ -177,7 +178,9 @@ urlpatterns = [
     path('unmapped/<int:taxid>/<source>/', unmapped.UnmappedEntries.as_view()),
 
     # return service status
-    path('service/ping/', service.PingService.as_view())
+    path('service/ping/', service.PingService.as_view()),
+
+    path('api/version/', version.APIVersion.as_view())
 ]
 
 """
