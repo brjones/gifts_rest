@@ -1027,4 +1027,4 @@ class APIVersion(APITestCase):
         client = APIClient()
         response = client.get('/api/version/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(isinstance(response.data['version'], float), True)
+        self.assertRegex(response.data['version'], r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$")

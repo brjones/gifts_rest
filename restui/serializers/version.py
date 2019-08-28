@@ -22,4 +22,4 @@ class VersionSerializer(serializers.Serializer):
     """
     Version serializer
     """
-    version = serializers.FloatField()
+    version = serializers.CharField(required=True)
