@@ -36,6 +36,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Custom User model for the service
 AUTH_USER_MODEL = 'aap_auth.AAPUser'
 
+API_VERSION = '1.0.0'
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 

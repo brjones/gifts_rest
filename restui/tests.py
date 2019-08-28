@@ -35,6 +35,7 @@ from restui.lib import alignments
 from restui.lib import external
 from restui.views import mappings
 from restui.views import unmapped
+from restui.views import version
 
 
 FIXTURES = [
@@ -1016,3 +1017,14 @@ class LibExternal(APITestCase):
     def test_ensembl_protein(self):
         prot = external.ensembl_protein('ENST00000382038', 95)
         self.assertEqual(prot, 'ENSP00000371469')
+
+class APIVersion(APITestCase):
+    """
+    Tests for endpoint /api/version/
+    """
+
+    def test_api_version(self):
+        client = APIClient()
+        response = client.get('/api/version/')
+        self.assertEqual(response.status_code, 200)
+        self.assertRegex(response.data['version'], r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$")
