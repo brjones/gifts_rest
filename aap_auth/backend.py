@@ -25,6 +25,8 @@ from aap_auth.auth import AAPAcess
 
 from future.utils import raise_with_traceback
 
+from django.conf import settings
+
 
 class AAPBackend(authentication.BaseAuthentication):
     """
@@ -75,6 +77,9 @@ class AAPBackend(authentication.BaseAuthentication):
         except JWTInvalidTokenError as err:
             raise_with_traceback(
                 Exception(u'{}'.format(err)))
+
+        if settings.AAP_GIFTS_DOMAIN not in decoded_token['domains']:
+            return None, None
 
         try:
             user = User.objects.get(elixir_id=decoded_token['sub'])

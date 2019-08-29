@@ -236,6 +236,7 @@ ENSEMBL_REST_SERVER = "http://rest.ensembl.org"
 AAP_PEM_URL = 'https://api.aai.ebi.ac.uk/meta/public.pem'
 AAP_PROFILE_URL = 'https://api.aai.ebi.ac.uk/users/{}/profile'
 AAP_PEM_FILE = '/tmp/aap.pem'
+AAP_GIFTS_DOMAIN = 'self.gifts'
 
 # CELERY STUFF
 BROKER_URL = 'redis://localhost:6379'
