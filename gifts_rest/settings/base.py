@@ -154,6 +154,12 @@ if 'TRAVIS' in os.environ:
 else:
     from . import secrets
     SECRET_KEY = secrets.SECRET_KEY
+
+    # Email settings:
+    EMAIL_HOST = secrets.MAIL_SERVER
+
+    EMAIL_LIST = secrets.EMAIL_LIST
+
     DATABASES = {
         'default': {
             'ENGINE': 'psqlextra.backend', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.

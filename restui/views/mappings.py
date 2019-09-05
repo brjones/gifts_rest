@@ -65,7 +65,7 @@ from restui.serializers.annotations import MappingLabelSerializer
 from restui.serializers.annotations import LabelsSerializer
 from restui.pagination import MappingViewFacetPagination
 from restui.lib.alignments import fetch_pairwise
-
+from restui.lib.mail import GiftsEmail
 
 def get_mapping(pk):
     try:
@@ -647,6 +647,9 @@ class MappingCommentsView(APIView):
 
         if serializer.is_valid():
             serializer.save()
+            email = GiftsEmail()
+            email.build_comments_email(request, mapping)
+            email.send()
             return Response(
                 serializer.data,
                 status=status.HTTP_201_CREATED
