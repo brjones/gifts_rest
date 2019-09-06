@@ -66,6 +66,8 @@ from restui.serializers.annotations import LabelsSerializer
 from restui.pagination import MappingViewFacetPagination
 from restui.lib.alignments import fetch_pairwise
 from restui.lib.mail import GiftsEmail
+from django.conf import settings
+
 
 def get_mapping(pk):
     try:
@@ -621,9 +623,15 @@ class MappingCommentsView(APIView):
                 'editable': request.user and request.user == comment.user_stamp
             })
 
+        email_recipients_list = {
+            recipient_id: recipient_details.get('name')
+            for (recipient_id, recipient_details) in settings.EMAIL_RECIPIENT_LIST.items()
+        }
+
         data = {
             'mappingId': pk,
-            'comments': comments
+            'comments': comments,
+            'email_recipients_list': email_recipients_list
         }
 
         serializer = MappingCommentsSerializer(data)

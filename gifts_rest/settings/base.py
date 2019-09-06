@@ -158,7 +158,7 @@ else:
     # Email settings:
     EMAIL_HOST = secrets.MAIL_SERVER
 
-    EMAIL_LIST = secrets.EMAIL_LIST
+    EMAIL_RECIPIENT_LIST = secrets.EMAIL_LIST
 
     DATABASES = {
         'default': {

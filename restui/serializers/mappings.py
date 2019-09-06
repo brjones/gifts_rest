@@ -497,6 +497,7 @@ class MappingCommentsSerializer(serializers.Serializer):
 
     mappingId = serializers.IntegerField()
     comments = CommentLabelSerializer(many=True)
+    email_recipients_list = serializers.DictField(child=serializers.CharField())
 
 
 class MappingPairwiseAlignmentSerializer(serializers.Serializer):

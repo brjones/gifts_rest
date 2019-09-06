@@ -29,7 +29,7 @@ class GiftsEmail(object):
 
         self.subject = "Comment {} for a mapping {}".format(action_type, mapping.mapping_id)
 
-        recipient_details = settings.EMAIL_LIST.get(request.data.get('email_recipient_id'))
+        recipient_details = settings.EMAIL_RECIPIENT_LIST.get(request.data.get('email_recipient_id'))
         self.to = [recipient_details.get('email')]
 
         self.from_email = "{} via Gifts <{}>".format(request.user.full_name, request.user.email)
