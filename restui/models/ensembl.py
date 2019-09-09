@@ -214,7 +214,7 @@ class TranscriptHistory(PostgresModel):
 
     ensembl_species_history = models.ForeignKey(
         EnsemblSpeciesHistory,
-        models.DO_NOTHING
+        models.DO_NOTHING,
         primary_key=True
     )
     transcript = models.ForeignKey(
