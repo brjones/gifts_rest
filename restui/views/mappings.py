@@ -655,9 +655,12 @@ class MappingCommentsView(APIView):
 
         if serializer.is_valid():
             serializer.save()
-            email = GiftsEmail()
-            email.build_comments_email(request, mapping)
-            email.send()
+
+            email = GiftsEmail(request)
+            build_comments_email = email.build_comments_email(mapping)
+            if build_comments_email:
+                email.send()
+
             return Response(
                 serializer.data,
                 status=status.HTTP_201_CREATED

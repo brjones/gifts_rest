@@ -22,28 +22,38 @@ from django.urls import reverse
 
 class GiftsEmail(object):
 
-    def __init__(self):
-        pass
+    def __init__(self, request):
+        self.request = request
+        self.subject = None
+        self.to = None
+        self.from_email = None
+        self.body = None
 
-    def build_comments_email(self, request, mapping, action_type='added'):
+    def build_comments_email(self, mapping, action_type='added'):
 
         self.subject = "Comment {} for a mapping {}".format(action_type, mapping.mapping_id)
 
-        recipient_details = settings.EMAIL_RECIPIENT_LIST.get(request.data.get('email_recipient_id'))
-        self.to = [recipient_details.get('email')]
+        recipient_ids = self.request.data.get('email_recipient_ids')
 
-        self.from_email = "{} via Gifts <{}>".format(request.user.full_name, request.user.email)
+        if not recipient_ids:
+            return False
 
-        mapping_url = request.build_absolute_uri(reverse('add_retrieve_comments', args=[mapping.mapping_id]))
+        self.to = [settings.EMAIL_RECIPIENT_LIST.get(recipient_id).get('email') for recipient_id in recipient_ids]
+
+        self.from_email = "{} via Gifts <{}>".format(self.request.user.full_name, self.request.user.email)
+
+        mapping_url = self.request.build_absolute_uri(reverse('add_retrieve_comments', args=[mapping.mapping_id]))
 
         self.body = "User: {} \n Comment: {} \n Action: {} \n Mapping URL: {}".format(
-            request.user.full_name,
-            request.data['text'],
+            self.request.user.full_name,
+            self.request.data['text'],
             action_type.title(),
             mapping_url
         )
 
-    def build_staus_email(self, request, mapping, action_type='added'):
+        return True
+
+    def build_status_email(self, status, action_type='added'):
         pass
 
     def send(self):

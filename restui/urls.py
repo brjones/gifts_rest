@@ -180,7 +180,7 @@ urlpatterns = [
     # return service status
     path('service/ping/', service.PingService.as_view()),
 
-    path('api/version/', version.APIVersion.as_view())
+    path('version/', version.APIVersion.as_view())
 ]
 
 """
