@@ -205,17 +205,18 @@ class GeneHistory(PostgresModel):
 
     class Meta:
         managed = False
-        db_table = 'gene_history'
+        db_table = 'gene_history_bak'
         unique_together = (('ensembl_species_history', 'gene'),)
 
 
 class TranscriptHistory(PostgresModel):
     objects = PostgresManager()
 
+    transcript_history_id = models.BigAutoField(primary_key=True)
+
     ensembl_species_history = models.ForeignKey(
         EnsemblSpeciesHistory,
-        models.DO_NOTHING,
-        primary_key=True
+        models.DO_NOTHING
     )
     transcript = models.ForeignKey(
         EnsemblTranscript,
@@ -225,5 +226,5 @@ class TranscriptHistory(PostgresModel):
 
     class Meta:
         managed = False
-        db_table = 'transcript_history'
+        db_table = 'transcript_history_bak2'
         unique_together = (('ensembl_species_history', 'transcript'),)
