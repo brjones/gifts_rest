@@ -427,7 +427,8 @@ class EnsemblMapping(APITestCase):
         response = client.post(
             '/mapping/1/comments/',
             data={
-                'text': 'This is a test comment'
+                'text': 'This is a test comment',
+                'email_recipient_ids': [1]
             }
         )
         self.assertEqual(response.status_code, 201)
