@@ -197,6 +197,8 @@ class EnspUCigar(models.Model):
 class GeneHistory(PostgresModel):
     objects = PostgresManager()
 
+    gene_history_id = models.BigAutoField(primary_key=True)
+
     ensembl_species_history = models.ForeignKey(
         EnsemblSpeciesHistory,
         models.DO_NOTHING
