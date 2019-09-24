@@ -207,7 +207,7 @@ class GeneHistory(PostgresModel):
 
     class Meta:
         managed = False
-        db_table = 'gene_history_bak'
+        db_table = 'gene_history'
         unique_together = (('ensembl_species_history', 'gene'),)
 
 
@@ -228,5 +228,5 @@ class TranscriptHistory(PostgresModel):
 
     class Meta:
         managed = False
-        db_table = 'transcript_history_bak2'
+        db_table = 'transcript_history'
         unique_together = (('ensembl_species_history', 'transcript'),)
