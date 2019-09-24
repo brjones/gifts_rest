@@ -429,7 +429,8 @@ class EnsemblMapping(APITestCase):
             data={
                 'text': 'This is a test comment',
                 'email_recipient_ids': [1]
-            }
+            },
+            format='json'
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['id'], 1)
