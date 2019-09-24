@@ -151,9 +151,21 @@ if 'TRAVIS' in os.environ:
             # 'PORT': '5433',
         }
     }
+    EMAIL_RECIPIENT_LIST = {
+        1: {
+            'name': 'Work email',
+            'email': 'sboddu@ebi.ac.uk',
+        }
+    }
 else:
     from . import secrets
     SECRET_KEY = secrets.SECRET_KEY
+
+    # Email settings:
+    EMAIL_HOST = secrets.MAIL_SERVER
+
+    EMAIL_RECIPIENT_LIST = secrets.EMAIL_LIST
+
     DATABASES = {
         'default': {
             'ENGINE': 'psqlextra.backend', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.

@@ -427,8 +427,10 @@ class EnsemblMapping(APITestCase):
         response = client.post(
             '/mapping/1/comments/',
             data={
-                'text': 'This is a test comment'
-            }
+                'text': 'This is a test comment',
+                'email_recipient_ids': [1]
+            },
+            format='json'
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['id'], 1)
@@ -1020,11 +1022,11 @@ class LibExternal(APITestCase):
 
 class APIVersion(APITestCase):
     """
-    Tests for endpoint /api/version/
+    Tests for endpoint version/
     """
 
     def test_api_version(self):
         client = APIClient()
-        response = client.get('/api/version/')
+        response = client.get('/version/')
         self.assertEqual(response.status_code, 200)
         self.assertRegex(response.data['version'], r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$")

@@ -128,7 +128,7 @@ urlpatterns = [
 
     # add comment/retrieve all comments
     path('mapping/<int:pk>/comments/', method_router,
-         {'VIEW': mappings.MappingCommentsView.as_view()}),
+         {'VIEW': mappings.MappingCommentsView.as_view()}, name="add_retrieve_comments"),
 
     # update mapping status
     path('mapping/<int:pk>/status/', method_router,
@@ -180,7 +180,7 @@ urlpatterns = [
     # return service status
     path('service/ping/', service.PingService.as_view()),
 
-    path('api/version/', version.APIVersion.as_view())
+    path('version/', version.APIVersion.as_view())
 ]
 
 """
