@@ -1,0 +1,58 @@
+[
+    {
+        "model": "restui.mappinghistory",
+        "pk": 1,
+        "fields": {
+            "release_mapping_history": "1",
+            "sequence_version": "1",
+            "entry_type": "1",
+            "entry_version": "1",
+            "enst_version": "1",
+            "mapping_id": "1",
+            "sp_ensembl_mapping_type": null,
+            "grouping_id": null
+        }
+    },
+    {
+        "model": "restui.mappinghistory",
+        "pk": 2,
+        "fields": {
+            "release_mapping_history": "2",
+            "sequence_version": "1",
+            "entry_type": "1",
+            "entry_version": "1",
+            "enst_version": "1",
+            "mapping_id": "3",
+            "sp_ensembl_mapping_type": null,
+            "grouping_id": 2
+        }
+    },
+    {
+        "model": "restui.mappinghistory",
+        "pk": 3,
+        "fields": {
+            "release_mapping_history": "2",
+            "sequence_version": "1",
+            "entry_type": "1",
+            "entry_version": "1",
+            "enst_version": "1",
+            "mapping_id": "2",
+            "sp_ensembl_mapping_type": null,
+            "grouping_id": null
+        }
+    },
+    {
+        "model": "restui.mappinghistory",
+        "pk": 4,
+        "fields": {
+            "release_mapping_history": "2",
+            "sequence_version": "1",
+            "entry_type": "1",
+            "entry_version": "1",
+            "enst_version": "1",
+            "mapping_id": "4",
+            "sp_ensembl_mapping_type": null,
+            "grouping_id": 2
+        }
+    }
+]

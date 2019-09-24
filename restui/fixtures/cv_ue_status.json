@@ -1,0 +1,16 @@
+[
+    {
+        "model": "restui.CvUeStatus",
+        "pk": 1,
+        "fields": {
+            "description": "TESTING"
+        }
+    },
+    {
+        "model": "restui.CvUeStatus",
+        "pk": 2,
+        "fields": {
+            "description": "TESTING2"
+        }
+    }
+]

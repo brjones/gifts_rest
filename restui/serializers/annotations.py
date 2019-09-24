@@ -1,14 +1,36 @@
-from restui.models.annotations import UeMappingStatus, UeMappingComment, UeMappingLabel, CvUeStatus,\
-    UeUnmappedEntryLabel, UeUnmappedEntryComment, UeUnmappedEntryStatus
+"""
+.. See the NOTICE file distributed with this work for additional information
+   regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
 
 from rest_framework import serializers
 
-import pprint
+from restui.models.annotations import UeMappingStatus
+from restui.models.annotations import UeMappingComment
+from restui.models.annotations import UeMappingLabel
+from restui.models.annotations import CvUeStatus
+from restui.models.annotations import UeUnmappedEntryLabel
+from restui.models.annotations import UeUnmappedEntryComment
+from restui.models.annotations import UeUnmappedEntryStatus
+
 
 class CvUeStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = CvUeStatus
         fields = '__all__'
+
 
 class StatusHistorySerializer(serializers.Serializer):
     """
@@ -93,6 +115,7 @@ class MappingCommentSerializer(serializers.ModelSerializer):
         model = UeMappingComment
         fields = '__all__'
 
+
 class UnmappedEntryCommentSerializer(serializers.ModelSerializer):
     """
     unmapped/:id/comments endpoint
@@ -134,6 +157,7 @@ class MappingLabelSerializer(serializers.ModelSerializer):
         model = UeMappingLabel
         fields = '__all__'
 
+
 class UnmappedEntryLabelSerializer(serializers.ModelSerializer):
     """
     unmapped/<int:mapping_view_id>/labels/<label_id>/ endpoint
@@ -161,7 +185,8 @@ class LabelSerializer(serializers.Serializer):
 
 class LabelsSerializer(serializers.Serializer):
     """
-    For nested serialization of user label for a mapping in call to (mapping|unmapped)/<id>/labels endpoint.
+    For nested serialization of user label for a mapping in call to
+    (mapping|unmapped)/<id>/labels endpoint.
     """
 
     labels = LabelSerializer(many=True)

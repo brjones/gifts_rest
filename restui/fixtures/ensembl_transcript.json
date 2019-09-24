@@ -1,0 +1,90 @@
+[
+    {
+        "model": "restui.ensembltranscript",
+        "pk": 1,
+        "fields": {
+            "gene": 1,
+            "enst_id": "ENST00000544455.5",
+            "enst_version": 0,
+            "ccds_id": null,
+            "uniparc_accession": null,
+            "biotype": null,
+            "deleted": null,
+            "seq_region_start": null,
+            "seq_region_end": null,
+            "supporting_evidence": null,
+            "userstamp": null,
+            "time_loaded": null,
+            "select": null,
+            "ensp_id": null,
+            "ensp_len": null,
+            "source": null
+        }
+    },
+    {
+        "model": "restui.ensembltranscript",
+        "pk": 2,
+        "fields": {
+            "gene": 1,
+            "enst_id": "ENST00000380152.7",
+            "enst_version": 1,
+            "ccds_id": null,
+            "uniparc_accession": null,
+            "biotype": null,
+            "deleted": null,
+            "seq_region_start": null,
+            "seq_region_end": null,
+            "supporting_evidence": null,
+            "userstamp": null,
+            "time_loaded": null,
+            "select": null,
+            "ensp_id": null,
+            "ensp_len": null,
+            "source": null
+        }
+    },
+    {
+        "model": "restui.ensembltranscript",
+        "pk": 3,
+        "fields": {
+            "gene": 2,
+            "enst_id": "ENST00000382038.6",
+            "enst_version": 1,
+            "ccds_id": null,
+            "uniparc_accession": null,
+            "biotype": null,
+            "deleted": null,
+            "seq_region_start": null,
+            "seq_region_end": null,
+            "supporting_evidence": null,
+            "userstamp": null,
+            "time_loaded": null,
+            "select": null,
+            "ensp_id": null,
+            "ensp_len": null,
+            "source": null
+        }
+    },
+    {
+        "model": "restui.ensembltranscript",
+        "pk": 4,
+        "fields": {
+            "gene": 3,
+            "enst_id": "ENSG0004.1",
+            "enst_version": 1,
+            "ccds_id": null,
+            "uniparc_accession": null,
+            "biotype": null,
+            "deleted": null,
+            "seq_region_start": null,
+            "seq_region_end": null,
+            "supporting_evidence": null,
+            "userstamp": null,
+            "time_loaded": null,
+            "select": null,
+            "ensp_id": null,
+            "ensp_len": null,
+            "source": null
+        }
+    }
+]

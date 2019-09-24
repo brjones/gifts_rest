@@ -1,0 +1,52 @@
+[
+    {
+        "model": "restui.releasestats",
+        "pk": 1,
+        "fields": {
+            "transcripts_total": "1",
+            "uniprot_entries_total": "1",
+            "uniprot_entries_unmapped": "0",
+            "genes_total": "1",
+            "uniprot_entries_unmapped_sp": "0",
+            "transcripts_unmapped": "0",
+            "genes_unmapped": "0",
+            "uniprot_entries_unmapped_isoform": "0",
+            "uniprot_entries_sp_total": "0",
+            "uniprot_entries_isoform_total": "0",
+            "uniprot_entries_trembl_total": "0",
+            "transcripts_protein_coding_total": "1",
+            "transcripts_protein_coding_mapped": "1",
+            "transcripts_protein_other_total": "0",
+            "transcripts_protein_other_mapped": "0",
+            "genes_mapped_pc": "1",
+            "genes_mapped_nonpc": "0",
+            "genes_unmapped_pc": "0",
+            "genes_unmapped_nonpc": "0"
+        }
+    },
+    {
+        "model": "restui.releasestats",
+        "pk": 2,
+        "fields": {
+            "transcripts_total": "2",
+            "uniprot_entries_total": "3",
+            "uniprot_entries_unmapped": "0",
+            "genes_total": "1",
+            "uniprot_entries_unmapped_sp": "0",
+            "transcripts_unmapped": "1",
+            "genes_unmapped": "1",
+            "uniprot_entries_unmapped_isoform": "0",
+            "uniprot_entries_sp_total": "0",
+            "uniprot_entries_isoform_total": "0",
+            "uniprot_entries_trembl_total": "0",
+            "transcripts_protein_coding_total": "2",
+            "transcripts_protein_coding_mapped": "2",
+            "transcripts_protein_other_total": "0",
+            "transcripts_protein_other_mapped": "0",
+            "genes_mapped_pc": "2",
+            "genes_mapped_nonpc": "0",
+            "genes_unmapped_pc": "0",
+            "genes_unmapped_nonpc": "0"
+        }
+    }
+]

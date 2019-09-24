@@ -1,0 +1,28 @@
+[
+    {
+        "model": "restui.ensemblspecieshistory",
+        "pk": 1,
+        "fields": {
+            "species": "homo_sapiens",
+            "assembly_accession": "GRCh37",
+            "ensembl_tax_id": "9606",
+            "ensembl_release": "87",
+            "status": "LOAD_COMPLETE",
+            "time_loaded": "2019-05-01T00:00:00Z",
+            "alignment_status": "ALIGNMENT_COMPLETE"
+        }
+    },
+    {
+        "model": "restui.ensemblspecieshistory",
+        "pk": 2,
+        "fields": {
+            "species": "homo_sapiens",
+            "assembly_accession": "GRCh38",
+            "ensembl_tax_id": "9606",
+            "ensembl_release": "95",
+            "status": "LOAD_COMPLETE",
+            "time_loaded": "2019-05-01T00:00:00Z",
+            "alignment_status": "ALIGNMENT_COMPLETE"
+        }
+    }
+]

@@ -1,0 +1,28 @@
+[
+    {
+        "model": "aap_auth.AAPUser",
+        "pk": 1,
+        "fields": {
+            "password": "check",
+            "last_login": null,
+            "elixir_id": "testtesttest123",
+            "full_name": "Travis Test",
+            "email": "tt@gifts.ens",
+            "is_admin": false,
+            "validated": true
+        }
+    },
+    {
+        "model": "aap_auth.AAPUser",
+        "pk": 1,
+        "fields": {
+            "password": "",
+            "last_login": null,
+            "elixir_id": "usr-d03bb471-5718-4899-addd-393de8b6ad69",
+            "full_name": "Zapp Brannigan",
+            "email": "zapp@nimbus.doop",
+            "is_admin": false,
+            "validated": true
+        }
+    }
+]
