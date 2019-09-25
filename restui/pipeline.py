@@ -1,10 +1,14 @@
-from itertools import chain # flatten list of lists, i.e. list of transcripts for each gene
-
 from django.utils import timezone
 from psqlextra.query import ConflictAction
 
-from restui.models.ensembl import EnsemblGene, EnsemblTranscript,\
-    EnsemblSpeciesHistory, GeneHistory, TranscriptHistory
+# flatten list of lists, i.e. list of transcripts for each gene
+from itertools import chain
+
+from restui.models.ensembl import EnsemblGene
+from restui.models.ensembl import EnsemblTranscript
+from restui.models.ensembl import EnsemblSpeciesHistory
+from restui.models.ensembl import GeneHistory
+from restui.models.ensembl import TranscriptHistory
 
 
 def batched(data, size=100):
@@ -12,33 +16,46 @@ def batched(data, size=100):
     tdata = {}
 
     timestamp = timezone.now()
-    length = len(data) # assume the iterable implements Sequence semantics
 
-    # transform incoming data for genes/transcripts in a way suitable for bulk insertion
-    #
-    # assume incoming data has list of transcripts nested into each gene
-    # map each ensg ID to the list of its transcripts, so that we can later
-    # assign the gene to each transcript for the transcripts bulk insert
+    # assume the iterable implements Sequence semantics
+    length = len(data)
+
+    """
+    Transform incoming data for genes/transcripts in a way suitable for bulk insertion
+    assume incoming data has list of transcripts nested into each gene
+    map each ensg ID to the list of its transcripts, so that we can later
+    assign the gene to each transcript for the transcripts bulk insert
+    """
     for i, item in enumerate(data):
-        item['time_loaded'] = timestamp # add timestamp to gene
+
+        # add timestamp to gene
+        item['time_loaded'] = timestamp
         ensg_id = item.get('ensg_id')
 
-        # need to remove 'transcripts' from data as this is not part of the gene model
-        # NOTE: assume payload always contains non-empty transcripts data for each gene
+        """
+        Need to remove 'transcripts' from data as this is not part of the gene model
+        NOTE: assume payload always contains non-empty transcripts data for each gene
+        """
+
         tdata[ensg_id] = item.pop('transcripts')
 
-        for t in tdata[ensg_id]: # add timestamp to gene's transcripts too
+        # add timestamp to gene's transcripts too
+        for t in tdata[ensg_id]:
             t['time_loaded'] = timestamp
             
         gdata.append(dict(**item))
 
         if len(gdata) == size or i == length-1:
-            yield gdata, tdata
+            yield gdata, tdata, i
             gdata = []
             tdata = {}
 
 
-def bulk_upload(history, data):
+def bulk_upload(task, history, data):
+
+    total_genes = len(data)
+
+    task.update_state(state="LOADING SPECIES HISTORY TO DATABASE")
     # create new species history associated to this bulk upload
     species_history = EnsemblSpeciesHistory.objects.create(**history)
     # set temporary status
@@ -46,10 +63,10 @@ def bulk_upload(history, data):
     species_history.save()
 
     # bulk insert the genes and transcripts in batches
-    for gdata, tdata in batched(data, size=500):
+    for gdata, tdata, current_number in batched(data, size=500):
 
         """
-        bulk insert the genes and transcripts
+        Bulk insert the genes and transcripts
         WARNING
         From http://django-postgres-extra.readthedocs.io/manager/
         In order to stick to the "everything in one query" principle, various,
@@ -57,6 +74,14 @@ def bulk_upload(history, data):
         It is not possible to have different rows specify different amounts of
         columns.
         """
+
+        task.update_state(
+            state="LOADING ENTRIES TO DATABASE",
+            meta={
+                'current': current_number,
+                'total': total_genes,
+            }
+        )
 
         genes = EnsemblGene.objects.on_conflict(
             ['ensg_id'], ConflictAction.UPDATE
@@ -66,7 +91,7 @@ def bulk_upload(history, data):
         )
 
         """
-        map each transcript data to its corresponding gene object,
+        Map each transcript data to its corresponding gene object,
         effectively establishing the gene-transcript one-to-many relationship
         use generator expression to reduce memory footprint
         """
@@ -87,7 +112,7 @@ def bulk_upload(history, data):
         )
 
         """
-        insert genes and transcripts histories
+        Insert genes and transcripts histories
         TODO: optimise, bulk_insert again?!
         UPDATE: tried bulk_insert, but receive a strange error:
                 'column "ensembl_species_history" does not exist'
@@ -115,7 +140,7 @@ def bulk_upload(history, data):
                 transcript=transcript
             )
 
-        # WARNING: this generates datetime with microseconds and no UTC
-        species_history.time_loaded = timezone.now()
-        species_history.status = 'LOAD_COMPLETE'
-        species_history.save()
+    # WARNING: this generates datetime with microseconds and no UTC
+    species_history.time_loaded = timezone.now()
+    species_history.status = 'LOAD_COMPLETE'
+    species_history.save()
