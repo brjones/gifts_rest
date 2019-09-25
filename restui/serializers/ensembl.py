@@ -105,10 +105,10 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
 
             if k in valid:
                 history_attrs[k] = v
-        
+
         result = bulk_upload_task.delay(history=history_attrs, data=validated_data)
 
-        return (result.get(), result.status)
+        return result.id, result.status
 
 
 class EnsemblGeneSerializer(serializers.Serializer):
