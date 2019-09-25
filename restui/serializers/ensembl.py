@@ -88,13 +88,27 @@ class EnsemblGeneListSerializer(serializers.ListSerializer):
     """
 
     def create(self, validated_data):
-        # data necessary to create new load record, i.e. species history
-        history_attrs = { k:v for (k,v) in self.context['view'].kwargs.items()
-                          if k in ('species', 'assembly_accession', 'ensembl_tax_id', 'ensembl_release') }
-        
-        result = bulk_upload_task.delay(history = history_attrs, data = validated_data)
 
-        return ( result.get(),result.status )
+        """
+        create new species history, use required parameters passed to view from
+        endpoint URL
+        NOTE: filter is likely to be not necessary
+        """
+        history_attrs = {}
+        for (k, v) in self.context['view'].kwargs.items():
+            valid = [
+                'species',
+                'assembly_accession',
+                'ensembl_tax_id',
+                'ensembl_release'
+            ]
+
+            if k in valid:
+                history_attrs[k] = v
+        
+        result = bulk_upload_task.delay(history=history_attrs, data=validated_data)
+
+        return (result.get(), result.status)
 
 
 class EnsemblGeneSerializer(serializers.Serializer):
