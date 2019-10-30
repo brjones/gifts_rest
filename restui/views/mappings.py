@@ -623,15 +623,9 @@ class MappingCommentsView(APIView):
                 'editable': request.user and request.user == comment.user_stamp
             })
 
-        email_recipients_list = {
-            recipient_id: recipient_details.get('name')
-            for (recipient_id, recipient_details) in settings.EMAIL_RECIPIENT_LIST.items()
-        }
-
         data = {
             'mappingId': pk,
-            'comments': comments,
-            'email_recipients_list': email_recipients_list
+            'comments': comments
         }
 
         serializer = MappingCommentsSerializer(data)
@@ -868,6 +862,11 @@ class MappingDetailed(APIView):
         if request.user and request.user.is_authenticated:
             authenticated = True
 
+        email_recipients_list = {
+            recipient_id: recipient_details.get('name')
+            for (recipient_id, recipient_details) in settings.EMAIL_RECIPIENT_LIST.items()
+        }
+
         data = {
             'taxonomy': build_taxonomy_data(mapping),
             'mapping': MappingsSerializer.build_mapping(
@@ -878,7 +877,8 @@ class MappingDetailed(APIView):
             'relatedEntries': {
                 'mapped': build_related_mappings_data(mapping),
                 'unmapped': build_related_unmapped_entries_data(mapping)
-            }
+            },
+            'emailRecipientsList': email_recipients_list
         }
 
         serializer = MappingSerializer(data)
