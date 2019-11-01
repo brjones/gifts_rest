@@ -44,7 +44,7 @@ class GiftsEmail(object):
 
     def build_comments_email(self, mapping):
 
-        self.build_subject("Comment added for a mapping {}".format(mapping.mapping_id))
+        self.build_subject("Comment added for mapping {}".format(mapping.mapping_id))
         self.build_from_address()
 
         if not self.build_to_list():
