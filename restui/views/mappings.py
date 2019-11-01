@@ -753,8 +753,14 @@ class MappingStatusView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         else:
+            prev_status = CvUeStatus.objects.get(id=mv.status)
             mv.status = s.id
             mv.save()
+
+            email = GiftsEmail(request)
+            build_status_change_email = email.build_status_change_email(mapping, prev_status.description, s.description)
+            if build_status_change_email:
+                email.send()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

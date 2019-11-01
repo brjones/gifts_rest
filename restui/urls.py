@@ -145,7 +145,7 @@ urlpatterns = [
     # path('mapping/<int:pk>/alignment_run/<alignment_run>/difference/')
 
     # retrieve mapping and related entries
-    path('mapping/<int:pk>/', mappings.MappingDetailed.as_view()),
+    path('mapping/<int:pk>/', mappings.MappingDetailed.as_view(), name="get_mapping"),
 
     # search the mappings (limit/offset paginated results)
     path('mappings/', mappings.MappingViewsSearch.as_view()),
