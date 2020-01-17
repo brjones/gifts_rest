@@ -48,6 +48,8 @@ from restui.serializers.annotations import UnmappedEntryLabelSerializer
 from restui.serializers.annotations import UnmappedEntryCommentSerializer
 from restui.serializers.annotations import UnmappedEntryStatusSerializer
 from restui.pagination import UnmappedEnsemblEntryPagination
+from restui.lib.mail import GiftsEmail
+from django.conf import settings
 
 
 def get_uniprot_entry(mapping_view_id):
@@ -449,9 +451,21 @@ class AddGetComments(APIView):
 
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            email = GiftsEmail(request)
+            build_comments_email = email.build_unmapped_comments_email(mapping_view_id)
+            if build_comments_email:
+                email.send()
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 class EditDeleteComment(APIView):

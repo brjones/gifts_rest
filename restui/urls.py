@@ -166,14 +166,14 @@ urlpatterns = [
 
     # add comment/retrieve all comments for an unmapped entry
     path('unmapped/<int:mapping_view_id>/comments/', method_router,
-         {'VIEW': unmapped.AddGetComments.as_view()}),
+         {'VIEW': unmapped.AddGetComments.as_view()}, name="add_retrieve_unmapped_entry_comments"),
 
     # update status
     path('unmapped/<int:mapping_view_id>/status/', method_router,
          {'VIEW': unmapped.StatusChange.as_view()}),
 
     # retrieve unmapped and related entries
-    path('unmapped/<int:mapping_view_id>/', unmapped.UnmappedDetailed.as_view()),
+    path('unmapped/<int:mapping_view_id>/', unmapped.UnmappedDetailed.as_view(), name="get_unmapped_entry"),
 
     # fetch unmapped entries (Swissprot, Ensembl)
     path('unmapped/<int:taxid>/<source>/', unmapped.UnmappedEntries.as_view()),

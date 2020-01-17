@@ -59,6 +59,24 @@ class GiftsEmail(object):
         )
         return True
 
+
+    def build_unmapped_comments_email(self, mapping_view_id):
+
+        self.build_subject("Comment added for unmapped entry {}".format(mapping_view_id))
+        self.build_from_address()
+
+        if not self.build_to_list():
+            return False
+
+        unmapped_entry_url = self.request.build_absolute_uri(reverse('get_unmapped_entry', args=[mapping_view_id]))
+
+        self.body = "User: {} \n Comment: {} \n Unmapped Entry URL: {}".format(
+            self.request.user.full_name,
+            self.request.data['text'],
+            unmapped_entry_url
+        )
+        return True
+
     def build_status_change_email(self, mapping, prev_status, current_status):
 
         self.build_subject("Status changed for mapping {}".format(mapping.mapping_id))
