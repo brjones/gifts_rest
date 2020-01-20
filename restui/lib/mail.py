@@ -96,6 +96,25 @@ class GiftsEmail(object):
         return True
 
 
+    def build_unmapped_status_change_email(self, mapping_view_id, prev_status, current_status):
+
+        self.build_subject("Status changed for unmapped entry {}".format(mapping_view_id))
+        self.build_from_address()
+
+        if not self.build_to_list():
+            return False
+
+        unmapped_entry_url = self.request.build_absolute_uri(reverse('get_unmapped_entry', args=[mapping_view_id]))
+
+        self.body = "User: {} \n Previous status: {} \n Current status: {} \n Unmapped entry URL: {}".format(
+            self.request.user.full_name,
+            prev_status,
+            current_status,
+            unmapped_entry_url
+        )
+        return True
+
+
 
     def send(self):
         email = EmailMessage(self.subject, self.body, self.from_email, self.to)

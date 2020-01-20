@@ -22,6 +22,7 @@ from restui.serializers.mappings import MappingViewSerializer
 class UnmappedEntrySerializer(serializers.Serializer):
     entry = MappingViewSerializer()
     relatedEntries = MappingViewSerializer(many=True)
+    emailRecipientsList = serializers.DictField(child=serializers.CharField())
 
 
 class UnmappedSwissprotEntrySerializer(serializers.Serializer):

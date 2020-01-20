@@ -96,13 +96,19 @@ class UnmappedDetailed(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        email_recipients_list = {
+            recipient_id: recipient_details.get('name')
+            for (recipient_id, recipient_details) in settings.EMAIL_RECIPIENT_LIST.items()
+        }
+
         data = {
             'entry': mapping_view,
             'relatedEntries': list(
                 MappingView.objects.filter(
                     grouping_id=mapping_view.grouping_id
                 ).exclude(pk=mapping_view_id)
-            )
+            ),
+            'emailRecipientsList': email_recipients_list
         }
 
         serializer = UnmappedEntrySerializer(data)
@@ -639,7 +645,16 @@ class StatusChange(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         else:
+            if map_view.status is not None:
+                prev_status = CvUeStatus.objects.get(id=map_view.status).description
+            else:
+                prev_status = 'No status'
             map_view.status = s.id
             map_view.save()
+
+        email = GiftsEmail(request)
+        build_status_change_email = email.build_unmapped_status_change_email(mapping_view_id, prev_status, s.description)
+        if build_status_change_email:
+            email.send()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
