@@ -40,12 +40,12 @@ class ServiceFlagSerializer(serializers.Serializer):
         ensembl_status = EnsemblSpeciesHistory.objects.filter(ensembl_release=latest_ensembl.ensembl_release)
         uniprot_status = ReleaseMappingHistory.objects.filter(uniprot_release=latest_uniprot.uniprot_release)
         flag_ensembl_load = all(
-            [(e.status == 'LOAD_COMPLETE') if e.status is not None else False for e in ensembl_status])
+            [(e.status == 'LOAD_COMPLETE') for e in ensembl_status])
         flag_mapping = all(
-            [('ALIGNMENT_COMPLETED' == e.alignment_status) if e.alignment_status is not None else False for e in
+            [('ALIGNMENT_COMPLETED' == e.alignment_status) for e in
              ensembl_status])
         flag_uniprot_load = all(
-            [('MAPPING_COMPLETED' == e.status) if e.status is not None else False for e in uniprot_status])
+            [('MAPPING_COMPLETED' == e.status) for e in uniprot_status])
         repr = {
             'ensembl_load_enable': flag_ensembl_load,
             'uniprot_load_enable': flag_uniprot_load,
