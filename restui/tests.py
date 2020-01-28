@@ -37,7 +37,6 @@ from restui.views import mappings
 from restui.views import unmapped
 from restui.views import version
 
-
 FIXTURES = [
     'ensembl_gene', 'ensembl_transcript', 'uniprot_entry',
     'cv_ue_status', 'mapping', 'ensembl_species_history',
@@ -368,7 +367,7 @@ class EnsemblMapping(APITestCase):
         # View labels
         response = client.get('/mapping/1/labels/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['labels'][mapped_label-1]['status'], True)
+        self.assertEqual(response.data['labels'][mapped_label - 1]['status'], True)
 
         # Add label - mappings.MappingLabelView
         response = client.post('/mapping/1/labels/4/')
@@ -376,7 +375,7 @@ class EnsemblMapping(APITestCase):
 
         response = client.get('/mapping/1/labels/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['labels'][mapped_label-1]['status'], True)
+        self.assertEqual(response.data['labels'][mapped_label - 1]['status'], True)
         self.assertEqual(response.data['labels'][3]['status'], True)
 
         # Delete label - mappings.MappingLabelView
@@ -663,6 +662,17 @@ class EnsemblService(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['ping'], 0)
 
+    def test_service_status(self):
+        client = APIClient()
+        response = client.get('service/status')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('ensembl_load_enable', response.data)
+        self.assertEqual(response.data['ensembl_load_enable'], 'true')
+        self.assertIn('uniprot_load_enable', response.data)
+        self.assertEqual(response.data['uniprot_load_enable'], 'true')
+        self.assertIn('gifts_mapping_enable', response.data)
+        self.assertEqual(response.data['gifts_mapping_enable'], 'true')
+
 
 class EnsemblUniProt(APITestCase):
     """
@@ -703,7 +713,7 @@ class EnsemblUnmapped(APITestCase):
         response = client.get('/unmapped/4/labels/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.data['labels'][mapped_label-1]['status'],
+            response.data['labels'][mapped_label - 1]['status'],
             True
         )
 
@@ -713,7 +723,7 @@ class EnsemblUnmapped(APITestCase):
 
         response = client.get('/unmapped/4/labels/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['labels'][mapped_label-1]['status'], True)
+        self.assertEqual(response.data['labels'][mapped_label - 1]['status'], True)
         self.assertEqual(response.data['labels'][3]['status'], True)
 
         # Delete label - mappings.MappingLabelView
@@ -1020,6 +1030,7 @@ class LibExternal(APITestCase):
         prot = external.ensembl_protein('ENST00000382038', 95)
         self.assertEqual(prot, 'ENSP00000371469')
 
+
 class APIVersion(APITestCase):
     """
     Tests for endpoint version/
@@ -1029,4 +1040,5 @@ class APIVersion(APITestCase):
         client = APIClient()
         response = client.get('/version/')
         self.assertEqual(response.status_code, 200)
-        self.assertRegex(response.data['version'], r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$")
+        self.assertRegex(response.data['version'],
+                         r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$")
