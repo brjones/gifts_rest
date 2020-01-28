@@ -27,6 +27,7 @@ from restui.views import unmapped
 from restui.views import pipelines
 from restui.views import service
 from restui.views import version
+from restui.views import flags
 
 
 @csrf_exempt
@@ -185,7 +186,11 @@ urlpatterns = [
     path('version/', version.APIVersion.as_view()),
 
     # check job status
-    path('job/<task_id>/', pipelines.CheckJobStatus().as_view())
+    path('job/<task_id>/', pipelines.CheckJobStatus().as_view()),
+
+    # check current running tasks
+    path('service/status/ensembl/<version>', flags.EnsemblFlagStatus().as_view()),
+    path('service/status/uniprot/<version>', flags.UniprotFlagStatus().as_view())
 ]
 
 """
