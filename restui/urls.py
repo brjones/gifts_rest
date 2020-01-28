@@ -19,6 +19,7 @@ from django.urls import path
 from django.http import Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+
 from restui.views import alignments
 from restui.views import ensembl
 from restui.views import mappings
@@ -27,7 +28,6 @@ from restui.views import unmapped
 from restui.views import pipelines
 from restui.views import service
 from restui.views import version
-from restui.views import flags
 
 
 @csrf_exempt
@@ -189,8 +189,7 @@ urlpatterns = [
     path('job/<task_id>/', pipelines.CheckJobStatus().as_view()),
 
     # check current running tasks
-    path('service/status/ensembl/<version>', flags.EnsemblFlagStatus().as_view()),
-    path('service/status/uniprot/<version>', flags.UniprotFlagStatus().as_view())
+    path('service/status', service.ServiceStatus().as_view())
 ]
 
 """

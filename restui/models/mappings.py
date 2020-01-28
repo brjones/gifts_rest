@@ -536,6 +536,14 @@ class ReleaseMappingHistory(models.Model):
         managed = False
         db_table = 'release_mapping_history'
 
+    def __str__(self):
+        return "{0} - {1} {2} {3} ".format(
+            self.ensembl_species_history_id,
+            self.uniprot_release,
+            self.uniprot_taxid,
+            self.status
+        )
+
 
 class MappingHistory(models.Model):
 
