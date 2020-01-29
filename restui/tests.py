@@ -664,14 +664,14 @@ class EnsemblService(APITestCase):
 
     def test_service_status(self):
         client = APIClient()
-        response = client.get('service/status')
+        response = client.get('/service/status')
         self.assertEqual(response.status_code, 200)
-        self.assertIn('ensembl_load_enable', response.data)
-        self.assertEqual(response.data['ensembl_load_enable'], 'true')
-        self.assertIn('uniprot_load_enable', response.data)
-        self.assertEqual(response.data['uniprot_load_enable'], 'true')
-        self.assertIn('gifts_mapping_enable', response.data)
-        self.assertEqual(response.data['gifts_mapping_enable'], 'true')
+        self.assertIn('ensembl_load_running', response.data)
+        self.assertEqual(response.data['ensembl_load_running'], 'true')
+        self.assertIn('uniprot_load_running', response.data)
+        self.assertEqual(response.data['uniprot_load_running'], 'true')
+        self.assertIn('gifts_mapping_running', response.data)
+        self.assertEqual(response.data['gifts_mapping_running'], 'true')
 
 
 class EnsemblUniProt(APITestCase):
