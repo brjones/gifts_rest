@@ -14,11 +14,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-
+from rest_framework import permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from restui.serializers.service import StatusSerializer
+from restui.serializers.service import StatusSerializer, ServiceFlagSerializer
 
 
 class PingService(APIView):
@@ -31,3 +31,11 @@ class PingService(APIView):
             {'ping': 0}
         )
         return Response(serializer.data)
+
+
+class ServiceStatus(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        serializer = ServiceFlagSerializer()
+        return Response(serializer.to_representation())
