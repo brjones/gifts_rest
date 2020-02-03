@@ -96,6 +96,8 @@ class MappingCommentSerializer(serializers.ModelSerializer):
     Serialize comment associated to mapping
     """
 
+    deleted = serializers.BooleanField(write_only=True)
+
     # this is probably not needed, the framework should already
     # check the provided comment data is not blank
     def validate_comment(self, value):
@@ -122,6 +124,8 @@ class UnmappedEntryCommentSerializer(serializers.ModelSerializer):
 
     Serialize comment associated to an unmapped entry
     """
+
+    deleted = serializers.BooleanField(write_only=True)
 
     # this is probably not needed, the framework should already
     # check the provided comment data is not blank
