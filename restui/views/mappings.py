@@ -293,7 +293,7 @@ class MappingsByHistory(generics.ListAPIView):
         try:
             return Mapping.objects.filter(
                 mapping_history__release_mapping_history=release_mapping_history_id
-            )
+            ).order_by('mapping_id')
         except Mapping.DoesNotExist:
             raise Http404
 
